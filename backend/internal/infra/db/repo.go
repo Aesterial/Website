@@ -17,11 +17,13 @@ type LoggerRepository struct {
 	DB *sql.DB
 }
 
+var _ user.Repository = (*UserRepository)(nil)
+
 func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (u *UserRepository) getUID(ctx context.Context, name string) (uint, error) {
+func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", name)
 	if err := row.Err(); err != nil {
 		return 0, err
@@ -33,7 +35,7 @@ func (u *UserRepository) getUID(ctx context.Context, name string) (uint, error) 
 	return uid, nil
 }
 
-func (u *UserRepository) getUsername(ctx context.Context, uid uint) (string, error) {
+func (u *UserRepository) GetUsername(ctx context.Context, uid uint) (string, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
 		return "", nil
@@ -45,7 +47,7 @@ func (u *UserRepository) getUsername(ctx context.Context, uid uint) (string, err
 	return username, nil
 }
 
-func (u *UserRepository) getEmail(ctx context.Context, uid uint) (*user.Email, error) {
+func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT (u.email).address, (u.email).verified FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
 		return nil, err
@@ -57,7 +59,7 @@ func (u *UserRepository) getEmail(ctx context.Context, uid uint) (*user.Email, e
 	return &email, nil
 }
 
-func (u *UserRepository) getRank(ctx context.Context, uid uint) (*rank.Rank, error) {
+func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
 		return nil, err
@@ -69,7 +71,7 @@ func (u *UserRepository) getRank(ctx context.Context, uid uint) (*rank.Rank, err
 	return &r, nil
 }
 
-func (u *UserRepository) getJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
+func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT u.joined FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
 		return nil, err
@@ -81,7 +83,7 @@ func (u *UserRepository) getJoinedAT(ctx context.Context, uid uint) (*time.Time,
 	return &t, nil
 }
 
-func (u *UserRepository) getSettings(ctx context.Context, uid uint) (*user.Settings, error) {
+func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
 	rowMain := u.DB.QueryRowContext(ctx,
 		"SELECT u.settings.session_live_time, u.settings.password, u.settings.display_name FROM users u WHERE u.uid = $1",
 		uid)
@@ -104,18 +106,18 @@ func (u *UserRepository) getSettings(ctx context.Context, uid uint) (*user.Setti
 	return &s, nil
 }
 
-func (u *UserRepository) getUser(ctx context.Context, uid uint) (*user.User, error) {
+func (u *UserRepository) GetUserByUID(ctx context.Context, uid uint) (*user.User, error) {
 	var us user.User
 	us.UID = uid
-	if exists, err := u.isExists(ctx, uid); err != nil || !exists {
+	if exists, err := u.IsExistsByUID(ctx, uid); err != nil || !exists {
 		return nil, err
 	}
 	var err error
-	us.Username, err = u.getUsername(ctx, uid)
+	us.Username, err = u.GetUsername(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	at, err := u.getJoinedAT(ctx, uid)
+	at, err := u.GetJoinedAT(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -123,32 +125,32 @@ func (u *UserRepository) getUser(ctx context.Context, uid uint) (*user.User, err
 		return nil, errors.New("joined at pointer is null")
 	}
 	us.Joined = *at
-	us.Email, err = u.getEmail(ctx, uid)
+	us.Email, err = u.GetEmail(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	us.Rank, err = u.getRank(ctx, uid)
+	us.Rank, err = u.GetRank(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	us.Settings, err = u.getSettings(ctx, uid)
+	us.Settings, err = u.GetSettings(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 	return &us, nil
 }
 
-func (u *UserRepository) getUserByUsername(ctx context.Context, username string) (*user.User, error) {
-	uid, err := u.getUID(ctx, username)
+func (u *UserRepository) GetUserByUsername(ctx context.Context, username string) (*user.User, error) {
+	uid, err := u.GetUID(ctx, username)
 	if err != nil {
 		return nil, err
 	}
-	return u.getUser(ctx, uid)
+	return u.GetUserByUID(ctx, uid)
 }
 
-func (u *UserRepository) isExists(ctx context.Context, uid uint) (bool, error) {
+func (u *UserRepository) IsExists(ctx context.Context, user user.User) (bool, error) {
 	var exists bool
-	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users u WHERE u.uid = $1)", uid).Scan(&exists)
+	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users u WHERE u.username = $1 OR (u.email).address = $2)", user.Username, user.Email.Address).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -156,4 +158,35 @@ func (u *UserRepository) isExists(ctx context.Context, uid uint) (bool, error) {
 		return false, errors.New("user not found")
 	}
 	return exists, nil
+}
+
+func (u *UserRepository) IsExistsByUID(ctx context.Context, uid uint) (bool, error) {
+	return u.IsExists(ctx, user.User{UID: uid})
+}
+
+func (u *UserRepository) Register(ctx context.Context, user user.User) error {
+	exists, err := u.IsExists(ctx, user)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("user already exists")
+	}
+	if _, err = u.DB.ExecContext(ctx, `
+	INSERT INTO users (username, email, settings, rank, joined)
+	VALUES (
+		$1,
+		ROW($2, false)::users_email_t,
+		ROW(NULL, NULL, $3, 30)::user_settings_t,
+		ROW('user', NULL)::users_rank_t,
+		$4
+	)`, user.Username, user.Email.Address, user.Settings.Password, time.Now()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserRepository) Authorize(ctx context.Context, user user.User) error {
+	return nil
 }

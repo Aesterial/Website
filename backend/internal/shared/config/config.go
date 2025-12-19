@@ -10,10 +10,10 @@ import (
 )
 
 func Ensure() {
-	if err := godotenv.Load(".ENV"); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		logger.Warning(
 			"Enviroment settings from .env not loaded: "+err.Error(),
-			"system.ENV.load",
+			"system.env.load",
 			logger.EventActor{Type: logger.System, ID: 0},
 			logger.Failure,
 		)
@@ -45,7 +45,7 @@ func parseBoolEnv(key string, def bool) bool {
 	if err != nil {
 		logger.Warning(
 			"Invalid bool in ENV "+key+": "+raw,
-			"system.ENV.parse_bool",
+			"system.env.parse_bool",
 			logger.EventActor{Type: logger.System, ID: 0},
 			logger.Failure,
 		)
