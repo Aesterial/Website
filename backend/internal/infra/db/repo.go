@@ -3,6 +3,7 @@ package db
 import (
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/user"
+	"ascendant/backend/internal/infra/logger"
 	"context"
 	"database/sql"
 	"errors"
@@ -189,4 +190,42 @@ func (u *UserRepository) Register(ctx context.Context, user user.User) error {
 
 func (u *UserRepository) Authorize(ctx context.Context, user user.User) error {
 	return nil
+}
+
+func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
+	var trace string
+	if event.TraceID == "" {
+		trace = "-"
+	}
+	if _, err := l.DB.ExecContext(ctx, "INSERT INTO events(event_type, level, message, actor_type, actor_id, trace_id, result) VALUES ($1, $2, $3, $4, $5, $6, $7)", event.Type.String(), event.Level.String(), event.Message, event.Actor.Type.String(), event.Actor.ID, trace, event.Result.String()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (l *LoggerRepository) GetList(ctx context.Context, limit uint, offset uint) ([]*logger.Event, error) {
+	var events []*logger.Event
+	var err error
+	var rows *sql.Rows
+	if limit > 0 {
+		rows, err = l.DB.QueryContext(ctx, "SELECT * FROM events ORDER BY at LIMIT $1 OFFSET $2", limit, offset)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+	} else {
+		rows, err = l.DB.QueryContext(ctx, "SELECT * FROM events ORDER BY at OFFSET $1", offset)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+	}
+	for rows.Next() {
+		var event logger.Event
+		if err = rows.Scan(&event.ID, &event.At, &event.Type, &event.Level, &event.Message, &event.Actor.Type, &event.Actor.ID, &event.Result); err != nil {
+			return nil, err
+		}
+		events = append(events, &event)
+	}
+	return events, nil
 }

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	loggercolor "ascendant/backend/internal/infra/logger/color"
+
+	"github.com/google/uuid"
 )
 
 type (
@@ -13,6 +15,22 @@ type (
 	EventResult string
 	ActorType   string
 )
+
+func (e EventType) String() string {
+	return string(e)
+}
+
+func (e EventLevel) String() string {
+	return string(e)
+}
+
+func (e EventResult) String() string {
+	return string(e)
+}
+
+func (e ActorType) String() string {
+	return string(e)
+}
 
 type EventActor struct {
 	Type ActorType
@@ -42,6 +60,7 @@ const (
 )
 
 type Event struct {
+	ID      uuid.UUID
 	At      time.Time
 	Type    EventType
 	Level   EventLevel

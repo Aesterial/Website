@@ -7,6 +7,10 @@ type Error struct {
 	TraceID string
 }
 
+func (e Error) Error() string {
+	return e.Code + ": " + e.Message
+}
+
 func UserNotFound(uid, traceID string) Error {
 	return Error{
 		Code:    "UserNotFound",
