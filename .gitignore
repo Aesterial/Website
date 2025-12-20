@@ -43,3 +43,4 @@ generated/
 /.idea/*
 /.idea
 backend/starter/.env
+/backend/.idea
