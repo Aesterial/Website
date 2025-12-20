@@ -13,16 +13,49 @@ import (
 func Tracing() gin.HandlerFunc {
 	return func(req *gin.Context) {
 		at := time.Now()
+
 		id, err := uuid.NewRandom()
 		if err != nil {
-			logger.Error("Failed to generate traceID. "+err.Error(), "middleware.tracing", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+			logger.Error("Failed to generate traceID. "+err.Error(),
+				"middleware.tracing",
+				logger.EventActor{Type: logger.System, ID: 0},
+				logger.None,
+			)
 			req.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		logger.Info("Received new request: "+req.ClientIP(), "middleware.tracing", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure, id.String())
+
+		req.Set("traceID", id.String())
+		logger.Info("Received new request: "+req.ClientIP(),
+			"middleware.tracing",
+			logger.EventActor{Type: logger.System, ID: 0},
+			logger.None,
+			id.String(),
+		)
+
 		req.Next()
-		end := time.Now()
-		duration := end.Sub(at)
-		logger.Info(fmt.Sprintf("Response to %s: code %d, method %s, elapsed %s", req.ClientIP(), req.Writer.Status(), req.Request.Method, duration), "middleware.tracing", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure, id.String())
+
+		duration := time.Since(at)
+		status := req.Writer.Status()
+
+		result := logger.None
+		switch {
+		case status >= 200 && status < 300:
+			result = logger.Success
+		case status >= 400:
+			result = logger.Failure
+		default:
+			result = logger.None
+		}
+
+		logger.Info(
+			fmt.Sprintf("Response to %s: code %d, method %s, elapsed %s",
+				req.ClientIP(), status, req.Request.Method, duration,
+			),
+			"middleware.tracing",
+			logger.EventActor{Type: logger.System, ID: 0},
+			result,
+			id.String(),
+		)
 	}
 }

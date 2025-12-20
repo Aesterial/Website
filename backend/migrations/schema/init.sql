@@ -52,9 +52,9 @@ create table users (
     uid bigint generated always as identity primary key,
     username varchar(64) not null,
 
-    email users_email_t not null,
-    settings user_settings_t not null,
-    rank users_rank_t not null,
+    email users_email_t not null default ROW('', false)::users_email_t,
+    settings user_settings_t not null default ROW('', ROW(NULL, NULL, NULL, NULL, NULL, NULL)::avatar_t, '', 30)::user_settings_t,
+    rank users_rank_t not null default ROW('user', NULL)::users_rank_t,
 
     joined timestamptz not null default now(),
 

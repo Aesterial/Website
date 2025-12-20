@@ -21,10 +21,10 @@ type Avatar struct {
 }
 
 type Settings struct {
-	DisplayName     string
-	Avatar          Avatar
-	Password        string
-	SessionLiveTime int
+    DisplayName     *string
+    Avatar          Avatar
+    Password        string
+    SessionLiveTime int
 }
 
 type User struct {

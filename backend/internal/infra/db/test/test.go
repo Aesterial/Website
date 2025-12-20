@@ -1,17 +1,13 @@
 package dbtest
 
 import (
-	"ascendant/backend/internal/infra/db"
 	"context"
 	"database/sql"
 	"time"
 )
 
-func Init() error {
-	DB, err := db.NewConnection()
-	if err != nil {
-		return err
-	}
+func Init(DB *sql.DB) error {
+	var err error
 	if err = pingTest(DB); err != nil {
 		return err
 	}

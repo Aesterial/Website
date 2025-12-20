@@ -44,12 +44,12 @@ func (s *Service) UpdateName(ctx context.Context, id uint, name string) (*user.U
 		return nil, err
 	}
 
-	if u.Settings == nil {
-		u.Settings = &user.Settings{}
-	}
-	u.Settings.DisplayName = trimmed
+        if u.Settings == nil {
+            u.Settings = &user.Settings{}
+        }
+        u.Settings.DisplayName = &trimmed
 
-	return u, nil
+        return u, nil
 }
 
 func isNotFound(err error) bool {

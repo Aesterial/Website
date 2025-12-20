@@ -11,7 +11,7 @@ import (
 )
 
 var events []*Event
-var mu sync.Mutex
+var Mu sync.Mutex
 
 type (
 	EventType   string
@@ -43,10 +43,10 @@ type EventActor struct {
 
 // Event levels
 const (
-	InfoL  EventLevel = "Info"
-	WarnL  EventLevel = "Warn"
-	ErrorL EventLevel = "Error"
-	DebugL EventLevel = "Debug"
+	InfoL  EventLevel = "info"
+	WarnL  EventLevel = "warn"
+	ErrorL EventLevel = "error"
+	DebugL EventLevel = "debug"
 )
 
 // Event results
@@ -130,13 +130,24 @@ func printEvent(e Event) {
 }
 
 func Append(event Event) {
-	mu.Lock()
-	defer mu.Unlock()
+	Mu.Lock()
+	defer Mu.Unlock()
 	events = append(events, &event)
 }
 
-func GetEvents() []*Event {
-	return events
+func DrainEvents() []*Event {
+	Mu.Lock()
+	defer Mu.Unlock()
+
+	out := events
+	events = nil
+	return out
+}
+
+func PushEvents(ev ...*Event) {
+	Mu.Lock()
+	events = append(events, ev...)
+	Mu.Unlock()
 }
 
 func Info(message, event string, actor EventActor, result EventResult, trace ...string) Event {

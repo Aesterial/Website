@@ -41,15 +41,15 @@ func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) 
 }
 
 func (u *UserRepository) GetUsername(ctx context.Context, uid uint) (string, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return "", nil
-	}
-	var username string
-	if err := row.Scan(&username); err != nil {
-		return "", nil
-	}
-	return username, nil
+    row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
+    if err := row.Err(); err != nil {
+        return "", err
+    }
+    var username string
+    if err := row.Scan(&username); err != nil {
+        return "", err
+    }
+    return username, nil
 }
 
 func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
@@ -65,15 +65,19 @@ func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, e
 }
 
 func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return nil, err
-	}
-	var r rank.Rank
-	if err := row.Scan(&r.Name, &r.Expires); err != nil {
-		return nil, err
-	}
-	return &r, nil
+    row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
+    if err := row.Err(); err != nil {
+        return nil, err
+    }
+    var r rank.Rank
+    var expires sql.NullTime
+    if err := row.Scan(&r.Name, &expires); err != nil {
+        return nil, err
+    }
+    if expires.Valid {
+        r.Expires = &expires.Time
+    }
+    return &r, nil
 }
 
 func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
@@ -89,16 +93,20 @@ func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time,
 }
 
 func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
-	rowMain := u.DB.QueryRowContext(ctx,
-		"SELECT u.settings.session_live_time, u.settings.password, u.settings.display_name FROM users u WHERE u.uid = $1",
-		uid)
-	if err := rowMain.Err(); err != nil {
-		return nil, err
-	}
-	var s user.Settings
-	if err := rowMain.Scan(&s.SessionLiveTime, &s.Password, &s.DisplayName); err != nil {
-		return nil, err
-	}
+    rowMain := u.DB.QueryRowContext(ctx,
+        "SELECT u.settings.session_live_time, u.settings.password, u.settings.display_name FROM users u WHERE u.uid = $1",
+        uid)
+    if err := rowMain.Err(); err != nil {
+        return nil, err
+    }
+    var s user.Settings
+    var displayName sql.NullString
+    if err := rowMain.Scan(&s.SessionLiveTime, &s.Password, &displayName); err != nil {
+        return nil, err
+    }
+    if displayName.Valid {
+        s.DisplayName = &displayName.String
+    }
 	var a user.Avatar
 	row := u.DB.QueryRowContext(ctx, " SELECT((u.settings).avatar).content_type, ((u.settings).avatar).data, ((u.settings).avatar).width, ((u.settings).avatar).height, ((u.settings).avatar).size_bytes, ((u.settings).avatar).updated FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
@@ -155,7 +163,11 @@ func (u *UserRepository) GetUserByUsername(ctx context.Context, username string)
 
 func (u *UserRepository) IsExists(ctx context.Context, user user.User) (bool, error) {
 	var exists bool
-	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users u WHERE u.username = $1 OR (u.email).address = $2)", user.Username, user.Email.Address).Scan(&exists)
+	var emailAddress string
+	if user.Email != nil {
+		emailAddress = user.Email.Address
+	}
+	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users u WHERE u.username = $1 OR (u.email).address = $2 OR u.uid = $3)", user.Username, emailAddress, user.UID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -197,11 +209,10 @@ func (u *UserRepository) Authorize(ctx context.Context, user user.User) error {
 }
 
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
-	var trace string
 	if event.TraceID == "" {
-		trace = "-"
+		event.TraceID = "-"
 	}
-	if _, err := l.DB.ExecContext(ctx, "INSERT INTO events(event_type, level, message, actor_type, actor_id, trace_id, result) VALUES ($1, $2, $3, $4, $5, $6, $7)", strings.ToLower(event.Type.String()), event.Level.String(), event.Message, event.Actor.Type.String(), event.Actor.ID, trace, event.Result.String()); err != nil {
+	if _, err := l.DB.ExecContext(ctx, "INSERT INTO events(event_type, level, message, actor_type, actor_id, trace_id, result) VALUES ($1, $2, $3, $4, $5, $6, $7)", strings.ToLower(event.Type.String()), event.Level.String(), event.Message, event.Actor.Type.String(), event.Actor.ID, event.TraceID, event.Result.String()); err != nil {
 		return err
 	}
 	return nil
@@ -226,7 +237,7 @@ func (l *LoggerRepository) GetList(ctx context.Context, limit uint, offset uint)
 	}
 	for rows.Next() {
 		var event logger.Event
-		if err = rows.Scan(&event.ID, &event.At, &event.Type, &event.Level, &event.Message, &event.Actor.Type, &event.Actor.ID, &event.Result); err != nil {
+		if err = rows.Scan(&event.ID, &event.At, &event.Type, &event.Level, &event.Message, &event.Actor.Type, &event.Actor.ID, &event.Result, &event.TraceID); err != nil {
 			return nil, err
 		}
 		events = append(events, &event)

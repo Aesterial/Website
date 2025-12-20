@@ -29,16 +29,17 @@ func main() {
 
 	config.Ensure()
 
-	if err := dbtest.Init(); err != nil {
-		logger.Error("Failed to test db: "+err.Error(), "db.start.failed", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
-		return
-	}
-
 	dbConn, err := db.NewConnection()
 	if err != nil {
 		logger.Error("Failed to connect db: "+err.Error(), "db.connect.failed", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
+
+	if err = dbtest.Init(dbConn); err != nil {
+		logger.Error("Failed to test db: "+err.Error(), "db.start.failed", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
+
 	defer func() {
 		type closer interface{ Close() error }
 		if c, ok := any(dbConn).(closer); ok {

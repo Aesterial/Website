@@ -4,11 +4,8 @@ import (
 	"ascendant/backend/internal/infra/logger"
 	"ascendant/backend/internal/shared/safe"
 	"context"
-	"sync"
 	"time"
 )
-
-var mu sync.Mutex
 
 type Service struct {
 	repo logger.Repository
@@ -25,7 +22,6 @@ func (s *Service) Append(ctx context.Context, event logger.Event) error {
 func (s *Service) GetList(ctx context.Context, limit uint, offset uint) ([]*logger.Event, error) {
 	return s.repo.GetList(ctx, limit, offset)
 }
-
 func (s *Service) Start(ctx context.Context, delta time.Duration) {
 	safe.Go("logger.service.loop", func() {
 		ticker := time.NewTicker(delta)
@@ -37,11 +33,9 @@ func (s *Service) Start(ctx context.Context, delta time.Duration) {
 				return
 
 			case <-ticker.C:
-				mu.Lock()
-				Events := logger.GetEvents()
-				events := make([]*logger.Event, len(Events))
-				copy(events, Events)
-				mu.Unlock()
+				events := logger.DrainEvents()
+
+				failed := make([]*logger.Event, 0, len(events))
 
 				for _, event := range events {
 					if event == nil {
@@ -49,7 +43,6 @@ func (s *Service) Start(ctx context.Context, delta time.Duration) {
 					}
 
 					ev := *event
-
 					if err := s.Append(ctx, ev); err != nil {
 						logger.Error(
 							"failed to save event: "+err.Error(),
@@ -57,8 +50,12 @@ func (s *Service) Start(ctx context.Context, delta time.Duration) {
 							logger.EventActor{Type: logger.System, ID: 0},
 							logger.Failure,
 						)
-						continue
+						failed = append(failed, event)
 					}
+				}
+
+				if len(failed) > 0 {
+					logger.PushEvents(failed...)
 				}
 			}
 		}
