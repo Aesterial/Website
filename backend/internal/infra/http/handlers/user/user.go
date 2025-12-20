@@ -25,20 +25,20 @@ func New(infoService *userinfo.Service, modifierService *modifier.Service) *Hand
 	}
 }
 
-func (h *Handler) GetByID(c *gin.Context) {
-	id, err := parseIDParam(c)
+func (h *Handler) GetByID(req *gin.Context) {
+	id, err := parseIDParam(req)
 	if err != nil {
-		send.Error(c, http.StatusBadRequest, err)
+		send.Error(req, http.StatusBadRequest, err)
 		return
 	}
 
-	u, err := h.info.GetByID(c.Request.Context(), id)
+	u, err := h.info.GetByID(req.Request.Context(), id)
 	if err != nil {
-		h.handleError(c, err)
+		h.handleError(req, err)
 		return
 	}
 
-	send.OK(c, u)
+	send.OK(req, u)
 }
 
 type updateNameRequest struct {

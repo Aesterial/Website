@@ -1,6 +1,7 @@
 package db
 
 import (
+	"ascendant/backend/internal/domain/login"
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/user"
 	"ascendant/backend/internal/infra/logger"
@@ -9,13 +10,17 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository struct {
 	DB *sql.DB
 }
-
 type LoggerRepository struct {
+	DB *sql.DB
+}
+type LoginRepository struct {
 	DB *sql.DB
 }
 
@@ -26,6 +31,9 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 func NewLoggerRepository(db *sql.DB) *LoggerRepository {
 	return &LoggerRepository{DB: db}
+}
+func NewLoginRepository(db *sql.DB) *LoginRepository {
+	return &LoginRepository{DB: db}
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
@@ -41,15 +49,15 @@ func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) 
 }
 
 func (u *UserRepository) GetUsername(ctx context.Context, uid uint) (string, error) {
-    row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
-    if err := row.Err(); err != nil {
-        return "", err
-    }
-    var username string
-    if err := row.Scan(&username); err != nil {
-        return "", err
-    }
-    return username, nil
+	row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
+	if err := row.Err(); err != nil {
+		return "", err
+	}
+	var username string
+	if err := row.Scan(&username); err != nil {
+		return "", err
+	}
+	return username, nil
 }
 
 func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
@@ -65,19 +73,19 @@ func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, e
 }
 
 func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
-    row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
-    if err := row.Err(); err != nil {
-        return nil, err
-    }
-    var r rank.Rank
-    var expires sql.NullTime
-    if err := row.Scan(&r.Name, &expires); err != nil {
-        return nil, err
-    }
-    if expires.Valid {
-        r.Expires = &expires.Time
-    }
-    return &r, nil
+	row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	var r rank.Rank
+	var expires sql.NullTime
+	if err := row.Scan(&r.Name, &expires); err != nil {
+		return nil, err
+	}
+	if expires.Valid {
+		r.Expires = &expires.Time
+	}
+	return &r, nil
 }
 
 func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
@@ -93,20 +101,20 @@ func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time,
 }
 
 func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
-    rowMain := u.DB.QueryRowContext(ctx,
-        "SELECT u.settings.session_live_time, u.settings.password, u.settings.display_name FROM users u WHERE u.uid = $1",
-        uid)
-    if err := rowMain.Err(); err != nil {
-        return nil, err
-    }
-    var s user.Settings
-    var displayName sql.NullString
-    if err := rowMain.Scan(&s.SessionLiveTime, &s.Password, &displayName); err != nil {
-        return nil, err
-    }
-    if displayName.Valid {
-        s.DisplayName = &displayName.String
-    }
+	rowMain := u.DB.QueryRowContext(ctx,
+		"SELECT u.settings.session_live_time, u.settings.password, u.settings.display_name FROM users u WHERE u.uid = $1",
+		uid)
+	if err := rowMain.Err(); err != nil {
+		return nil, err
+	}
+	var s user.Settings
+	var displayName sql.NullString
+	if err := rowMain.Scan(&s.SessionLiveTime, &s.Password, &displayName); err != nil {
+		return nil, err
+	}
+	if displayName.Valid {
+		s.DisplayName = &displayName.String
+	}
 	var a user.Avatar
 	row := u.DB.QueryRowContext(ctx, " SELECT((u.settings).avatar).content_type, ((u.settings).avatar).data, ((u.settings).avatar).width, ((u.settings).avatar).height, ((u.settings).avatar).size_bytes, ((u.settings).avatar).updated FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
@@ -243,4 +251,48 @@ func (l *LoggerRepository) GetList(ctx context.Context, limit uint, offset uint)
 		events = append(events, &event)
 	}
 	return events, nil
+}
+
+func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRequire) (*int, error) {
+	if require.IsEmpty() {
+		return nil, errors.New("some of params is empty")
+	}
+	var id int
+	err := l.DB.QueryRowContext(ctx, `
+		INSERT INTO users (username, email, password)
+		VALUES (
+		$1,
+		ROW($2, false)::users_email_t,
+		$3) RETURNING uid`,
+		require.Username, require.Email, require.Password).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+func (l *LoginRepository) Authorization(ctx context.Context, require login.AuthorizationRequire) (*int, error) {
+	if require.IsEmpty() {
+		return nil, errors.New("some of params is empty")
+	}
+	var uid int
+	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username == $1", require.Usermail).Scan(&uid); err != nil {
+		return nil, err
+	}
+	if uid == 0 {
+		if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE (u.email).address == $1", require.Usermail).Scan(&uid); err != nil {
+			return nil, err
+		}
+	}
+	if uid == 0 {
+		return nil, errors.New("user not found")
+	}
+	var password string
+	if err := l.DB.QueryRowContext(ctx, "SELECT u.password FROM users u WHERE u.uid = $1", uid).Scan(&password); err != nil {
+		return nil, err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(require.Password)); err != nil {
+		return nil, err
+	}
+	return &uid, nil
 }

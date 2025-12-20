@@ -43,7 +43,6 @@ create type users_rank_t as (
 create type user_settings_t as (
     display_name varchar(255),
     avatar avatar_t,
-    password varchar(255),
     session_live_time int
 );
 
@@ -57,6 +56,8 @@ create table users (
     rank users_rank_t not null default ROW('user', NULL)::users_rank_t,
 
     joined timestamptz not null default now(),
+
+    password varchar(255),
 
     -- constraints for struct fields
     constraint users_email_address_nn check (((email).address) is not null),
@@ -184,6 +185,20 @@ create table events (
 
     trace_id varchar(255) not null,
     result event_result not null
+);
+
+-- sessions
+create table sessions (
+    id uuid primary key,
+    uid bigint not null,
+
+    created_at timestamptz not null default now(),
+    last_seen_at timestamptz not null default now(),
+    expires timestamptz,
+    revoked bool not null default false,
+    mfa_complete bool not null default false,
+
+    user_agent_hash text not null
 );
 
 create index events_at_idx on events(at);

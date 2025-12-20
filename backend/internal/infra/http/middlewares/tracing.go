@@ -26,7 +26,7 @@ func Tracing() gin.HandlerFunc {
 		}
 
 		req.Set("traceID", id.String())
-		logger.Info("Received new request: "+req.ClientIP(),
+		logger.Info("Received new request: "+req.ClientIP()+" -> "+req.FullPath(),
 			"middleware.tracing",
 			logger.EventActor{Type: logger.System, ID: 0},
 			logger.None,
@@ -49,8 +49,8 @@ func Tracing() gin.HandlerFunc {
 		}
 
 		logger.Info(
-			fmt.Sprintf("Response to %s: code %d, method %s, elapsed %s",
-				req.ClientIP(), status, req.Request.Method, duration,
+			fmt.Sprintf("Response to %s from %s: code %d, method %s, elapsed %s",
+				req.ClientIP(), req.FullPath(), status, req.Request.Method, duration,
 			),
 			"middleware.tracing",
 			logger.EventActor{Type: logger.System, ID: 0},

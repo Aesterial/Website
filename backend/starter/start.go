@@ -7,6 +7,7 @@ import (
 	usermodifier "ascendant/backend/internal/app/modifier/user"
 	"ascendant/backend/internal/infra/db"
 	dbtest "ascendant/backend/internal/infra/db/test"
+	loginhandler "ascendant/backend/internal/infra/http/handlers/login"
 	userhandler "ascendant/backend/internal/infra/http/handlers/user"
 	"ascendant/backend/internal/infra/http/middlewares"
 	"ascendant/backend/internal/infra/http/routes"
@@ -51,6 +52,7 @@ func main() {
 
 	userRepo := db.NewUserRepository(dbConn)
 	loggerRepo := db.NewLoggerRepository(dbConn)
+	loginRepo := db.NewLoginRepository(dbConn)
 	loggerServ := loggerservice.New(loggerRepo)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -61,11 +63,16 @@ func main() {
 	userInfoService := userinfo.New(userRepo)
 	userModifierService := usermodifier.New(userRepo)
 	userHandler := userhandler.New(userInfoService, userModifierService)
+	loginRegisterService := login.New(loginRepo)
+	loginHandler := loginhandler.New(loginRegisterService)
 
 	service := gin.New()
 	service.Use(middlewares.Tracing())
-	service.POST("/reg", login.Register)
+	service.GET("/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "pong"})
+	})
 	routes.RegisterUser(service, userHandler)
+	routes.RegisterLogin(service, loginHandler)
 
 	addr := "0.0.0.0:" + strings.TrimPrefix(config.ENV.Boot.Port, ":")
 
@@ -92,7 +99,7 @@ func main() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := srv.Shutdown(shutdownCtx); err != nil {
+		if err = srv.Shutdown(shutdownCtx); err != nil {
 			logger.Error("Failed to shutdown server: "+err.Error(), "service.shutdown.failed", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 			_ = srv.Close()
 		}
