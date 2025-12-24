@@ -10,10 +10,12 @@ import { AnimatePresence, motion } from "framer-motion"
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Moon, Sun, User } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
-type AuthMode = "login" | "register"
+type AuthMode = "login" | "register" // | "forgot-password"
 
 export default function AuthPage() {
+  const router = useRouter()
   const [mode, setMode] = useState<AuthMode>("login")
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -32,8 +34,17 @@ export default function AuthPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (mode === "login") {
+      const isAdminLogin =
+        formData.email.trim().toLowerCase() === "admin@admin.admin" &&
+        formData.password === "admin"
+      if (isAdminLogin) {
+        router.push("/admin")
+        return
+      }
+    }
     console.log("[!] Form submit:", formData)
-  }
+  } // <-- just example!!!! i waiting api!!!!
 
   const inputVariants = {
     hidden: { opacity: 0, x: -20 },
@@ -109,6 +120,19 @@ export default function AuthPage() {
                 {m === "login" ? t("authorization") : t("registration")}
               </button>
             ))}
+          </motion.div>
+
+          <motion.div
+            className="rounded-2xl border border-border/60 bg-card/80 px-4 py-3 mb-6"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.45 }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Тестовый доступ</p>
+            <div className="mt-2 text-sm font-semibold">
+              <p>Логин: admin@admin.admin</p>
+              <p>Пароль: admin</p>
+            </div>
           </motion.div>
 
 
