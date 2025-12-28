@@ -2,6 +2,7 @@ package db
 
 import (
 	"ascendant/backend/internal/domain/login"
+	"ascendant/backend/internal/domain/permissions"
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/user"
@@ -31,6 +32,10 @@ type SessionsRepository struct {
 	DB *sql.DB
 }
 
+type PermissionsRepository struct {
+	DB *sql.DB
+}
+
 var _ user.Repository = (*UserRepository)(nil)
 
 func NewUserRepository(db *sql.DB) *UserRepository {
@@ -42,7 +47,12 @@ func NewLoggerRepository(db *sql.DB) *LoggerRepository {
 func NewLoginRepository(db *sql.DB) *LoginRepository {
 	return &LoginRepository{DB: db}
 }
-func NewSessionsRepository(db *sql.DB) *SessionsRepository { return &SessionsRepository{DB: db} }
+func NewSessionsRepository(db *sql.DB) *SessionsRepository {
+	return &SessionsRepository{DB: db}
+}
+func NewPermissionsRepository(db *sql.DB) *PermissionsRepository {
+	return &PermissionsRepository{DB: db}
+}
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", name)
@@ -300,6 +310,18 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 	if err != nil {
 		return nil, err
 	}
+	//if require.Email == "admin@admin.admin" {
+	//	if _, err = l.DB.ExecContext(ctx, `
+	//		UPDATE users u
+	//		SET rank = ROW($1, NULL)::users_rank_t
+	//		WHERE u.uid = $2`,
+	//		"staff",
+	//		id,
+	//	); err != nil {
+	//		logger.Debug("error: "+err.Error(), "a")
+	//		return nil, err
+	//	}
+	//}
 	return &id, nil
 }
 
@@ -401,4 +423,186 @@ func (s *SessionsRepository) AddSession(ctx context.Context, sessionID uuid.UUID
 func (s *SessionsRepository) UpdateLastSeen(ctx context.Context, sessionID uuid.UUID) error {
 	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET last_seen_at = $1 WHERE id = $2", time.Now(), sessionID)
 	return err
+}
+
+func fetchPermissions(row *sql.Row) (*permissions.Permissions, error) {
+	var perm permissions.Permissions
+	if err := row.Scan(
+		&perm.ViewOtherProfile,
+		&perm.PatchOtherProfile,
+		&perm.PatchSelfProfile,
+		&perm.DeleteSelfProfile,
+		&perm.BanProfile,
+		&perm.UnBanProfile,
+
+		&perm.CreateIdea,
+		&perm.PatchSelfIdea,
+		&perm.DeleteSelfIdea,
+		&perm.PatchOtherIdea,
+		&perm.DeleteOtherIdea,
+
+		&perm.CreateComment,
+		&perm.PatchSelfComment,
+		&perm.DeleteSelfComment,
+		&perm.DeleteOtherComment,
+
+		&perm.UploadIdeaMediaSelf,
+		&perm.DeleteIdeaMediaSelf,
+		&perm.DeleteIdeaMediaOther,
+
+		&perm.ModerateIdea,
+		&perm.ModerateCommentHide,
+		&perm.ModerateCommentUnhide,
+
+		&perm.PatchIdeaStatusAdmin,
+		&perm.ViewStatistics,
+		&perm.ViewPermissions,
+		&perm.ManagePermissions,
+	); err != nil {
+		return nil, err
+	}
+	return &perm, nil
+}
+
+func updateUserPermissions(DB *sql.DB, ctx context.Context, usr uint, perms *permissions.Permissions) error {
+	_, err := DB.ExecContext(ctx, `
+		UPDATE users u
+		SET permissions = ROW(
+			$1, $2, $3, $4, $5,
+			$6, $7, $8, $9, $10,
+			$11, $12, $13, $14, $15,
+			$16, $17, $18, $19, $20,
+			$21, $22, $23, $24, $25
+		)::permissions_t
+		WHERE u.uid = $26`,
+		perms.ViewOtherProfile,
+		perms.PatchOtherProfile,
+		perms.PatchSelfProfile,
+		perms.DeleteSelfProfile,
+		perms.BanProfile,
+		perms.UnBanProfile,
+		perms.CreateIdea,
+		perms.PatchSelfIdea,
+		perms.DeleteSelfIdea,
+		perms.PatchOtherIdea,
+		perms.DeleteOtherIdea,
+		perms.CreateComment,
+		perms.PatchSelfComment,
+		perms.DeleteSelfComment,
+		perms.DeleteOtherComment,
+		perms.UploadIdeaMediaSelf,
+		perms.DeleteIdeaMediaSelf,
+		perms.DeleteIdeaMediaOther,
+		perms.ModerateIdea,
+		perms.ModerateCommentHide,
+		perms.ModerateCommentUnhide,
+		perms.PatchIdeaStatusAdmin,
+		perms.ViewStatistics,
+		perms.ViewPermissions,
+		perms.ManagePermissions,
+		usr,
+	)
+	return err
+}
+
+func updateRankPermissions(DB *sql.DB, ctx context.Context, rank string, perms *permissions.Permissions) error {
+	_, err := DB.ExecContext(ctx, `
+		UPDATE ranks r
+		SET permissions = ROW(
+			$1, $2, $3, $4, $5,
+			$6, $7, $8, $9, $10,
+			$11, $12, $13, $14, $15,
+			$16, $17, $18, $19, $20,
+			$21, $22, $23, $24, $25
+		)::permissions_t
+		WHERE r.name = $26`,
+		perms.ViewOtherProfile,
+		perms.PatchOtherProfile,
+		perms.PatchSelfProfile,
+		perms.DeleteSelfProfile,
+		perms.BanProfile,
+		perms.UnBanProfile,
+		perms.CreateIdea,
+		perms.PatchSelfIdea,
+		perms.DeleteSelfIdea,
+		perms.PatchOtherIdea,
+		perms.DeleteOtherIdea,
+		perms.CreateComment,
+		perms.PatchSelfComment,
+		perms.DeleteSelfComment,
+		perms.DeleteOtherComment,
+		perms.UploadIdeaMediaSelf,
+		perms.DeleteIdeaMediaSelf,
+		perms.DeleteIdeaMediaOther,
+		perms.ModerateIdea,
+		perms.ModerateCommentHide,
+		perms.ModerateCommentUnhide,
+		perms.PatchIdeaStatusAdmin,
+		perms.ViewStatistics,
+		perms.ViewPermissions,
+		perms.ManagePermissions,
+		rank,
+	)
+	return err
+}
+
+func (p *PermissionsRepository) GetForRank(ctx context.Context, rank string) (*permissions.Permissions, error) {
+	row := p.DB.QueryRowContext(ctx, "SELECT (r.permissions).* FROM ranks r WHERE r.name = $1", rank)
+	return fetchPermissions(row)
+}
+
+func (p *PermissionsRepository) GetForUser(ctx context.Context, uid uint) (*permissions.Permissions, error) {
+	row := p.DB.QueryRowContext(ctx, "SELECT (u.permissions).* FROM users u WHERE u.uid = $1", uid)
+	return fetchPermissions(row)
+}
+
+func (p *PermissionsRepository) Has(ctx context.Context, uid uint, need permissions.Permission) (bool, error) {
+	perms, err := p.GetForUser(ctx, uid)
+	if err != nil {
+		return false, err
+	}
+	return perms.Has(need)
+}
+
+func (p *PermissionsRepository) HasAll(ctx context.Context, uid uint, need ...permissions.Permission) (bool, error) {
+	perms, err := p.GetForUser(ctx, uid)
+	if err != nil {
+		return false, err
+	}
+
+	for _, n := range need {
+		ok := perms.HasBool(n)
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (p *PermissionsRepository) ChangeForUser(ctx context.Context, uid uint, need permissions.Permission, state bool) error {
+	perms, err := p.GetForUser(ctx, uid)
+	if err != nil {
+		return err
+	}
+	if err = perms.Set(need, state); err != nil {
+		return err
+	}
+	if err = updateUserPermissions(p.DB, ctx, uid, perms); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *PermissionsRepository) ChangeForRank(ctx context.Context, rank string, need permissions.Permission, state bool) error {
+	perms, err := p.GetForRank(ctx, rank)
+	if err != nil {
+		return err
+	}
+	if err = perms.Set(need, state); err != nil {
+		return err
+	}
+	if err = updateRankPermissions(p.DB, ctx, rank, perms); err != nil {
+		return err
+	}
+	return nil
 }

@@ -30,6 +30,40 @@ create type project_info_t as (
     location project_location_t
 );
 
+create type permissions_t as (
+    view_other_profile              boolean,
+    patch_other_profile             boolean,
+    patch_self_profile              boolean,
+    delete_self_profile             boolean,
+    ban_profile                     boolean,
+    unban_profile                   boolean,
+
+    create_idea                     boolean,
+    patch_self_idea                 boolean,
+    delete_self_idea                boolean,
+
+    patch_other_idea                boolean,
+    delete_other_idea               boolean,
+
+    create_comment                  boolean,
+    patch_self_comment              boolean,
+    delete_self_comment             boolean,
+    delete_other_comment            boolean,
+
+    upload_idea_media_self          boolean,
+    delete_idea_media_self          boolean,
+    delete_idea_media_other         boolean,
+
+    moderate_idea                   boolean,
+    moderate_comment_hide           boolean,
+    moderate_comment_unhide         boolean,
+
+    patch_idea_status_admin         boolean,
+    view_statistics                 boolean,
+    view_permissions                boolean,
+    manage_permissions              boolean
+);
+
 create type users_email_t as (
     address varchar(255),
     verified boolean
@@ -54,6 +88,7 @@ create table users (
     email users_email_t not null default ROW('', false)::users_email_t,
     settings user_settings_t not null default ROW('', ROW(NULL, NULL, NULL, NULL, NULL, NULL)::avatar_t, 30)::user_settings_t,
     rank users_rank_t not null default ROW('user', NULL)::users_rank_t,
+    permissions permissions_t not null default ROW(true, false, true, false, false, false, true, true, true, false, false, true, true, true, false, true, true, false, false, false, false, false, false, false, false)::permissions_t,
 
     joined timestamptz not null default now(),
 
@@ -137,23 +172,42 @@ create or replace function toggle_project_like(p_project_id uuid, p_user_uid big
     return true;
 end $$;
 
--- permissions
-create table permissions (
-    key text primary key,
-    description text
-);
-
+-- ranks
 create table ranks (
     name user_rank primary key,
     color int,
-    description text
+    description text,
+    permissions permissions_t not null default ROW(true, false, true, false, false, false, true, true, true, false, false, true, true, true, false, true, true, false, false, false, false, false, false, false, false)::permissions_t
 );
 
-create table rank_permissions (
-    rank user_rank not null references ranks(name) on delete cascade,
-    permission_key text not null references permissions(key) on delete cascade,
-    primary key (rank, permission_key)
-);
+-- sync user.permissions when rank name changes
+create or replace function sync_user_permissions_from_rank()
+    returns trigger
+    language plpgsql
+as $$
+declare
+    v_permissions permissions_t;
+begin
+    if (new.rank).name is distinct from (old.rank).name then
+        select r.permissions
+        into v_permissions
+        from ranks r
+        where r.name = (new.rank).name;
+
+        if v_permissions is null then
+            raise exception 'rank % not found', (new.rank).name;
+        end if;
+
+        new.permissions := v_permissions;
+    end if;
+
+    return new;
+end $$;
+
+create trigger users_permissions_from_rank
+    before update of rank on users
+    for each row
+    execute function sync_user_permissions_from_rank();
 
 -- bans
 create table bans (

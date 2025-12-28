@@ -55,6 +55,7 @@ func main() {
 	loggerRepo := db.NewLoggerRepository(dbConn)
 	loginRepo := db.NewLoginRepository(dbConn)
 	sessionsRepo := db.NewSessionsRepository(dbConn)
+	permissionsRepo := db.NewPermissionsRepository(dbConn)
 	loggerServ := loggerservice.New(loggerRepo)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -68,7 +69,7 @@ func main() {
 	userHandler := userhandler.New(userInfoService, userModifierService)
 	loginRegisterService := login.New(loginRepo, sessionsService, userInfoService)
 	loginHandler := loginhandler.New(loginRegisterService)
-	middleService := middlewares.New(sessionsRepo)
+	middleService := middlewares.New(sessionsRepo, permissionsRepo)
 
 	service := gin.New()
 	priv := middleService.Register(service)
@@ -76,8 +77,8 @@ func main() {
 	service.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
-	routes.RegisterUser(service, userHandler, priv)
-	routes.RegisterLogin(service, loginHandler, pub)
+	routes.RegisterUser(userHandler, priv, middleService.RequirePermissions)
+	routes.RegisterLogin(loginHandler, pub)
 
 	addr := "0.0.0.0:" + strings.TrimPrefix(config.ENV.Boot.Port, ":")
 

@@ -16,7 +16,7 @@ func (s *MiddleService) Authorize() gin.HandlerFunc {
 	return func(req *gin.Context) {
 		cookie, err := handlers.GetCookie(req, config.ENV.Cookies.Name)
 		if err != nil {
-			logger.Debug("Failed to get cookie from request", "handlers.middleware.authorize", handlers.GetTraceID(req))
+			logger.Debug("Failed to get cookie from request: "+err.Error(), "handlers.middleware.authorize", handlers.GetTraceID(req))
 			send.Error(req, http.StatusForbidden, "failed to validate cookie")
 			req.Abort()
 			return
@@ -34,7 +34,7 @@ func (s *MiddleService) Authorize() gin.HandlerFunc {
 			req.Abort()
 			return
 		}
-		valid, err := s.repo.IsValid(req.Request.Context(), id)
+		valid, err := s.sessions.IsValid(req.Request.Context(), id)
 		if err != nil {
 			send.Error(req, http.StatusForbidden, "failed to validate cookie")
 			req.Abort()
@@ -45,7 +45,7 @@ func (s *MiddleService) Authorize() gin.HandlerFunc {
 			req.Abort()
 			return
 		}
-		uid, err := s.repo.GetUID(req.Request.Context(), id)
+		uid, err := s.sessions.GetUID(req.Request.Context(), id)
 		if err != nil {
 			send.Error(req, http.StatusForbidden, "failed to validate cookie")
 			req.Abort()

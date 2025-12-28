@@ -23,6 +23,11 @@ type Cookies struct {
 	Secure   bool
 }
 
+type CORS struct {
+	AllowedOrigins   string
+	AllowCredentials bool
+}
+
 type Boot struct {
 	Port      string
 	IpService string
@@ -33,5 +38,6 @@ type Environment struct {
 	Boot     Boot
 	Database Database
 	Cookies  Cookies
+	CORS     CORS
 	TLS      TLS
 }

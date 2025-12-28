@@ -34,6 +34,9 @@ func Ensure() {
 	ENV.Cookies.SameSite = os.Getenv("COOKIES_SAME_SITE")
 	ENV.Cookies.Secure = os.Getenv("COOKIES_SECURE") == "true"
 
+	ENV.CORS.AllowedOrigins = os.Getenv("CORS_ALLOWED_ORIGINS")
+	ENV.CORS.AllowCredentials = parseBoolEnv("CORS_ALLOW_CREDENTIALS", true)
+
 	ENV.Boot.Port = os.Getenv("BOOT_PORT")
 	ENV.Boot.IpService = os.Getenv("BOOT_IPSERVICE")
 	ENV.Boot.UseTLS = parseBoolEnv("BOOT_USETLS", false)
