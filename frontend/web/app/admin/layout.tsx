@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -26,5 +27,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return null
   }
 
-  return <>{children}</>
+  return (
+    <>
+      <Toaster position="top-right" richColors closeButton />
+      {children}
+    </>
+  )
 }

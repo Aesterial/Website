@@ -26,7 +26,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Toaster } from "@/components/ui/sonner"
 import {
   BarChart3,
   Bell,
@@ -280,13 +279,12 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-      <Toaster position="top-right" richColors closeButton />
       <div className="pointer-events-none absolute -top-40 right-0 h-[28rem] w-[28rem] rounded-full bg-foreground/5 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-[32rem] w-[32rem] rounded-full bg-foreground/10 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.04),transparent_45%,rgba(0,0,0,0.06))]" />
 
       <aside className="relative z-30 w-full border-b border-border/60 bg-background/90 backdrop-blur lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-6 p-4 sm:p-6">
           <div className="flex items-center justify-between lg:justify-start lg:gap-3">
             <Logo className="h-9 w-9 text-foreground" showText={false} />
             <div className="leading-tight">
@@ -376,7 +374,7 @@ export default function AdminPage() {
 
       <div className="relative z-20 flex min-h-screen flex-col lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-4">
               <Logo className="h-9 w-9 text-foreground" showText={false} />
               <div>
@@ -396,7 +394,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <main className="flex-1 px-6 pb-16 pt-8">
+        <main className="flex-1 px-4 pb-16 pt-8 sm:px-6">
           <div className="mx-auto flex max-w-6xl flex-col gap-12">
             <motion.section
               id="users"
@@ -444,14 +442,78 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-                <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-[0_24px_60px_-45px_rgba(0,0,0,0.5)]">
+              <div className="admin-moderation-grid grid grid-cols-1 gap-6">
+                <div className="order-1 min-w-0 rounded-3xl border border-border/70 bg-card/90 p-6 shadow-[0_24px_60px_-45px_rgba(0,0,0,0.5)]">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold">Последние пользователи</p>
                     <span className="text-xs text-muted-foreground">Обновлено минуту назад</span>
                   </div>
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-border/60">
-                    <table className="w-full text-left text-sm">
+                  <div className="mt-4">
+                    <div className="space-y-3 sm:hidden">
+                      {users.map((user) => {
+                        const ActionIcon = user.status === "banned" ? CheckCircle2 : Ban
+                        const actionTitle = user.status === "banned" ? "Unblock user" : "Block user"
+
+                        return (
+                          <div key={user.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold break-words">{user.name}</p>
+                                <p className="text-xs text-muted-foreground break-all">{user.email}</p>
+                                <p className="text-xs text-muted-foreground">{user.lastActive}</p>
+                              </div>
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                  user.status === "active"
+                                    ? "bg-foreground text-background"
+                                    : user.status === "offline"
+                                      ? "bg-muted text-foreground"
+                                      : "bg-destructive/10 text-destructive"
+                                }`}
+                              >
+                                {user.status === "active"
+                                  ? "Active"
+                                  : user.status === "offline"
+                                    ? "Offline"
+                                    : "Banned"}
+                              </span>
+                            </div>
+                            <div className="mt-3 space-y-2 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground uppercase tracking-[0.2em]">Role</span>
+                                <span className="text-sm font-semibold">{user.role}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground uppercase tracking-[0.2em]">Reports</span>
+                                <span className="text-sm font-semibold">{user.reports}</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-2">
+                              <button
+                                type="button"
+                                title={actionTitle}
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
+                                onClick={() =>
+                                  handleUserAction(user, user.status === "banned" ? "unblock" : "block")
+                                }
+                              >
+                                <ActionIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                title="Message user"
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
+                                onClick={() => handleUserAction(user, "message")}
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="hidden overflow-hidden rounded-2xl border border-border/60 sm:block">
+                      <table className="w-full text-left text-sm">
                       <thead className="bg-muted/60 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         <tr>
                           <th className="px-4 py-3">Пользователь</th>
@@ -518,11 +580,11 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="order-2 flex flex-col gap-6">
                   <div className="rounded-3xl border border-border/70 bg-card/90 p-6">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold">Блокировка пользователя</p>
+                        <p className="text-sm font-semibold">Блокировка пользоваzтеля</p>
                         <p className="text-xs text-muted-foreground">Текущий выбор</p>
                       </div>
                       <Ban className="h-5 w-5 text-muted-foreground" />
@@ -613,7 +675,8 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-            </motion.section>
+            </div>
+          </motion.section>
 
             <motion.section
               id="voting"

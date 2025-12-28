@@ -3,6 +3,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
+/* scrollbar */
+
+::-webkit-scrollbar{
+  width:6px;
+  height:6px;
+}
+
+::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb{
+  background: #000;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background: #111;
+}
+/* firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #000 transparent;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -210,4 +236,11 @@
 }
 .delay-500 {
   animation-delay: 500ms;
+}
+
+@media (min-width: 1024px) {
+  .admin-moderation-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
 }

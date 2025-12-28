@@ -113,6 +113,46 @@ export const translations: Translations = {
     EN: "Confirm password",
     KZ: "Құпия сөзді растаңыз",
   },
+  passwordChecklistTitle: {
+    RU: "Требования к паролю",
+    EN: "Password requirements",
+    KZ: "Password requirements",
+  },
+  passwordRuleLength: {
+    RU: "Не менее 10 символов",
+    EN: "At least 10 characters",
+    KZ: "At least 10 characters",
+  },
+  passwordRuleLowercase: {
+    RU: "Строчная буква (a-z)",
+    EN: "Lowercase letter (a-z)",
+    KZ: "Lowercase letter (a-z)",
+  },
+  passwordRuleUppercase: {
+    RU: "Заглавная буква (A-Z)",
+    EN: "Uppercase letter (A-Z)",
+    KZ: "Uppercase letter (A-Z)",
+  },
+  passwordRuleNumber: {
+    RU: "Цифра (0-9)",
+    EN: "Number (0-9)",
+    KZ: "Number (0-9)",
+  },
+  passwordRuleSymbol: {
+    RU: "Спецсимвол (!@#)",
+    EN: "Special character (!@#)",
+    KZ: "Special character (!@#)",
+  },
+  passwordRuleMatch: {
+    RU: "Пароли совпадают",
+    EN: "Passwords match",
+    KZ: "Passwords match",
+  },
+  passwordRequirementsError: {
+    RU: "Пароль слишком простой. Выполните все требования.",
+    EN: "Password is too weak. Meet all requirements.",
+    KZ: "Password is too weak. Meet all requirements.",
+  },
   noAccount: {
     RU: "Нет аккаунта?",
     EN: "No account?",

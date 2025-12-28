@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Logo } from "@/components/logo"
 import { useTheme } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/sonner"
 import {
   Ban,
   CheckCircle2,
@@ -133,13 +132,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-      <Toaster position="top-right" richColors closeButton />
       <div className="pointer-events-none absolute -top-40 right-0 h-[28rem] w-[28rem] rounded-full bg-foreground/5 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-[32rem] w-[32rem] rounded-full bg-foreground/10 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.04),transparent_45%,rgba(0,0,0,0.06))]" />
 
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
             <Logo className="h-9 w-9 text-foreground" showText={false} />
             <div>
@@ -169,7 +167,7 @@ export default function AdminUsersPage() {
         </div>
       </header>
 
-      <main className="px-6 pb-16 pt-8">
+      <main className="px-4 pb-16 pt-8 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-6">
           <motion.section
             initial={{ opacity: 0, y: 24 }}
@@ -236,13 +234,13 @@ export default function AdminUsersPage() {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Имя или почта"
-                    className="h-10 w-64 rounded-full border border-border/70 bg-background pl-9 pr-4 text-sm"
+                    className="h-10 w-full rounded-full border border-border/70 bg-background pl-9 pr-4 text-sm sm:w-64"
                   />
                 </div>
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-                  className="h-10 rounded-full border border-border/70 bg-background px-4 text-sm"
+                  className="h-10 w-full rounded-full border border-border/70 bg-background px-4 text-sm sm:w-auto"
                 >
                   {Object.entries(statusLabels).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -272,8 +270,74 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-2xl border border-border/60">
-              <table className="w-full text-left text-sm">
+            <div className="mt-4">
+              <div className="space-y-3 sm:hidden">
+                {currentPageUsers.map((user) => {
+                  const ActionIcon = user.status === "banned" ? CheckCircle2 : Ban
+                  const actionTitle = user.status === "banned" ? "Unblock user" : "Block user"
+
+                  return (
+                    <div key={user.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold break-words">{user.name}</p>
+                          <p className="text-xs text-muted-foreground break-all">{user.email}</p>
+                          <p className="text-xs text-muted-foreground break-all">{user.id}</p>
+                        </div>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            user.status === "active"
+                              ? "bg-foreground text-background"
+                              : user.status === "offline"
+                                ? "bg-muted text-foreground"
+                                : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          {user.status === "active"
+                            ? "Active"
+                            : user.status === "offline"
+                              ? "Offline"
+                              : "Banned"}
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground uppercase tracking-[0.2em]">Role</span>
+                          <span className="text-sm font-semibold">{user.role}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground uppercase tracking-[0.2em]">Last active</span>
+                          <span className="text-sm font-semibold">{user.lastActive}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground uppercase tracking-[0.2em]">Reports</span>
+                          <span className="text-sm font-semibold">{user.reports}</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          title={actionTitle}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
+                          onClick={() => handleAction(user, user.status === "banned" ? "unblock" : "block")}
+                        >
+                          <ActionIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Message user"
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
+                          onClick={() => handleAction(user, "message")}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="hidden overflow-hidden rounded-2xl border border-border/60 sm:block">
+                <table className="w-full text-left text-sm">
                 <thead className="bg-muted/60 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Пользователь</th>
@@ -343,6 +407,7 @@ export default function AdminUsersPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {filteredUsers.length === 0 && (

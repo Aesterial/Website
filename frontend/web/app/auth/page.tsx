@@ -8,7 +8,7 @@ import { useLanguage } from "@/components/language-provider"
 import { Logo } from "@/components/logo"
 import { useTheme } from "@/components/theme-provider"
 import { AnimatePresence, motion } from "framer-motion"
-import { ArrowRight, Eye, EyeOff, Lock, Mail, Moon, Sun, User } from "lucide-react"
+import { ArrowRight, Check, Eye, EyeOff, Lock, Mail, Moon, Sun, User } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -32,6 +32,44 @@ export default function AuthPage() {
   const { theme, toggleTheme } = useTheme()
   const { t } = useLanguage()
 
+  const passwordRules = [
+    {
+      id: "length",
+      label: t("passwordRuleLength"),
+      test: (value: string) => value.length >= 10,
+    },
+    {
+      id: "lowercase",
+      label: t("passwordRuleLowercase"),
+      test: (value: string) => /[a-z]/.test(value),
+    },
+    {
+      id: "uppercase",
+      label: t("passwordRuleUppercase"),
+      test: (value: string) => /[A-Z]/.test(value),
+    },
+    {
+      id: "number",
+      label: t("passwordRuleNumber"),
+      test: (value: string) => /[0-9]/.test(value),
+    },
+    {
+      id: "symbol",
+      label: t("passwordRuleSymbol"),
+      test: (value: string) => /[^A-Za-z0-9]/.test(value),
+    },
+  ]
+
+  const passwordChecks = passwordRules.map((rule) => ({
+    ...rule,
+    passed: rule.test(formData.password),
+  }))
+  const passwordScore = passwordChecks.filter((rule) => rule.passed).length
+  const passwordProgress = Math.round((passwordScore / passwordRules.length) * 100)
+  const isPasswordStrong = passwordScore === passwordRules.length
+  const passwordsMatch =
+    formData.confirmPassword.length > 0 && formData.password === formData.confirmPassword
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -51,6 +89,10 @@ export default function AuthPage() {
     if (mode === "register") {
       if (!name || !email || !password) {
         setErrorMessage("Please fill in all fields.")
+        return
+      }
+      if (!isPasswordStrong) {
+        setErrorMessage(t("passwordRequirementsError"))
         return
       }
       if (password !== formData.confirmPassword) {
@@ -242,6 +284,72 @@ export default function AuthPage() {
                 </button>
               </div>
             </motion.div>
+
+            <AnimatePresence mode="wait">
+              {mode === "register" && (
+                <motion.div
+                  key="passwordChecklist"
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-2xl border border-border/60 bg-background/70 px-4 py-4 sm:px-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                      {t("passwordChecklistTitle")}
+                    </p>
+                    <span
+                      className={`text-xs font-semibold ${
+                        isPasswordStrong ? "text-emerald-500" : "text-muted-foreground"
+                      }`}
+                    >
+                      {passwordScore}/{passwordRules.length}
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                    <motion.div
+                      className={`h-full ${isPasswordStrong ? "bg-emerald-500" : "bg-foreground"}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${passwordProgress}%` }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                    {passwordChecks.map((rule) => (
+                      <div key={rule.id} className="flex items-center gap-2 font-semibold">
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                            rule.passed
+                              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+                              : "border-border/70 text-muted-foreground"
+                          }`}
+                        >
+                          {rule.passed ? <Check className="h-3 w-3" /> : null}
+                        </span>
+                        <span className={rule.passed ? "text-foreground" : "text-muted-foreground"}>
+                          {rule.label}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2 font-semibold">
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                          passwordsMatch
+                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+                            : "border-border/70 text-muted-foreground"
+                        }`}
+                      >
+                        {passwordsMatch ? <Check className="h-3 w-3" /> : null}
+                      </span>
+                      <span className={passwordsMatch ? "text-foreground" : "text-muted-foreground"}>
+                        {t("passwordRuleMatch")}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence mode="wait">
               {mode === "register" && (
