@@ -3,6 +3,7 @@ package db
 import (
 	"ascendant/backend/internal/domain/login"
 	"ascendant/backend/internal/domain/permissions"
+	project_domain "ascendant/backend/internal/domain/projects"
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/user"
@@ -36,6 +37,14 @@ type PermissionsRepository struct {
 	DB *sql.DB
 }
 
+type ProjectsRepository struct {
+	DB *sql.DB
+}
+
+type StatisticsRepository struct {
+	DB *sql.DB
+}
+
 var _ user.Repository = (*UserRepository)(nil)
 
 func NewUserRepository(db *sql.DB) *UserRepository {
@@ -52,6 +61,12 @@ func NewSessionsRepository(db *sql.DB) *SessionsRepository {
 }
 func NewPermissionsRepository(db *sql.DB) *PermissionsRepository {
 	return &PermissionsRepository{DB: db}
+}
+func NewStatisticsRepository(db *sql.DB) *StatisticsRepository {
+	return &StatisticsRepository{DB: db}
+}
+func NewProjectsRepository(db *sql.DB) *ProjectsRepository {
+	return &ProjectsRepository{DB: db}
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
@@ -618,4 +633,44 @@ func (p *PermissionsRepository) SetForRank(ctx context.Context, rank string, per
 		return errors.New("permissions is nil")
 	}
 	return updateRankPermissions(p.DB, ctx, rank, perms)
+}
+
+func (p *ProjectsRepository) GetProject(ctx context.Context, id uuid.UUID) (*project_domain.Project, error) {
+	var project project_domain.Project
+	if err := p.DB.QueryRowContext(ctx, "SELECT * FROM projects p WHERE p.id = $1", id).Scan(&project.ID, &project.Author, &project.Info.Title, &project.Info.Description, &project.Info.Photos, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At); err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
+func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) ([]*project_domain.Project, error) {
+	var projects []*project_domain.Project
+	rows, err := p.DB.QueryContext(ctx, "SELECT p.id FROM projects p WHERE p.author_uid = $1", uid)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var id uuid.UUID
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		project, err := p.GetProject(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, project)
+	}
+	return projects, nil
+}
+
+func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (uint32, error) {
+	if since.IsZero() {
+		return 0, errors.New("since is zero")
+	}
+	var count uint
+	err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM project_likes WHERE created_at >= $1 ORDER BY created_at", since).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(count), nil
 }

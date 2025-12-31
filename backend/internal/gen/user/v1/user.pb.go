@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -27,7 +26,7 @@ var File_user_user_proto protoreflect.FileDescriptor
 
 const file_user_user_proto_rawDesc = "" +
 	"\n" +
-	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11user/domain.proto2\x96\x06\n" +
+	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x11user/domain.proto2\xe2\a\n" +
 	"\vUserService\x12L\n" +
 	"\x04Self\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.UserSelfResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/api/user\x12[\n" +
 	"\x05Other\x12\x19.user.v1.OtherUserRequest\x1a\x1b.user.v1.UserPublicResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/{userID}\x12]\n" +
@@ -36,40 +35,48 @@ const file_user_user_proto_rawDesc = "" +
 	"\x05Unban\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a\"\x18/api/user/{userID}/unban\x12n\n" +
 	"\x0eUpdateSelfName\x12\x1e.user.v1.ChangeSelfNameRequest\x1a\x16.user.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e2\x1c/api/user/change/name/{name}\x12c\n" +
 	"\x10DeleteSelfAvatar\x12\x16.google.protobuf.Empty\x1a\x16.user.v1.EmptyResponse\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/user/delete/avatar\x12o\n" +
-	"\x10DeleteUserAvatar\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\"* /api/user/{userID}/delete/avatarB-Z+ascendant/backend/internal/gen/user/v1;userb\x06proto3"
+	"\x10DeleteUserAvatar\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\"* /api/user/{userID}/delete/avatar\x12o\n" +
+	"\vSendMessage\x12\x1b.user.v1.SendMessageRequest\x1a\x16.user.v1.EmptyResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/user/{userID}/messages/send\x12Y\n" +
+	"\bMessages\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.MessagesResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/messagesB-Z+ascendant/backend/internal/gen/user/v1;userb\x06proto3"
 
 var file_user_user_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),         // 0: google.protobuf.Empty
 	(*OtherUserRequest)(nil),      // 1: user.v1.OtherUserRequest
 	(*BanUserRequest)(nil),        // 2: user.v1.BanUserRequest
 	(*ChangeSelfNameRequest)(nil), // 3: user.v1.ChangeSelfNameRequest
-	(*UserSelfResponse)(nil),      // 4: user.v1.UserSelfResponse
-	(*UserPublicResponse)(nil),    // 5: user.v1.UserPublicResponse
-	(*UserSessionsResponse)(nil),  // 6: user.v1.UserSessionsResponse
-	(*EmptyResponse)(nil),         // 7: user.v1.EmptyResponse
+	(*SendMessageRequest)(nil),    // 4: user.v1.SendMessageRequest
+	(*UserSelfResponse)(nil),      // 5: user.v1.UserSelfResponse
+	(*UserPublicResponse)(nil),    // 6: user.v1.UserPublicResponse
+	(*UserSessionsResponse)(nil),  // 7: user.v1.UserSessionsResponse
+	(*EmptyResponse)(nil),         // 8: user.v1.EmptyResponse
+	(*MessagesResponse)(nil),      // 9: user.v1.MessagesResponse
 }
 var file_user_user_proto_depIdxs = []int32{
-	0, // 0: user.v1.UserService.Self:input_type -> google.protobuf.Empty
-	1, // 1: user.v1.UserService.Other:input_type -> user.v1.OtherUserRequest
-	0, // 2: user.v1.UserService.Sessions:input_type -> google.protobuf.Empty
-	2, // 3: user.v1.UserService.Ban:input_type -> user.v1.BanUserRequest
-	1, // 4: user.v1.UserService.Unban:input_type -> user.v1.OtherUserRequest
-	3, // 5: user.v1.UserService.UpdateSelfName:input_type -> user.v1.ChangeSelfNameRequest
-	0, // 6: user.v1.UserService.DeleteSelfAvatar:input_type -> google.protobuf.Empty
-	1, // 7: user.v1.UserService.DeleteUserAvatar:input_type -> user.v1.OtherUserRequest
-	4, // 8: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
-	5, // 9: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
-	6, // 10: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
-	7, // 11: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
-	7, // 12: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
-	7, // 13: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
-	7, // 14: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
-	7, // 15: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
-	8, // [8:16] is the sub-list for method output_type
-	0, // [0:8] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: user.v1.UserService.Self:input_type -> google.protobuf.Empty
+	1,  // 1: user.v1.UserService.Other:input_type -> user.v1.OtherUserRequest
+	0,  // 2: user.v1.UserService.Sessions:input_type -> google.protobuf.Empty
+	2,  // 3: user.v1.UserService.Ban:input_type -> user.v1.BanUserRequest
+	1,  // 4: user.v1.UserService.Unban:input_type -> user.v1.OtherUserRequest
+	3,  // 5: user.v1.UserService.UpdateSelfName:input_type -> user.v1.ChangeSelfNameRequest
+	0,  // 6: user.v1.UserService.DeleteSelfAvatar:input_type -> google.protobuf.Empty
+	1,  // 7: user.v1.UserService.DeleteUserAvatar:input_type -> user.v1.OtherUserRequest
+	4,  // 8: user.v1.UserService.SendMessage:input_type -> user.v1.SendMessageRequest
+	0,  // 9: user.v1.UserService.Messages:input_type -> google.protobuf.Empty
+	5,  // 10: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
+	6,  // 11: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
+	7,  // 12: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
+	8,  // 13: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
+	8,  // 14: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
+	8,  // 15: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
+	8,  // 16: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
+	8,  // 17: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
+	8,  // 18: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
+	9,  // 19: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_user_user_proto_init() }

@@ -22,7 +22,6 @@ service RanksService {
   rpc Delete(DeleteRequest) returns (EmptyResponse) {
     option (google.api.http) = {
       delete: "/api/ranks/{name}/delete",
-      body: "*"
     };
   }
 }

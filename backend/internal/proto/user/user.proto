@@ -5,7 +5,6 @@ option go_package = "ascendant/backend/internal/gen/user/v1;user";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 import "user/domain.proto";
 
 service UserService {

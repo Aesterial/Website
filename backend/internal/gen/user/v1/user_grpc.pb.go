@@ -28,6 +28,8 @@ const (
 	UserService_UpdateSelfName_FullMethodName   = "/user.v1.UserService/UpdateSelfName"
 	UserService_DeleteSelfAvatar_FullMethodName = "/user.v1.UserService/DeleteSelfAvatar"
 	UserService_DeleteUserAvatar_FullMethodName = "/user.v1.UserService/DeleteUserAvatar"
+	UserService_SendMessage_FullMethodName      = "/user.v1.UserService/SendMessage"
+	UserService_Messages_FullMethodName         = "/user.v1.UserService/Messages"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -44,6 +46,8 @@ type UserServiceClient interface {
 	UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error)
 }
 
 type userServiceClient struct {
@@ -134,6 +138,26 @@ func (c *userServiceClient) DeleteUserAvatar(ctx context.Context, in *OtherUserR
 	return out, nil
 }
 
+func (c *userServiceClient) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UserService_SendMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessagesResponse)
+	err := c.cc.Invoke(ctx, UserService_Messages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -148,6 +172,8 @@ type UserServiceServer interface {
 	UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*EmptyResponse, error)
 	DeleteSelfAvatar(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error)
+	SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error)
+	Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -181,6 +207,12 @@ func (UnimplementedUserServiceServer) DeleteSelfAvatar(context.Context, *emptypb
 }
 func (UnimplementedUserServiceServer) DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUserAvatar not implemented")
+}
+func (UnimplementedUserServiceServer) SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
+}
+func (UnimplementedUserServiceServer) Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Messages not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -347,6 +379,42 @@ func _UserService_DeleteUserAvatar_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SendMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_SendMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SendMessage(ctx, req.(*SendMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_Messages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Messages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Messages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Messages(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -385,6 +453,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUserAvatar",
 			Handler:    _UserService_DeleteUserAvatar_Handler,
+		},
+		{
+			MethodName: "SendMessage",
+			Handler:    _UserService_SendMessage_Handler,
+		},
+		{
+			MethodName: "Messages",
+			Handler:    _UserService_Messages_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

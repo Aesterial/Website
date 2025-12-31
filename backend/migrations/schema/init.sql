@@ -19,7 +19,7 @@ create type avatar_t as (
 create type project_location_t as (
     city varchar(64), -- кемерово
     street varchar(64), -- проспект ленина
-    house varchar(64) -- дом 4 подъезд 4
+    house varchar(64) -- дом 4
 );
 
 create type project_info_t as (

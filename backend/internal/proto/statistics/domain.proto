@@ -16,7 +16,6 @@ message IdeasCountResponse {
 message CategoryRecord {
   string name = 1;
   uint32 posts = 2;
-  string tracing = 3;
 }
 
 message TopByCategoriesResponse {

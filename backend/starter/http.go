@@ -89,7 +89,7 @@ func grpcAllowedHeaders() []string {
 		"x-user-agent",
 		"authorization",
 		"x-session-token",
-		"x-tracee-id",
+		"x-trace-id",
 		"grpc-timeout",
 	}
 }
@@ -99,7 +99,7 @@ func grpcExposeHeaders() []string {
 		"grpc-status",
 		"grpc-message",
 		"grpc-status-details-bin",
-		"x-tracee-id",
+		"x-trace-id",
 	}
 }
 

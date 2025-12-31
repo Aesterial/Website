@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const TraceHeader = "x-tracee-id"
+const TraceHeader = "x-trace-id"
 
 type traceIDKey struct{}
 
