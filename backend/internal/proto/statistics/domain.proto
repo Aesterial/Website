@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package statistics.v1;
 option go_package = "ascendant/backend/internal/gen/statistics/v1;statistics";
+import "google/protobuf/timestamp.proto";
 
 message VoteCountResponse {
   uint32 count = 1;
@@ -36,6 +37,14 @@ message OfflineUsersResponse {
 message UsersActivity {
   uint32 active = 1;
   uint32 offline = 2;
+}
+
+message StatisticsRecap {
+  string id = 1;
+  google.protobuf.Timestamp at = 2;
+  UsersActivity users_activity = 3;
+  uint32 new_ideas = 4;
+  uint32 vote_count = 5;
 }
 
 message IdeasApprovalResponse {

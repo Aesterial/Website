@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package submissions.v1;
+option go_package = "ascendant/backend/internal/gen/submissions/v1;submissions";
+
+import "projects/domain.proto";
+
+message DataResponse {
+  string tracing = 1;
+}
+
+message ApproveRequest {
+  string id = 1;
+}
+
+message DeclineRequest {
+  string id = 1;
+  string reason = 2;
+}
+
+message ListResponse {
+  message target {
+    projects.v1.Project info = 1;
+    string state = 2;
+  }
+  repeated target data = 1;
+}

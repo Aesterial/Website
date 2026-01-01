@@ -23,9 +23,8 @@ const (
 
 type AuthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	Usermail      string                 `protobuf:"bytes,1,opt,name=usermail,proto3" json:"usermail,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,16 +59,9 @@ func (*AuthRequest) Descriptor() ([]byte, []int) {
 	return file_login_domain_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AuthRequest) GetUsername() string {
+func (x *AuthRequest) GetUsermail() string {
 	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *AuthRequest) GetEmail() string {
-	if x != nil {
-		return x.Email
+		return x.Usermail
 	}
 	return ""
 }
@@ -249,11 +241,10 @@ var File_login_domain_proto protoreflect.FileDescriptor
 
 const file_login_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x12login/domain.proto\x12\blogin.v1\"[\n" +
+	"\x12login/domain.proto\x12\blogin.v1\"E\n" +
 	"\vAuthRequest\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"<\n" +
+	"\busermail\x18\x01 \x01(\tR\busermail\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"<\n" +
 	"\fAuthResponse\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\tR\x04data\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"_\n" +

@@ -31,9 +31,9 @@ func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthReque
 		return nil, status.Error(codes.InvalidArgument, "request is empty")
 	}
 
-	usermail := strings.TrimSpace(req.Username)
+	usermail := strings.TrimSpace(req.Usermail)
 	if usermail == "" {
-		usermail = strings.TrimSpace(req.Email)
+		usermail = strings.TrimSpace(req.Usermail)
 	}
 
 	require := logindomain.AuthorizationRequire{

@@ -21,17 +21,37 @@ type ApiRank = {
 
 type ApiUserSettings = {
   display_name?: string | null
+  displayName?: string | null
   session_live_time?: number | null
+  sessionLiveTime?: number | null
   avatar?: unknown
 }
 
+type ApiUserPublic = {
+  uid?: number
+  userID?: number
+  username?: string
+  settings?: ApiUserSettings | null
+  rank?: ApiRank | null
+  joined?: string
+  joinedAt?: string
+}
+
 type ApiUser = {
-  uid: number
-  username: string
+  uid?: number
+  userID?: number
+  username?: string
+  public?: ApiUserPublic | null
   email?: ApiEmail | null
   settings?: ApiUserSettings | null
   rank?: ApiRank | null
   joined?: string
+  joinedAt?: string
+}
+
+type ApiUserResponse = {
+  data?: ApiUser | null
+  tracing?: string
 }
 
 export type AuthUser = {
@@ -55,14 +75,31 @@ export class ApiError extends Error {
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL
 
-function toAuthUser(user: ApiUser): AuthUser {
+function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
+  const user = "data" in payload ? payload.data ?? null : payload
+  if (!user) {
+    throw new Error("Missing user payload.")
+  }
+
+  const publicUser = user.public ?? undefined
+  const uid = publicUser?.uid ?? publicUser?.userID ?? user.uid ?? user.userID
+  const username = publicUser?.username ?? user.username
+  if (uid == null || !username) {
+    throw new Error("Missing user fields.")
+  }
+
+  const settings = publicUser?.settings ?? user.settings
+  const displayName = settings?.display_name ?? settings?.displayName ?? undefined
+  const rank = publicUser?.rank ?? user.rank ?? undefined
+  const joined = publicUser?.joined ?? publicUser?.joinedAt ?? user.joined ?? user.joinedAt
+
   return {
-    uid: user.uid,
-    username: user.username,
+    uid,
+    username,
     email: user.email?.address,
-    displayName: user.settings?.display_name ?? undefined,
-    rank: user.rank ?? undefined,
-    joined: user.joined,
+    displayName,
+    rank,
+    joined,
   }
 }
 
@@ -111,14 +148,14 @@ export async function authorizeUser(payload: AuthorizationPayload): Promise<void
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
-  const user = await apiRequest<ApiUser>("/api/user", { method: "GET" })
-  return toAuthUser(user)
+  const payload = await apiRequest<ApiUser | ApiUserResponse>("/api/user", { method: "GET" })
+  return toAuthUser(payload)
 }
 
-export async function updateDisplayName(uid: number, name: string): Promise<AuthUser> {
-  const user = await apiRequest<ApiUser>(`/api/user/${uid}/name`, {
+export async function updateDisplayName(name: string): Promise<AuthUser> {
+  const encoded = encodeURIComponent(name)
+  await apiRequest(`/api/user/change/name/${encoded}`, {
     method: "PATCH",
-    body: JSON.stringify({ name }),
   })
-  return toAuthUser(user)
+  return fetchCurrentUser()
 }

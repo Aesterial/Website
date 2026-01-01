@@ -4,9 +4,8 @@ package login.v1;
 option go_package = "ascendant/backend/internal/gen/login/v1;login";
 
 message AuthRequest {
-  string username = 1;
-  string email = 2;
-  string password = 3;
+  string usermail = 1;
+  string password = 2;
 }
 
 message AuthResponse {

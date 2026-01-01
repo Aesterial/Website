@@ -9,6 +9,7 @@ package statistics
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -385,6 +386,82 @@ func (x *UsersActivity) GetOffline() uint32 {
 	return 0
 }
 
+type StatisticsRecap struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	At            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
+	UsersActivity *UsersActivity         `protobuf:"bytes,3,opt,name=users_activity,json=usersActivity,proto3" json:"users_activity,omitempty"`
+	NewIdeas      uint32                 `protobuf:"varint,4,opt,name=new_ideas,json=newIdeas,proto3" json:"new_ideas,omitempty"`
+	VoteCount     uint32                 `protobuf:"varint,5,opt,name=vote_count,json=voteCount,proto3" json:"vote_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatisticsRecap) Reset() {
+	*x = StatisticsRecap{}
+	mi := &file_statistics_domain_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatisticsRecap) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatisticsRecap) ProtoMessage() {}
+
+func (x *StatisticsRecap) ProtoReflect() protoreflect.Message {
+	mi := &file_statistics_domain_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatisticsRecap.ProtoReflect.Descriptor instead.
+func (*StatisticsRecap) Descriptor() ([]byte, []int) {
+	return file_statistics_domain_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StatisticsRecap) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *StatisticsRecap) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.At
+	}
+	return nil
+}
+
+func (x *StatisticsRecap) GetUsersActivity() *UsersActivity {
+	if x != nil {
+		return x.UsersActivity
+	}
+	return nil
+}
+
+func (x *StatisticsRecap) GetNewIdeas() uint32 {
+	if x != nil {
+		return x.NewIdeas
+	}
+	return 0
+}
+
+func (x *StatisticsRecap) GetVoteCount() uint32 {
+	if x != nil {
+		return x.VoteCount
+	}
+	return 0
+}
+
 type IdeasApprovalResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	New           uint32                 `protobuf:"varint,1,opt,name=new,proto3" json:"new,omitempty"`
@@ -396,7 +473,7 @@ type IdeasApprovalResponse struct {
 
 func (x *IdeasApprovalResponse) Reset() {
 	*x = IdeasApprovalResponse{}
-	mi := &file_statistics_domain_proto_msgTypes[7]
+	mi := &file_statistics_domain_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -408,7 +485,7 @@ func (x *IdeasApprovalResponse) String() string {
 func (*IdeasApprovalResponse) ProtoMessage() {}
 
 func (x *IdeasApprovalResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[7]
+	mi := &file_statistics_domain_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -421,7 +498,7 @@ func (x *IdeasApprovalResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IdeasApprovalResponse.ProtoReflect.Descriptor instead.
 func (*IdeasApprovalResponse) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{7}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *IdeasApprovalResponse) GetNew() uint32 {
@@ -454,7 +531,7 @@ type UsersActivityRequest struct {
 
 func (x *UsersActivityRequest) Reset() {
 	*x = UsersActivityRequest{}
-	mi := &file_statistics_domain_proto_msgTypes[8]
+	mi := &file_statistics_domain_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +543,7 @@ func (x *UsersActivityRequest) String() string {
 func (*UsersActivityRequest) ProtoMessage() {}
 
 func (x *UsersActivityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[8]
+	mi := &file_statistics_domain_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +556,7 @@ func (x *UsersActivityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UsersActivityRequest.ProtoReflect.Descriptor instead.
 func (*UsersActivityRequest) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{8}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UsersActivityRequest) GetLimit() uint32 {
@@ -499,7 +576,7 @@ type UsersActivityResponse struct {
 
 func (x *UsersActivityResponse) Reset() {
 	*x = UsersActivityResponse{}
-	mi := &file_statistics_domain_proto_msgTypes[9]
+	mi := &file_statistics_domain_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -511,7 +588,7 @@ func (x *UsersActivityResponse) String() string {
 func (*UsersActivityResponse) ProtoMessage() {}
 
 func (x *UsersActivityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[9]
+	mi := &file_statistics_domain_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -524,7 +601,7 @@ func (x *UsersActivityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UsersActivityResponse.ProtoReflect.Descriptor instead.
 func (*UsersActivityResponse) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{9}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UsersActivityResponse) GetData() map[int64]*UsersActivity {
@@ -550,7 +627,7 @@ type CategoriesRequest struct {
 
 func (x *CategoriesRequest) Reset() {
 	*x = CategoriesRequest{}
-	mi := &file_statistics_domain_proto_msgTypes[10]
+	mi := &file_statistics_domain_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +639,7 @@ func (x *CategoriesRequest) String() string {
 func (*CategoriesRequest) ProtoMessage() {}
 
 func (x *CategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[10]
+	mi := &file_statistics_domain_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +652,7 @@ func (x *CategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoriesRequest.ProtoReflect.Descriptor instead.
 func (*CategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{10}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CategoriesRequest) GetLimit() uint32 {
@@ -597,7 +674,7 @@ type EditorsGradeResponse struct {
 
 func (x *EditorsGradeResponse) Reset() {
 	*x = EditorsGradeResponse{}
-	mi := &file_statistics_domain_proto_msgTypes[11]
+	mi := &file_statistics_domain_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -609,7 +686,7 @@ func (x *EditorsGradeResponse) String() string {
 func (*EditorsGradeResponse) ProtoMessage() {}
 
 func (x *EditorsGradeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[11]
+	mi := &file_statistics_domain_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -622,7 +699,7 @@ func (x *EditorsGradeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditorsGradeResponse.ProtoReflect.Descriptor instead.
 func (*EditorsGradeResponse) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{11}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EditorsGradeResponse) GetPhotos() *EditorsGradeResponse_Grade {
@@ -662,7 +739,7 @@ type MediaCoverageRequest struct {
 
 func (x *MediaCoverageRequest) Reset() {
 	*x = MediaCoverageRequest{}
-	mi := &file_statistics_domain_proto_msgTypes[12]
+	mi := &file_statistics_domain_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -674,7 +751,7 @@ func (x *MediaCoverageRequest) String() string {
 func (*MediaCoverageRequest) ProtoMessage() {}
 
 func (x *MediaCoverageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[12]
+	mi := &file_statistics_domain_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -687,7 +764,7 @@ func (x *MediaCoverageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MediaCoverageRequest.ProtoReflect.Descriptor instead.
 func (*MediaCoverageRequest) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{12}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MediaCoverageRequest) GetLimit() uint32 {
@@ -707,7 +784,7 @@ type MediaCoverageResponse struct {
 
 func (x *MediaCoverageResponse) Reset() {
 	*x = MediaCoverageResponse{}
-	mi := &file_statistics_domain_proto_msgTypes[13]
+	mi := &file_statistics_domain_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -719,7 +796,7 @@ func (x *MediaCoverageResponse) String() string {
 func (*MediaCoverageResponse) ProtoMessage() {}
 
 func (x *MediaCoverageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[13]
+	mi := &file_statistics_domain_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -732,7 +809,7 @@ func (x *MediaCoverageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MediaCoverageResponse.ProtoReflect.Descriptor instead.
 func (*MediaCoverageResponse) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{13}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MediaCoverageResponse) GetMedias() map[int64]*MediaCoverageResponseMedia {
@@ -759,7 +836,7 @@ type EditorsGradeResponse_Grade struct {
 
 func (x *EditorsGradeResponse_Grade) Reset() {
 	*x = EditorsGradeResponse_Grade{}
-	mi := &file_statistics_domain_proto_msgTypes[15]
+	mi := &file_statistics_domain_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -771,7 +848,7 @@ func (x *EditorsGradeResponse_Grade) String() string {
 func (*EditorsGradeResponse_Grade) ProtoMessage() {}
 
 func (x *EditorsGradeResponse_Grade) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[15]
+	mi := &file_statistics_domain_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -784,7 +861,7 @@ func (x *EditorsGradeResponse_Grade) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditorsGradeResponse_Grade.ProtoReflect.Descriptor instead.
 func (*EditorsGradeResponse_Grade) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{11, 0}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{12, 0}
 }
 
 func (x *EditorsGradeResponse_Grade) GetGood() uint32 {
@@ -811,7 +888,7 @@ type MediaCoverageResponseMedia struct {
 
 func (x *MediaCoverageResponseMedia) Reset() {
 	*x = MediaCoverageResponseMedia{}
-	mi := &file_statistics_domain_proto_msgTypes[16]
+	mi := &file_statistics_domain_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -823,7 +900,7 @@ func (x *MediaCoverageResponseMedia) String() string {
 func (*MediaCoverageResponseMedia) ProtoMessage() {}
 
 func (x *MediaCoverageResponseMedia) ProtoReflect() protoreflect.Message {
-	mi := &file_statistics_domain_proto_msgTypes[16]
+	mi := &file_statistics_domain_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -836,7 +913,7 @@ func (x *MediaCoverageResponseMedia) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MediaCoverageResponseMedia.ProtoReflect.Descriptor instead.
 func (*MediaCoverageResponseMedia) Descriptor() ([]byte, []int) {
-	return file_statistics_domain_proto_rawDescGZIP(), []int{13, 0}
+	return file_statistics_domain_proto_rawDescGZIP(), []int{14, 0}
 }
 
 func (x *MediaCoverageResponseMedia) GetPhotos() uint32 {
@@ -857,7 +934,7 @@ var File_statistics_domain_proto protoreflect.FileDescriptor
 
 const file_statistics_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x17statistics/domain.proto\x12\rstatistics.v1\"C\n" +
+	"\x17statistics/domain.proto\x12\rstatistics.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
 	"\x11VoteCountResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\rR\x05count\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"D\n" +
@@ -878,7 +955,14 @@ const file_statistics_domain_proto_rawDesc = "" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"A\n" +
 	"\rUsersActivity\x12\x16\n" +
 	"\x06active\x18\x01 \x01(\rR\x06active\x12\x18\n" +
-	"\aoffline\x18\x02 \x01(\rR\aoffline\"]\n" +
+	"\aoffline\x18\x02 \x01(\rR\aoffline\"\xce\x01\n" +
+	"\x0fStatisticsRecap\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
+	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12C\n" +
+	"\x0eusers_activity\x18\x03 \x01(\v2\x1c.statistics.v1.UsersActivityR\rusersActivity\x12\x1b\n" +
+	"\tnew_ideas\x18\x04 \x01(\rR\bnewIdeas\x12\x1d\n" +
+	"\n" +
+	"vote_count\x18\x05 \x01(\rR\tvoteCount\"]\n" +
 	"\x15IdeasApprovalResponse\x12\x10\n" +
 	"\x03new\x18\x01 \x01(\rR\x03new\x12\x18\n" +
 	"\aworking\x18\x02 \x01(\rR\aworking\x12\x18\n" +
@@ -925,7 +1009,7 @@ func file_statistics_domain_proto_rawDescGZIP() []byte {
 	return file_statistics_domain_proto_rawDescData
 }
 
-var file_statistics_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_statistics_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_statistics_domain_proto_goTypes = []any{
 	(*VoteCountResponse)(nil),          // 0: statistics.v1.VoteCountResponse
 	(*IdeasCountResponse)(nil),         // 1: statistics.v1.IdeasCountResponse
@@ -934,32 +1018,36 @@ var file_statistics_domain_proto_goTypes = []any{
 	(*ActiveUsersResponse)(nil),        // 4: statistics.v1.ActiveUsersResponse
 	(*OfflineUsersResponse)(nil),       // 5: statistics.v1.OfflineUsersResponse
 	(*UsersActivity)(nil),              // 6: statistics.v1.UsersActivity
-	(*IdeasApprovalResponse)(nil),      // 7: statistics.v1.IdeasApprovalResponse
-	(*UsersActivityRequest)(nil),       // 8: statistics.v1.UsersActivityRequest
-	(*UsersActivityResponse)(nil),      // 9: statistics.v1.UsersActivityResponse
-	(*CategoriesRequest)(nil),          // 10: statistics.v1.CategoriesRequest
-	(*EditorsGradeResponse)(nil),       // 11: statistics.v1.EditorsGradeResponse
-	(*MediaCoverageRequest)(nil),       // 12: statistics.v1.MediaCoverageRequest
-	(*MediaCoverageResponse)(nil),      // 13: statistics.v1.MediaCoverageResponse
-	nil,                                // 14: statistics.v1.UsersActivityResponse.DataEntry
-	(*EditorsGradeResponse_Grade)(nil), // 15: statistics.v1.EditorsGradeResponse.Grade
-	(*MediaCoverageResponseMedia)(nil), // 16: statistics.v1.MediaCoverageResponse.media
-	nil,                                // 17: statistics.v1.MediaCoverageResponse.MediasEntry
+	(*StatisticsRecap)(nil),            // 7: statistics.v1.StatisticsRecap
+	(*IdeasApprovalResponse)(nil),      // 8: statistics.v1.IdeasApprovalResponse
+	(*UsersActivityRequest)(nil),       // 9: statistics.v1.UsersActivityRequest
+	(*UsersActivityResponse)(nil),      // 10: statistics.v1.UsersActivityResponse
+	(*CategoriesRequest)(nil),          // 11: statistics.v1.CategoriesRequest
+	(*EditorsGradeResponse)(nil),       // 12: statistics.v1.EditorsGradeResponse
+	(*MediaCoverageRequest)(nil),       // 13: statistics.v1.MediaCoverageRequest
+	(*MediaCoverageResponse)(nil),      // 14: statistics.v1.MediaCoverageResponse
+	nil,                                // 15: statistics.v1.UsersActivityResponse.DataEntry
+	(*EditorsGradeResponse_Grade)(nil), // 16: statistics.v1.EditorsGradeResponse.Grade
+	(*MediaCoverageResponseMedia)(nil), // 17: statistics.v1.MediaCoverageResponse.media
+	nil,                                // 18: statistics.v1.MediaCoverageResponse.MediasEntry
+	(*timestamppb.Timestamp)(nil),      // 19: google.protobuf.Timestamp
 }
 var file_statistics_domain_proto_depIdxs = []int32{
 	2,  // 0: statistics.v1.TopByCategoriesResponse.record:type_name -> statistics.v1.CategoryRecord
-	14, // 1: statistics.v1.UsersActivityResponse.data:type_name -> statistics.v1.UsersActivityResponse.DataEntry
-	15, // 2: statistics.v1.EditorsGradeResponse.photos:type_name -> statistics.v1.EditorsGradeResponse.Grade
-	15, // 3: statistics.v1.EditorsGradeResponse.videos:type_name -> statistics.v1.EditorsGradeResponse.Grade
-	15, // 4: statistics.v1.EditorsGradeResponse.graphics:type_name -> statistics.v1.EditorsGradeResponse.Grade
-	17, // 5: statistics.v1.MediaCoverageResponse.medias:type_name -> statistics.v1.MediaCoverageResponse.MediasEntry
-	6,  // 6: statistics.v1.UsersActivityResponse.DataEntry.value:type_name -> statistics.v1.UsersActivity
-	16, // 7: statistics.v1.MediaCoverageResponse.MediasEntry.value:type_name -> statistics.v1.MediaCoverageResponse.media
-	8,  // [8:8] is the sub-list for method output_type
-	8,  // [8:8] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	19, // 1: statistics.v1.StatisticsRecap.at:type_name -> google.protobuf.Timestamp
+	6,  // 2: statistics.v1.StatisticsRecap.users_activity:type_name -> statistics.v1.UsersActivity
+	15, // 3: statistics.v1.UsersActivityResponse.data:type_name -> statistics.v1.UsersActivityResponse.DataEntry
+	16, // 4: statistics.v1.EditorsGradeResponse.photos:type_name -> statistics.v1.EditorsGradeResponse.Grade
+	16, // 5: statistics.v1.EditorsGradeResponse.videos:type_name -> statistics.v1.EditorsGradeResponse.Grade
+	16, // 6: statistics.v1.EditorsGradeResponse.graphics:type_name -> statistics.v1.EditorsGradeResponse.Grade
+	18, // 7: statistics.v1.MediaCoverageResponse.medias:type_name -> statistics.v1.MediaCoverageResponse.MediasEntry
+	6,  // 8: statistics.v1.UsersActivityResponse.DataEntry.value:type_name -> statistics.v1.UsersActivity
+	17, // 9: statistics.v1.MediaCoverageResponse.MediasEntry.value:type_name -> statistics.v1.MediaCoverageResponse.media
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_statistics_domain_proto_init() }
@@ -973,7 +1061,7 @@ func file_statistics_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_statistics_domain_proto_rawDesc), len(file_statistics_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

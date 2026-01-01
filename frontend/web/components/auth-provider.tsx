@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) {
         return null
       }
-      const updated = await updateDisplayName(user.uid, displayName)
+      const updated = await updateDisplayName(displayName)
       setUser(updated)
       return updated
     },

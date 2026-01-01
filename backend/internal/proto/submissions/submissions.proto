@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package submissions.v1;
+option go_package = "ascendant/backend/internal/gen/submissions/v1;submissions";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+import "submissions/domain.proto";
+
+service SubmissionsService {
+  rpc List(google.protobuf.Empty) returns (ListResponse) {
+    option (google.api.http) = {
+      get: "/api/submissions/list"
+    };
+  }
+  rpc Approve(ApproveRequest) returns (DataResponse) {
+    option (google.api.http) = {
+      post: "/api/submissions/{id}/approve",
+      body: "*"
+    };
+  }
+  rpc Decline(DeclineRequest) returns (DataResponse) {
+    option (google.api.http) = {
+      post: "/api/submissions/{id}/decline",
+      body: "*"
+    };
+  }
+}

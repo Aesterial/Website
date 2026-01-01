@@ -62,7 +62,7 @@ func TestAuthorization(t *testing.T) {
 	ctx, _ := newTestContext("/login.v1.LoginService/Authorization")
 
 	resp, err := service.Authorization(ctx, &loginpb.AuthRequest{
-		Username: "admin1",
+		Usermail: "admin1",
 		Password: "admin1_password",
 	})
 	if err != nil {

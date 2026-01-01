@@ -6,7 +6,10 @@ import (
 	project_domain "ascendant/backend/internal/domain/projects"
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/sessions"
+	"ascendant/backend/internal/domain/submissions"
+	//"ascendant/backend/internal/domain/statistics"
 	"ascendant/backend/internal/domain/user"
+	statpb "ascendant/backend/internal/gen/statistics/v1"
 	"ascendant/backend/internal/infra/logger"
 	"context"
 	"database/sql"
@@ -17,6 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type UserRepository struct {
@@ -45,6 +49,10 @@ type StatisticsRepository struct {
 	DB *sql.DB
 }
 
+type SubmissionsRepository struct {
+	DB *sql.DB
+}
+
 var _ user.Repository = (*UserRepository)(nil)
 
 func NewUserRepository(db *sql.DB) *UserRepository {
@@ -67,6 +75,9 @@ func NewStatisticsRepository(db *sql.DB) *StatisticsRepository {
 }
 func NewProjectsRepository(db *sql.DB) *ProjectsRepository {
 	return &ProjectsRepository{DB: db}
+}
+func NewSubmissionRepository(db *sql.DB) *SubmissionsRepository {
+	return &SubmissionsRepository{DB: db}
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
@@ -635,12 +646,16 @@ func (p *PermissionsRepository) SetForRank(ctx context.Context, rank string, per
 	return updateRankPermissions(p.DB, ctx, rank, perms)
 }
 
-func (p *ProjectsRepository) GetProject(ctx context.Context, id uuid.UUID) (*project_domain.Project, error) {
+func getProject(ctx context.Context, id uuid.UUID, db *sql.DB) (*project_domain.Project, error) {
 	var project project_domain.Project
-	if err := p.DB.QueryRowContext(ctx, "SELECT * FROM projects p WHERE p.id = $1", id).Scan(&project.ID, &project.Author, &project.Info.Title, &project.Info.Description, &project.Info.Photos, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At); err != nil {
+	if err := db.QueryRowContext(ctx, "SELECT * FROM projects p WHERE p.id = $1", id).Scan(&project.ID, &project.Author, &project.Info.Title, &project.Info.Description, &project.Info.Photos, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At); err != nil {
 		return nil, err
 	}
 	return &project, nil
+}
+
+func (p *ProjectsRepository) GetProject(ctx context.Context, id uuid.UUID) (*project_domain.Project, error) {
+	return getProject(ctx, id, p.DB)
 }
 
 func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) ([]*project_domain.Project, error) {
@@ -649,6 +664,12 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) ([]*
 	if err != nil {
 		return nil, err
 	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			logger.Error("failed to close rows: "+err.Error(), "system.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		}
+	}(rows)
 	for rows.Next() {
 		var id uuid.UUID
 		if err = rows.Scan(&id); err != nil {
@@ -663,6 +684,8 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) ([]*
 	return projects, nil
 }
 
+//var _ statistics.Repository = (*StatisticsRepository)(nil)
+
 func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (uint32, error) {
 	if since.IsZero() {
 		return 0, errors.New("since is zero")
@@ -673,4 +696,204 @@ func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (
 		return 0, err
 	}
 	return uint32(count), nil
+}
+
+func (s *StatisticsRepository) GetOnlineUsers(ctx context.Context, since time.Time) (uint32, error) {
+	if since.IsZero() {
+		return 0, errors.New("since is zero")
+	}
+
+	var count uint32
+	err := s.DB.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT e.actor_id)
+		 FROM events e
+		 WHERE e.at >= $1`, since,
+	).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (s *StatisticsRepository) GetOfflineUsers(ctx context.Context, since time.Time) (uint32, error) {
+	if since.IsZero() {
+		return 0, errors.New("since is zero")
+	}
+
+	var offline int64
+	err := s.DB.QueryRowContext(ctx, `
+		SELECT
+		  (SELECT COUNT(*) FROM users)::bigint -
+		  (SELECT COUNT(DISTINCT e.actor_id) FROM events e WHERE e.at >= $1)::bigint
+	`, since).Scan(&offline)
+	if err != nil {
+		return 0, err
+	}
+
+	if offline < 0 {
+		offline = 0
+	}
+	return uint32(offline), nil
+}
+
+func (s *StatisticsRepository) NewIdeasCount(ctx context.Context, since time.Time) (uint32, error) {
+	if since.IsZero() {
+		return 0, errors.New("since is zero")
+	}
+	var count int
+	row := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects WHERE created_at >= $1", since)
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return uint32(count), nil
+}
+
+func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.Time) (map[time.Time]*statpb.StatisticsRecap, error) {
+	if since.IsZero() {
+		return nil, errors.New("since is zero")
+	}
+
+	recap := make(map[time.Time]*statpb.StatisticsRecap)
+
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT
+			s.id,
+			s.at,
+			(s.us_activity).online,
+			(s.us_activity).offline,
+			s.new_ideas,
+			s.vote_count
+		FROM statistics_recap s
+		WHERE s.at >= $1
+	`, since)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logger.Error("failed to close rows", "system.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		}
+	}()
+
+	for rows.Next() {
+		var (
+			id        int
+			at        time.Time
+			online    int64
+			offline   int64
+			newIdeas  int64
+			voteCount int64
+		)
+
+		if err := rows.Scan(&id, &at, &online, &offline, &newIdeas, &voteCount); err != nil {
+			return nil, err
+		}
+
+		rec := &statpb.StatisticsRecap{
+			Id: strconv.Itoa(id),
+			At: timestamppb.New(at),
+			UsersActivity: &statpb.UsersActivity{
+				Active:  uint32(online),
+				Offline: uint32(offline),
+			},
+			NewIdeas:  uint32(newIdeas),
+			VoteCount: uint32(voteCount),
+		}
+
+		recap[at] = rec
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return recap, nil
+}
+
+func (s *StatisticsRepository) UsersActivity(ctx context.Context, since time.Time) (map[time.Time]*statpb.UsersActivity, error) {
+	if since.IsZero() {
+		return nil, errors.New("since is zero")
+	}
+	data, err := s.StatisticsRecap(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	var activity = make(map[time.Time]*statpb.UsersActivity)
+	for at, stat := range data {
+		activity[at] = stat.UsersActivity
+	}
+	return activity, nil
+}
+
+func (s *StatisticsRepository) VoteCategories(ctx context.Context, since time.Time, limit int) ([]*statpb.CategoryRecord, error) {
+	if since.IsZero() {
+		return nil, errors.New("since is zero")
+	}
+
+	base := `
+		SELECT pr.info.category AS category, COUNT(*) AS votes
+		FROM project_likes pl
+		JOIN projects pr ON pr.id = pl.project_id
+		WHERE pl.created_at >= $1
+		GROUP BY pr.info.category
+		ORDER BY votes DESC
+	`
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+
+	if limit > 0 {
+		rows, err = s.DB.QueryContext(ctx, base+` LIMIT $2`, since, limit)
+	} else {
+		rows, err = s.DB.QueryContext(ctx, base, since)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var records []*statpb.CategoryRecord
+	for rows.Next() {
+		var cat sql.NullString
+		var votes int64
+
+		if err := rows.Scan(&cat, &votes); err != nil {
+			return nil, err
+		}
+
+		name := cat.String
+		if !cat.Valid {
+			name = "Not Specified"
+		}
+
+		records = append(records, &statpb.CategoryRecord{
+			Name:  name,
+			Posts: uint32(votes),
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
+
+func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Submission, error) {
+	var data []*submissions.Submission
+	rows, err := s.DB.QueryContext(ctx, "SELECT s.id, s.project_id, s.state FROM submissions s")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var sub submissions.Submission
+		if err := rows.Scan(&sub.ID, &sub.ProjectID, &sub.State); err != nil {
+			return nil, err
+		}
+		data = append(data, &sub)
+	}
+	return data, nil
 }
