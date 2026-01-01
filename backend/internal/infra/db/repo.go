@@ -7,6 +7,8 @@ import (
 	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/submissions"
+	userpb "ascendant/backend/internal/gen/user/v1"
+
 	//"ascendant/backend/internal/domain/statistics"
 	"ascendant/backend/internal/domain/user"
 	statpb "ascendant/backend/internal/gen/statistics/v1"
@@ -78,6 +80,25 @@ func NewProjectsRepository(db *sql.DB) *ProjectsRepository {
 }
 func NewSubmissionRepository(db *sql.DB) *SubmissionsRepository {
 	return &SubmissionsRepository{DB: db}
+}
+
+func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserSelf, error) {
+	var usrs []*userpb.UserSelf
+	rows, err := u.DB.QueryContext(ctx, "SELECT u.uid, u.username, (u.email).address, (u.email).verified, ((u.settings).avatar).data, ((u.settings).avatar).content_type, (u.rank).name, (u.rank).expires, u.joined FROM users u ORDER BY u.joined")
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	for rows.Next() {
+		var usr userpb.UserSelf
+		if err := rows.Scan(&usr.Public.UserID, &usr.Public.Username, &usr.Email.Address, &usr.Email.Verified, &usr.Public.Settings.Avatar.Data, &usr.Public.Settings.Avatar.ContentType, &usr.Public.Rank.Name, &usr.Public.Rank.Expires, &usr.Public.JoinedAt); err != nil {
+			return nil, err
+		}
+		usrs = append(usrs, &usr)
+	}
+	return usrs, nil
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {

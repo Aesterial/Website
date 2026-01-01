@@ -2,11 +2,13 @@ package user
 
 import (
 	"ascendant/backend/internal/domain/rank"
+	"ascendant/backend/internal/gen/user/v1"
 	"context"
 	"time"
 )
 
 type Repository interface {
+	GetList(ctx context.Context) ([]*user.UserSelf, error)
 	GetUID(ctx context.Context, username string) (uint, error)
 	GetUsername(ctx context.Context, uid uint) (string, error)
 	GetEmail(ctx context.Context, uid uint) (*Email, error)
