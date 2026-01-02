@@ -404,6 +404,14 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 	return &uid, nil
 }
 
+func (l *LoginRepository) Logout(ctx context.Context, sessionID uuid.UUID) error {
+	if sessionID == uuid.Nil {
+		return errors.New("invalid session")
+	}
+	_, err := l.DB.ExecContext(ctx, "UPDATE sessions SET revoked = true WHERE id = $1", sessionID)
+	return err
+}
+
 func (s *SessionsRepository) IsValid(ctx context.Context, sessionID uuid.UUID) (bool, error) {
 	var expires time.Time
 	var revoked bool
@@ -771,6 +779,38 @@ func (s *StatisticsRepository) NewIdeasCount(ctx context.Context, since time.Tim
 	return uint32(count), nil
 }
 
+func today() time.Time {
+	now := time.Now()
+	t := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return t
+}
+
+func (s *StatisticsRepository) GetForToday(ctx context.Context) (*statpb.StatisticsRecap, error) {
+	var stat statpb.StatisticsRecap
+	voteCount, err := s.VoteCount(ctx, today())
+	if err != nil {
+		return nil, err
+	}
+	newIdeas, err := s.NewIdeasCount(ctx, today())
+	if err != nil {
+		return nil, err
+	}
+	offline, err := s.GetOfflineUsers(ctx, today())
+	if err != nil {
+		return nil, err
+	}
+	active, err := s.GetOnlineUsers(ctx, today())
+	if err != nil {
+		return nil, err
+	}
+	stat.UsersActivity.Active = active
+	stat.UsersActivity.Offline = offline
+	stat.NewIdeas = newIdeas
+	stat.VoteCount = voteCount
+	stat.At = timestamppb.New(today())
+	return &stat, nil
+}
+
 func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.Time) (map[time.Time]*statpb.StatisticsRecap, error) {
 	if since.IsZero() {
 		return nil, errors.New("since is zero")
@@ -824,6 +864,10 @@ func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.T
 		}
 
 		recap[at] = rec
+	}
+	recap[today()], err = s.GetForToday(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := rows.Err(); err != nil {
