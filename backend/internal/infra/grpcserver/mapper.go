@@ -54,13 +54,11 @@ func toProtoRank(r *rank.Rank) *userpb.Rank {
 	return out
 }
 
-func toProtoUserSettings(s *user.Settings) *userpb.UserSettings {
+func toProtoUserSettings(s *user.Settings) *userpb.UserPublicSettings {
 	if s == nil {
 		return nil
 	}
-	out := &userpb.UserSettings{
-		SessionLiveTime: int32(s.SessionLiveTime),
-	}
+	out := &userpb.UserPublicSettings{}
 	if s.DisplayName != nil {
 		out.DisplayName = s.DisplayName
 	}

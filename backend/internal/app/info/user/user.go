@@ -3,9 +3,11 @@ package user
 import (
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/user"
+	"ascendant/backend/internal/infra/logger"
 	apperrors "ascendant/backend/internal/shared/errors"
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -66,6 +68,7 @@ func (s *Service) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, 
 
 func (s *Service) Ban(ctx context.Context, info user.BanInfo) error {
 	if info.Empty() {
+		logger.Debug(fmt.Sprintf("target: %d, reason: %s", info.Target, info.Reason), "a")
 		return errors.New("argument is empty")
 	}
 	return s.repo.Ban(ctx, info)
@@ -73,9 +76,16 @@ func (s *Service) Ban(ctx context.Context, info user.BanInfo) error {
 
 func (s *Service) UnBan(ctx context.Context, uid uint) error {
 	if uid == 0 {
-		return nil
+		return errors.New("argument is empty")
 	}
 	return s.repo.UnBan(ctx, uid)
+}
+
+func (s *Service) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, error) {
+	if uid == 0 {
+		return nil, errors.New("argument is empty")
+	}
+	return s.repo.BanInfo(ctx, uid)
 }
 
 func (s *Service) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.SessionTime, error) {

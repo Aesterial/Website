@@ -22,9 +22,12 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	UserService_Self_FullMethodName             = "/user.v1.UserService/Self"
 	UserService_Other_FullMethodName            = "/user.v1.UserService/Other"
+	UserService_Users_FullMethodName            = "/user.v1.UserService/Users"
 	UserService_Sessions_FullMethodName         = "/user.v1.UserService/Sessions"
 	UserService_Ban_FullMethodName              = "/user.v1.UserService/Ban"
 	UserService_Unban_FullMethodName            = "/user.v1.UserService/Unban"
+	UserService_BanInfo_FullMethodName          = "/user.v1.UserService/BanInfo"
+	UserService_BanInfoOther_FullMethodName     = "/user.v1.UserService/BanInfoOther"
 	UserService_UpdateSelfName_FullMethodName   = "/user.v1.UserService/UpdateSelfName"
 	UserService_DeleteSelfAvatar_FullMethodName = "/user.v1.UserService/DeleteSelfAvatar"
 	UserService_DeleteUserAvatar_FullMethodName = "/user.v1.UserService/DeleteUserAvatar"
@@ -39,10 +42,13 @@ type UserServiceClient interface {
 	// Information
 	Self(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserSelfResponse, error)
 	Other(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*UserPublicResponse, error)
+	Users(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UsersResponse, error)
 	Sessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserSessionsResponse, error)
 	// Management
 	Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	BanInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BanInfoResponse, error)
+	BanInfoOther(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*BanInfoResponse, error)
 	UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -78,6 +84,16 @@ func (c *userServiceClient) Other(ctx context.Context, in *OtherUserRequest, opt
 	return out, nil
 }
 
+func (c *userServiceClient) Users(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UsersResponse)
+	err := c.cc.Invoke(ctx, UserService_Users_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) Sessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserSessionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserSessionsResponse)
@@ -102,6 +118,26 @@ func (c *userServiceClient) Unban(ctx context.Context, in *OtherUserRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, UserService_Unban_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) BanInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BanInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BanInfoResponse)
+	err := c.cc.Invoke(ctx, UserService_BanInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) BanInfoOther(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*BanInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BanInfoResponse)
+	err := c.cc.Invoke(ctx, UserService_BanInfoOther_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,10 +201,13 @@ type UserServiceServer interface {
 	// Information
 	Self(context.Context, *emptypb.Empty) (*UserSelfResponse, error)
 	Other(context.Context, *OtherUserRequest) (*UserPublicResponse, error)
+	Users(context.Context, *emptypb.Empty) (*UsersResponse, error)
 	Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error)
 	// Management
 	Ban(context.Context, *BanUserRequest) (*EmptyResponse, error)
 	Unban(context.Context, *OtherUserRequest) (*EmptyResponse, error)
+	BanInfo(context.Context, *emptypb.Empty) (*BanInfoResponse, error)
+	BanInfoOther(context.Context, *OtherUserRequest) (*BanInfoResponse, error)
 	UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*EmptyResponse, error)
 	DeleteSelfAvatar(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error)
@@ -190,6 +229,9 @@ func (UnimplementedUserServiceServer) Self(context.Context, *emptypb.Empty) (*Us
 func (UnimplementedUserServiceServer) Other(context.Context, *OtherUserRequest) (*UserPublicResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Other not implemented")
 }
+func (UnimplementedUserServiceServer) Users(context.Context, *emptypb.Empty) (*UsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Users not implemented")
+}
 func (UnimplementedUserServiceServer) Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Sessions not implemented")
 }
@@ -198,6 +240,12 @@ func (UnimplementedUserServiceServer) Ban(context.Context, *BanUserRequest) (*Em
 }
 func (UnimplementedUserServiceServer) Unban(context.Context, *OtherUserRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Unban not implemented")
+}
+func (UnimplementedUserServiceServer) BanInfo(context.Context, *emptypb.Empty) (*BanInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BanInfo not implemented")
+}
+func (UnimplementedUserServiceServer) BanInfoOther(context.Context, *OtherUserRequest) (*BanInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BanInfoOther not implemented")
 }
 func (UnimplementedUserServiceServer) UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSelfName not implemented")
@@ -271,6 +319,24 @@ func _UserService_Other_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_Users_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Users(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Users_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Users(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_Sessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -321,6 +387,42 @@ func _UserService_Unban_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).Unban(ctx, req.(*OtherUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_BanInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).BanInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_BanInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).BanInfo(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_BanInfoOther_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OtherUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).BanInfoOther(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_BanInfoOther_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).BanInfoOther(ctx, req.(*OtherUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -431,6 +533,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_Other_Handler,
 		},
 		{
+			MethodName: "Users",
+			Handler:    _UserService_Users_Handler,
+		},
+		{
 			MethodName: "Sessions",
 			Handler:    _UserService_Sessions_Handler,
 		},
@@ -441,6 +547,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Unban",
 			Handler:    _UserService_Unban_Handler,
+		},
+		{
+			MethodName: "BanInfo",
+			Handler:    _UserService_BanInfo_Handler,
+		},
+		{
+			MethodName: "BanInfoOther",
+			Handler:    _UserService_BanInfoOther_Handler,
 		},
 		{
 			MethodName: "UpdateSelfName",

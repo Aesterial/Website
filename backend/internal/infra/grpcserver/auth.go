@@ -7,9 +7,11 @@ import (
 	userapp "ascendant/backend/internal/app/info/user"
 	"ascendant/backend/internal/domain/permissions"
 	"ascendant/backend/internal/domain/user"
+	"ascendant/backend/internal/infra/logger"
 	"ascendant/backend/internal/shared/types"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"net/http"
@@ -73,14 +75,15 @@ func (a *Authenticator) RequireUser(ctx context.Context) (*user.RequestData, err
 		return nil, status.Error(codes.Unauthenticated, "invalid session")
 	}
 	banned, _, err := a.User.IsBanned(ctx, *uid)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		logger.Debug("error: "+err.Error(), "")
 		return nil, status.Error(codes.Unauthenticated, "failed to check ban state")
 	}
+	us := &user.RequestData{UID: *uid, SessionID: sessionID}
 	if banned {
-		return nil, status.Error(codes.Unauthenticated, "user is banned")
+		return us, status.Error(codes.PermissionDenied, "user is banned")
 	}
-
-	return &user.RequestData{UID: *uid, SessionID: sessionID}, nil
+	return us, nil
 }
 
 func (a *Authenticator) RequirePermissions(ctx context.Context, uid uint, need ...permissions.Permission) error {

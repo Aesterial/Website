@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Service struct {
@@ -26,35 +25,11 @@ func New(repo submissions.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func toAvatar(av *user.Avatar) *userpb.Avatar {
-	if av == nil {
-		return nil
-	}
-	var avatar userpb.Avatar
-	avatar.ContentType = av.ContentType.String
-	avatar.Data = av.Data
-	return &avatar
-}
-
-func toUserPublic(usr *user.User) *userpb.UserPublic {
-	return &userpb.UserPublic{
-		UserID:   uint32(usr.UID),
-		Username: usr.Username,
-		Rank:     &userpb.Rank{Name: usr.Rank.Name, Expires: timestamppb.New(*usr.Rank.Expires)},
-		Settings: &userpb.UserSettings{
-			DisplayName:     usr.Settings.DisplayName,
-			Avatar:          toAvatar(usr.Settings.Avatar),
-			SessionLiveTime: int32(usr.Settings.SessionLiveTime),
-		},
-		JoinedAt: timestamppb.New(usr.Joined),
-	}
-}
-
 func toGenProject(p *projects.Project) *projpb.Project {
 	convAvatars := func() []*userpb.Avatar {
 		var photos []*userpb.Avatar
 		for _, av := range p.Info.Photos {
-			photos = append(photos, toAvatar(av))
+			photos = append(photos, av.ToPublic())
 		}
 		return photos
 	}
@@ -103,7 +78,7 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, er
 			return nil, err
 		}
 		project := toGenProject(p)
-		project.Author = toUserPublic(author)
+		project.Author = author.ToPublic()
 		response = append(response, &submpb.ListResponseTarget{Info: project, State: v.State})
 	}
 	return response, nil

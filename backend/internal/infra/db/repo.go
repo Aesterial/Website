@@ -299,8 +299,10 @@ func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.Ba
 		return false, nil, errors.New("uid is zero")
 	}
 	var found bool
-	var id uuid.UUID
-	if err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM bans b WHERE b.target = $1) id FROM bans b WHERE b.target = $1", uid).Scan(&found, &id); err != nil {
+	err := u.DB.QueryRowContext(ctx, `
+		SELECT EXISTS (SELECT 1 FROM bans b WHERE b.target = $1)
+	`, uid).Scan(&found)
+	if err != nil {
 		return false, nil, err
 	}
 	if !found {
@@ -314,10 +316,14 @@ func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.Ba
 }
 
 func (u *UserRepository) Ban(ctx context.Context, info user.BanInfo) error {
-	if info.Executor == 0 || info.Target == 0 || info.Reason == "" || info.Expires.Time.IsZero() {
+	if info.Empty() {
 		return errors.New("invalid argument")
 	}
-	_, err := u.DB.ExecContext(ctx, "INSERT INTO bans (executor, target, reason, expires) VALUES ($1, $2, $3, $4)", info.Executor, info.Target, info.Reason, info.Expires.Time)
+	var expr *time.Time = nil
+	if info.Expire.IsZero() {
+		expr = &info.Expire
+	}
+	_, err := u.DB.ExecContext(ctx, "INSERT INTO bans (executor, target, reason, expires) VALUES ($1, $2, $3, $4)", info.Executor, info.Target, info.Reason, expr)
 	return err
 }
 
@@ -334,7 +340,7 @@ func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, 
 		return nil, errors.New("uid is zero")
 	}
 	var info user.BanInfo
-	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info); err != nil {
+	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info.ID, &info.Executor, &info.Reason, &info.At, &info.Expires); err != nil {
 		return nil, err
 	}
 	return &info, nil

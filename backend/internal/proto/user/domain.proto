@@ -10,7 +10,7 @@ message UserPublic {
   uint32 userID = 1;
   string username = 2;
   Rank rank = 3;
-  optional UserSettings settings = 4;
+  optional UserPublicSettings settings = 4;
   google.protobuf.Timestamp joinedAt = 5;
 }
 
@@ -28,6 +28,11 @@ message UserSettings  {
   optional string displayName = 1;
   optional Avatar avatar = 2;
   int32 sessionLiveTime = 3;
+}
+
+message UserPublicSettings {
+  optional string displayName = 1;
+  optional Avatar avatar = 2;
 }
 
 message Rank  {
@@ -111,6 +116,6 @@ message BanInfoResponse {
   UserPublic executor = 2;
   string reason = 3;
   google.protobuf.Timestamp at = 4;
-  google.protobuf.Timestamp expires = 5;
+  optional google.protobuf.Timestamp expires = 5;
   string tracing = 6;
 }
