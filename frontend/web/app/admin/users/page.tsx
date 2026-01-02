@@ -8,12 +8,24 @@ import { toast } from "sonner"
 import { Logo } from "@/components/logo"
 import { useTheme } from "@/components/theme-provider"
 import { useAuth } from "@/components/auth-provider"
+import { useLanguage } from "@/components/language-provider"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Ban,
   CheckCircle2,
+  ChevronDown,
+  Globe,
   LogOut,
   MessageSquare,
   Moon,
+  Settings,
   Search,
   Sun,
   Users,
@@ -73,11 +85,19 @@ const statusLabels: Record<StatusFilter, string> = {
 export default function AdminUsersPage() {
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [page, setPage] = useState(1)
+  const displayName = user?.displayName || user?.username || ""
+  const initials = (displayName || "U").slice(0, 2).toUpperCase()
+  const languageOptions = [
+    { code: "RU" as const, label: "RU" },
+    { code: "EN" as const, label: "EN" },
+    { code: "KZ" as const, label: "KZ" },
+  ]
 
 
   const handleLogout = async () => {
@@ -164,25 +184,59 @@ export default function AdminUsersPage() {
               className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
             >
               {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : null}
-              Тема
+              ????????
             </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
-            <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold">
-                A
-              </span>
-              <div className="text-right leading-tight">
-                <p className="text-sm font-semibold">admin</p>
-                <p className="text-xs text-muted-foreground">Super admin</p>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+                >
+                  <Globe className="h-4 w-4" />
+                  {language}
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[90px]">
+                {languageOptions.map((option) => (
+                  <DropdownMenuItem key={option.code} onClick={() => setLanguage(option.code)}>
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-semibold">{displayName || user?.username || "admin"}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/account">
+                    <Settings className="h-4 w-4" />
+                    {t("accountSettings")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void handleLogout()
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

@@ -4,9 +4,18 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarDays, ExternalLink, LogOut, MapPin, UserCircle2 } from "lucide-react"
+import { CalendarDays, ChevronDown, ExternalLink, Globe, LogOut, MapPin, Settings, UserCircle2 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useAuth } from "@/components/auth-provider"
+import { useLanguage } from "@/components/language-provider"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { submissions, statusMeta, type Submission, type SubmissionStatus } from "../data"
 
 const statusBadgeStyles: Record<SubmissionStatus, string> = {
@@ -27,12 +36,21 @@ type StatusPageProps = {
 
 export default function SubmissionStatusPage({ status }: StatusPageProps) {
   const router = useRouter()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
 
   const handleLogout = async () => {
     await logout()
     router.push("/")
   }
+  const displayName = user?.displayName || user?.username || ""
+  const initials = (displayName || "U").slice(0, 2).toUpperCase()
+  const languageOptions = [
+    { code: "RU" as const, label: "RU" },
+    { code: "EN" as const, label: "EN" },
+    { code: "KZ" as const, label: "KZ" },
+  ]
+
   const filtered = useMemo(
     () => submissions.filter((item) => item.status === status),
     [status],
@@ -63,26 +81,57 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
-            <Link
-              href="/admin/submissions"
-              className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-            >
-              Категории
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-            >
-              Админка
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                >
+                  <Globe className="h-4 w-4" />
+                  {language}
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[90px]">
+                {languageOptions.map((option) => (
+                  <DropdownMenuItem key={option.code} onClick={() => setLanguage(option.code)}>
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-semibold">{displayName || user?.username || "admin"}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/account">
+                    <Settings className="h-4 w-4" />
+                    {t("accountSettings")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void handleLogout()
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

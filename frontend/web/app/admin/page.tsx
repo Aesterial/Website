@@ -14,12 +14,15 @@ import {
   Ban,
   BarChart3,
   Bell,
+  ChevronDown,
   CheckCircle2,
+  Globe,
   Image as ImageIcon,
   Lock,
   LogOut,
   MessageSquare,
   Moon,
+  Settings,
   Shield,
   Sun,
   TrendingUp,
@@ -45,6 +48,15 @@ import {
 } from "recharts"
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
+import { useLanguage } from "@/components/language-provider"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 // import { useRouter } from "next/navigation"
 
@@ -383,6 +395,7 @@ export default function AdminPage() {
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const { logout, user } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const [rangeDays, setRangeDays] = useState(timeRanges[2].days)
   const [statsSummary, setStatsSummary] = useState<StatsSummary>({
@@ -400,6 +413,12 @@ export default function AdminPage() {
   const [banReason, setBanReason] = useState("Спам, мультиаккаунты, повторные жалобы")
   // const push = useRouter();
   const displayName = user?.displayName || user?.username || ""
+  const initials = (displayName || "U").slice(0, 2).toUpperCase()
+  const languageOptions = [
+    { code: "RU" as const, label: "RU" },
+    { code: "EN" as const, label: "EN" },
+    { code: "KZ" as const, label: "KZ" },
+  ]
 
   const handleLogout = async () => {
     await logout()
@@ -634,15 +653,14 @@ export default function AdminPage() {
               <Logo className="h-9 w-9 text-foreground" showText={false} />
             </Link>
             <div className="leading-tight">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Город идей</p>
-              <p className="text-sm font-semibold">Админ-панель</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Admin panel</p>
+              <p className="text-sm font-semibold">City of Ideas</p>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
               <Shield className="h-4 w-4 text-foreground" />
-              <span className="text-xs font-semibold">Система защищена</span>
+              <span className="text-xs font-semibold">Moderator workspace</span>
             </div>
           </div>
-
           <nav className="flex gap-3 overflow-x-auto pb-2 text-sm lg:flex-col lg:gap-2 lg:pb-0">
             {sidebarItems.map((item) => {
               const content = (
@@ -684,34 +702,30 @@ export default function AdminPage() {
                 <Bell className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold">Уведомления</p>
-                <p className="text-xs text-muted-foreground">3 новых события</p>
+                <p className="text-sm font-semibold">Notifications</p>
+                <p className="text-xs text-muted-foreground">3 new items</p>
               </div>
             </div>
             <button
               type="button"
               className="mt-4 w-full rounded-xl border border-foreground/20 bg-background px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-              onClick={() =>
-                toast.message("Лента обновлена", {
-                  description: "Все события синхронизированы",
-                })
-              }
+              onClick={() => toast.message("View notifications")}
             >
-              Обновить ленту
+              View notifications
             </button>
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-card/80 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Тема</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Theme</p>
             <div className="mt-3 flex items-center justify-between gap-3 text-sm font-semibold">
-              <span>{mounted ? (theme === "light" ? "Светлая" : "Темная") : "Тема"}</span>
+              <span>{mounted ? (theme === "light" ? "Light" : "Dark") : "Theme"}</span>
               <button
                 type="button"
                 onClick={toggleTheme}
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
               >
                 {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : null}
-                Переключить
+                Toggle
               </button>
             </div>
           </div>
@@ -731,23 +745,57 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-              <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold">
-                  A
-                </span>
-                <div className="text-right leading-tight">
-                  <p className="text-sm font-semibold">{displayName || user?.username || "admin"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.rank?.name || "Admin"}</p>
-                </div>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+                  >
+                    <Globe className="h-4 w-4" />
+                    {language}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[90px]">
+                  {languageOptions.map((option) => (
+                    <DropdownMenuItem key={option.code} onClick={() => setLanguage(option.code)}>
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-semibold">{displayName || user?.username || "admin"}</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                      <Settings className="h-4 w-4" />
+                      {t("accountSettings")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      void handleLogout()
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("logout")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
@@ -775,28 +823,6 @@ export default function AdminPage() {
                   >
                     Полная таблица
                   </Link>
-                  <button
-                    type="button"
-                    className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-                    onClick={() =>
-                      toast.message("Отчет сформирован", {
-                        description: "Экспорт пользователей готов",
-                      })
-                    }
-                  >
-                    Экспорт
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/30"
-                    onClick={() =>
-                      toast.success("Приглашение отправлено", {
-                        description: "Новый администратор получит письмо",
-                      })
-                    }
-                  >
-                    Пригласить
-                  </button>
                 </div>
               </div>
 
@@ -847,24 +873,6 @@ export default function AdminPage() {
                               </div>
                             </div>
                             <div className="mt-4 flex justify-end gap-2">
-                              <button
-                                type="button"
-                                title={actionTitle}
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
-                                onClick={() =>
-                                  handleUserAction(user, user.status === "banned" ? "unblock" : "block")
-                                }
-                              >
-                                <ActionIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                title="Message user"
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
-                                onClick={() => handleUserAction(user, "message")}
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </button>
                             </div>
                           </div>
                         )
@@ -910,24 +918,6 @@ export default function AdminPage() {
                               <td className="px-4 py-4 text-right text-sm font-semibold">{user.reports}</td>
                               <td className="px-4 py-4">
                                 <div className="flex justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    title={actionTitle}
-                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
-                                    onClick={() =>
-                                      handleUserAction(user, user.status === "banned" ? "unblock" : "block")
-                                    }
-                                  >
-                                    <ActionIcon className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    title="Сообщение"
-                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
-                                    onClick={() => handleUserAction(user, "message")}
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -971,34 +961,6 @@ export default function AdminPage() {
                       </p>
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        className="rounded-2xl border border-border/70 px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-                        onClick={() => handleUserAction(selectedUser, "reset")}
-                      >
-                        Сбросить пароль
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-2xl bg-foreground px-4 py-2 text-xs font-semibold text-background transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/30"
-                        onClick={() => handleUserAction(selectedUser, "block")}
-                      >
-                        Заблокировать
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-2xl border border-border/70 px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-                        onClick={() => handleUserAction(selectedUser, "unblock")}
-                      >
-                        Снять бан
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-2xl border border-border/70 px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-                        onClick={() => handleUserAction(selectedUser, "message")}
-                      >
-                        Отправить сообщение
-                      </button>
                     </div>
                   </div>
 
@@ -1016,18 +978,7 @@ export default function AdminPage() {
                         { icon: Lock, label: "Security audit" },
                         { icon: MessageSquare, label: "Support inbox" },
                       ].map((item) => (
-                        <button
                           key={item.label}
-                          type="button"
-                          className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/30"
-                          onClick={() => toast.message(item.label)}
-                        >
-                          <span className="flex items-center gap-2">
-                            <item.icon className="h-4 w-4" />
-                            {item.label}
-                          </span>
-                          <span className="text-muted-foreground">&gt;</span>
-                        </button>
                       ))}
                     </div>
                   </div>
@@ -1050,17 +1001,6 @@ export default function AdminPage() {
                   <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Голосование</p>
                   <h2 className="text-2xl font-bold">Активные кампании</h2>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/30"
-                  onClick={() =>
-                    toast.success("Голосование создано", {
-                      description: "Черновик сохранен",
-                    })
-                  }
-                >
-                  Новое голосование
-                </button>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -1130,13 +1070,6 @@ export default function AdminPage() {
                         </div>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      className="mt-4 w-full rounded-2xl border border-border/70 px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
-                      onClick={() => toast.message("Открыт список модерации")}
-                    >
-                      Перейти к списку
-                    </button>
                   </div>
                 </div>
               </div>
@@ -1198,19 +1131,7 @@ export default function AdminPage() {
                       {timeRanges.map((range) => {
                         const isActive = rangeDays === range.days
                         return (
-                          <button
                             key={range.id}
-                            type="button"
-                            onClick={() => setRangeDays(range.days)}
-                            aria-pressed={isActive}
-                            className={`rounded-full px-3 py-1 transition-all duration-300 ${
-                              isActive
-                                ? "bg-foreground text-background shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            {range.label}
-                          </button>
                         )
                       })}
                     </div>
