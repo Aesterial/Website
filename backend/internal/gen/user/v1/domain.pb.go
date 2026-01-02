@@ -29,7 +29,8 @@ type UserPublic struct {
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Rank          *Rank                  `protobuf:"bytes,3,opt,name=rank,proto3" json:"rank,omitempty"`
 	Settings      *UserPublicSettings    `protobuf:"bytes,4,opt,name=settings,proto3,oneof" json:"settings,omitempty"`
-	JoinedAt      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=joinedAt,proto3" json:"joinedAt,omitempty"`
+	Banned        bool                   `protobuf:"varint,5,opt,name=banned,proto3" json:"banned,omitempty"`
+	JoinedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=joinedAt,proto3" json:"joinedAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,6 +91,13 @@ func (x *UserPublic) GetSettings() *UserPublicSettings {
 		return x.Settings
 	}
 	return nil
+}
+
+func (x *UserPublic) GetBanned() bool {
+	if x != nil {
+		return x.Banned
+	}
+	return false
 }
 
 func (x *UserPublic) GetJoinedAt() *timestamppb.Timestamp {
@@ -1191,14 +1199,15 @@ var File_user_domain_proto protoreflect.FileDescriptor
 
 const file_user_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x11user/domain.proto\x12\auser.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"\xe6\x01\n" +
+	"\x11user/domain.proto\x12\auser.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"\xfe\x01\n" +
 	"\n" +
 	"UserPublic\x12\x16\n" +
 	"\x06userID\x18\x01 \x01(\rR\x06userID\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12!\n" +
 	"\x04rank\x18\x03 \x01(\v2\r.user.v1.RankR\x04rank\x12<\n" +
-	"\bsettings\x18\x04 \x01(\v2\x1b.user.v1.UserPublicSettingsH\x00R\bsettings\x88\x01\x01\x126\n" +
-	"\bjoinedAt\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAtB\v\n" +
+	"\bsettings\x18\x04 \x01(\v2\x1b.user.v1.UserPublicSettingsH\x00R\bsettings\x88\x01\x01\x12\x16\n" +
+	"\x06banned\x18\x05 \x01(\bR\x06banned\x126\n" +
+	"\bjoinedAt\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAtB\v\n" +
 	"\t_settings\"a\n" +
 	"\bUserSelf\x12+\n" +
 	"\x06public\x18\x01 \x01(\v2\x13.user.v1.UserPublicR\x06public\x12(\n" +
