@@ -49,7 +49,7 @@ import {
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { useLanguage } from "@/components/language-provider"
-import { fetchUserBanInfo, fetchUsers, type BanInfo } from "@/lib/api"
+import { fetchUserBanInfo, fetchUsers, handleBannedUser, type BanInfo } from "@/lib/api"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,39 +77,39 @@ const statsCards: Array<{
   note: string
   icon: typeof Users
 }> = [
-  {
-    id: "activeUsers",
-    title: "Активные пользователи",
-    value: "3 482",
-    delta: "+12%",
-    note: "за сутки",
-    icon: Users,
-  },
-  {
-    id: "offlineUsers",
-    title: "Оффлайн",
-    value: "214",
-    delta: "-3%",
-    note: "сейчас не в сети",
-    icon: UserX,
-  },
-  {
-    id: "newIdeas",
-    title: "Новых идей",
-    value: "128",
-    delta: "+18%",
-    note: "за сутки",
-    icon: TrendingUp,
-  },
-  {
-    id: "votes",
-    title: "Голосов сегодня",
-    value: "1 946",
-    delta: "+9%",
-    note: "с 00:00",
-    icon: Vote,
-  },
-]
+    {
+      id: "activeUsers",
+      title: "Активные пользователи",
+      value: "3 482",
+      delta: "+12%",
+      note: "за сутки",
+      icon: Users,
+    },
+    {
+      id: "offlineUsers",
+      title: "Оффлайн",
+      value: "214",
+      delta: "-3%",
+      note: "сейчас не в сети",
+      icon: UserX,
+    },
+    {
+      id: "newIdeas",
+      title: "Новых идей",
+      value: "128",
+      delta: "+18%",
+      note: "за сутки",
+      icon: TrendingUp,
+    },
+    {
+      id: "votes",
+      title: "Голосов сегодня",
+      value: "1 946",
+      delta: "+9%",
+      note: "с 00:00",
+      icon: Vote,
+    },
+  ]
 
 type UserStatus = "active" | "banned"
 
@@ -382,16 +382,20 @@ async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   }
 
   let message = `Request failed (${response.status})`
+  let data: { error?: string; data?: unknown } | null = null
   try {
-    const data = (await response.json()) as { error?: string }
-    if (data?.error) {
-      message = data.error
-    }
+    data = (await response.json()) as { error?: string; data?: unknown }
   } catch {
     const text = await response.text()
     if (text) {
       message = text
     }
+  }
+  if (data?.error) {
+    message = data.error
+  }
+  if (response.status === 401 && data?.data === "user is banned") {
+    await handleBannedUser({ signal })
   }
   throw new Error(message)
 }
@@ -917,109 +921,116 @@ export default function AdminPage() {
                     </div>
                     <div className="hidden overflow-hidden rounded-2xl border border-border/60 sm:block">
                       <table className="w-full text-left text-sm">
-                      <thead className="bg-muted/60 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                        <tr>
-                          <th className="px-4 py-3">Пользователь</th>
-                          <th className="px-4 py-3">Роль</th>
-                          <th className="px-4 py-3">Статус</th>
-                          <th className="px-4 py-3 text-right">Жалобы</th>
-                          <th className="px-4 py-3 text-right">Действия</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((user) => {
-                          const ActionIcon = user.status === "banned" ? CheckCircle2 : Ban
-                          const actionTitle = user.status === "banned" ? "Снять бан" : "Заблокировать"
+                        <thead className="bg-muted/60 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          <tr>
+                            <th className="px-4 py-3">Пользователь</th>
+                            <th className="px-4 py-3">Роль</th>
+                            <th className="px-4 py-3">Статус</th>
+                            <th className="px-4 py-3 text-right">Жалобы</th>
+                            <th className="px-4 py-3 text-right">Действия</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users.map((user) => {
+                            const ActionIcon = user.status === "banned" ? CheckCircle2 : Ban
+                            const actionTitle = user.status === "banned" ? "Снять бан" : "Заблокировать"
+
+                            return (
+                              <tr key={user.id} className="border-t border-border/50">
+                                <td className="px-4 py-4">
+                                  <div className="font-semibold">{user.name}</div>
+                                  <div className="text-xs text-muted-foreground">{user.email}</div>
+                                  <div className="text-xs text-muted-foreground">{user.lastActive}</div>
+                                </td>
+                                <td className="px-4 py-4 text-sm">{user.role}</td>
+                                <td className="px-4 py-4">
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${user.status === "banned" ? "bg-destructive/10 text-destructive" : "bg-foreground text-background"}`}
+                                  >
+                                    {user.status === "banned" ? "Banned" : "Active"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-4 text-right text-sm font-semibold">{user.reports}</td>
+                                <td className="px-4 py-4">
+                                  <div className="flex justify-end gap-2">
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="order-2 flex flex-col gap-6">
+                    <div className="rounded-3xl border border-border/70 bg-card/90 p-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">Блокировка пользоваzтеля</p>
+                          <p className="text-xs text-muted-foreground">Текущий выбор</p>
+                        </div>
+                        <Ban className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Пользователь</label>
+                        <select
+                          className="w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
+                          value={selectedUserId ?? ""}
+                          onChange={(event) => {
+                            const nextValue = Number(event.target.value)
+                            setSelectedUserId(Number.isFinite(nextValue) ? nextValue : null)
+                          }}
+                        >
+                          {users.map((user) => (
+                            <option key={user.id} value={user.userID}>
+                              {user.name}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Причина</label>
+                        <textarea
+                          className="min-h-[90px] w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
+                          value={banReason}
+                          onChange={(event) => setBanReason(event.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Эта причина будет показана пользователю на странице блокировки.
+                        </p>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-border/70 bg-card/90 p-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">Быстрые действия</p>
+                          <p className="text-xs text-muted-foreground">Администрирование</p>
+                        </div>
+                        <Shield className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="mt-4 space-y-3 text-sm">
+                        {[
+                          { icon: CheckCircle2, label: 'Review approvals' },
+                          { icon: Lock, label: 'Security audit' },
+                          { icon: MessageSquare, label: 'Support inbox' },
+                        ].map((item) => {
+                          const Icon = item.icon;
 
                           return (
-                            <tr key={user.id} className="border-t border-border/50">
-                              <td className="px-4 py-4">
-                                <div className="font-semibold">{user.name}</div>
-                                <div className="text-xs text-muted-foreground">{user.email}</div>
-                                <div className="text-xs text-muted-foreground">{user.lastActive}</div>
-                              </td>
-                              <td className="px-4 py-4 text-sm">{user.role}</td>
-                              <td className="px-4 py-4">
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${user.status === "banned" ? "bg-destructive/10 text-destructive" : "bg-foreground text-background"}`}
-                                >
-                                  {user.status === "banned" ? "Banned" : "Active"}
-                                </span>
-                              </td>
-                              <td className="px-4 py-4 text-right text-sm font-semibold">{user.reports}</td>
-                              <td className="px-4 py-4">
-                                <div className="flex justify-end gap-2">
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="order-2 flex flex-col gap-6">
-                  <div className="rounded-3xl border border-border/70 bg-card/90 p-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">Блокировка пользоваzтеля</p>
-                        <p className="text-xs text-muted-foreground">Текущий выбор</p>
+                            <div key={item.label} className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span>{item.label}</span>
+                            </div>
+                          );
+                        })} {/* i fuck prettier, where my fucking formatter.... */}
                       </div>
-                      <Ban className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Пользователь</label>
-                      <select
-                        className="w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
-                        value={selectedUserId ?? ""}
-                        onChange={(event) => {
-                          const nextValue = Number(event.target.value)
-                          setSelectedUserId(Number.isFinite(nextValue) ? nextValue : null)
-                        }}
-                      >
-                        {users.map((user) => (
-                          <option key={user.id} value={user.userID}>
-                            {user.name}
-                          </option>
-                        ))}
-                      </select>
-                      <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Причина</label>
-                      <textarea
-                        className="min-h-[90px] w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
-                        value={banReason}
-                        onChange={(event) => setBanReason(event.target.value)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Эта причина будет показана пользователю на странице блокировки.
-                      </p>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-border/70 bg-card/90 p-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">Быстрые действия</p>
-                        <p className="text-xs text-muted-foreground">Администрирование</p>
-                      </div>
-                      <Shield className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="mt-4 space-y-3 text-sm">
-                      {[
-                        { icon: CheckCircle2, label: "Review approvals" },
-                        { icon: Lock, label: "Security audit" },
-                        { icon: MessageSquare, label: "Support inbox" },
-                      ].map((item) => (
-                          key={item.label}
-                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.section>
+            </motion.section>
 
             <motion.section
               id="voting"
@@ -1165,7 +1176,7 @@ export default function AdminPage() {
                       {timeRanges.map((range) => {
                         const isActive = rangeDays === range.days
                         return (
-                            key={range.id}
+                          key = { range.id }
                         )
                       })}
                     </div>

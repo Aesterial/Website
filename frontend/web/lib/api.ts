@@ -108,6 +108,8 @@ function isApiUserResponse(payload: ApiUser | ApiUserResponse): payload is ApiUs
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL
 
+const BAN_STORAGE_KEY = "banInfo"
+
 function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const user: ApiUser | null = isApiUserResponse(payload) ? (payload.data ?? null) : payload
 
@@ -150,13 +152,24 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`
+    let data: { error?: string; data?: unknown } | null = null
     try {
-      const data = (await response.json()) as { error?: string }
-      if (data?.error) {
-        message = data.error
-      }
+      data = (await response.json()) as { error?: string; data?: unknown }
     } catch {
-      message = response.statusText || message
+      const text = await response.text()
+      if (text) {
+        message = text
+      } else if (response.statusText) {
+        message = response.statusText
+      }
+    }
+
+    if (data?.error) {
+      message = data.error
+    }
+
+    if (response.status === 401 && data?.data === "user is banned") {
+      await handleBannedUser({ signal: init?.signal })
     }
     throw new ApiError(response.status, message)
   }
@@ -166,6 +179,38 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (await response.json()) as T
+}
+
+export async function handleBannedUser(options?: { signal?: AbortSignal }) {
+  if (typeof window === "undefined") {
+    return
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/user/ban/info`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+      },
+      signal: options?.signal,
+    })
+    if (response.ok) {
+      const payload = (await response.json()) as ApiBanInfoResponse
+      const banInfo: BanInfo = {
+        id: payload?.id,
+        reason: payload?.reason,
+        at: payload?.at,
+        expires: payload?.expires ?? null,
+      }
+      window.sessionStorage.setItem(BAN_STORAGE_KEY, JSON.stringify(banInfo))
+    } else {
+      window.sessionStorage.removeItem(BAN_STORAGE_KEY)
+    }
+  } catch {
+    window.sessionStorage.removeItem(BAN_STORAGE_KEY)
+  }
+
+  window.location.assign("/banned")
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<void> {

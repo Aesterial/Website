@@ -19,6 +19,7 @@ import {
 import { Logo } from "@/components/logo"
 import { useAuth } from "@/components/auth-provider"
 import { useLanguage } from "@/components/language-provider"
+import { handleBannedUser } from "@/lib/api"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,17 +74,21 @@ async function postDecision(path: string, payload?: unknown) {
     return
   }
 
-  let message = `Ошибка запроса (${response.status})`
+  let message = `Request failed (${response.status})`
+  let data: { error?: string; data?: unknown } | null = null
   try {
-    const data = (await response.json()) as { error?: string }
-    if (data?.error) {
-      message = data.error
-    }
+    data = (await response.json()) as { error?: string; data?: unknown }
   } catch {
     const text = await response.text()
     if (text) {
       message = text
     }
+  }
+  if (data?.error) {
+    message = data.error
+  }
+  if (response.status === 401 && data?.data === "user is banned") {
+    await handleBannedUser()
   }
   throw new Error(message)
 }

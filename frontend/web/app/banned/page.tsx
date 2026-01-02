@@ -3,10 +3,52 @@
 import { motion } from "framer-motion"
 import { Ban, ShieldAlert } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import type { BanInfo } from "@/lib/api"
 
+const BAN_STORAGE_KEY = "banInfo"
 const banReason = "Спам, мультиаккаунты, повторные жалобы"
 
+const banDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
+const formatBanDate = (value?: string | null) => {
+  if (!value) {
+    return "-"
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return "-"
+  }
+  return banDateFormatter.format(date)
+}
+
 export default function BannedPage() {
+  const [banInfo, setBanInfo] = useState<BanInfo | null>(null)
+
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem(BAN_STORAGE_KEY)
+    if (!stored) {
+      return
+    }
+    try {
+      const parsed = JSON.parse(stored) as BanInfo
+      setBanInfo(parsed ?? null)
+    } catch {
+      setBanInfo(null)
+    }
+  }, [])
+
+  const reasonText = banInfo?.reason || banReason
+  const bannedAt = formatBanDate(banInfo?.at ?? null)
+  const expiresAt = banInfo?.expires ? formatBanDate(banInfo.expires) : "Permanent"
+
+
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
       <div className="pointer-events-none absolute -top-32 right-0 h-[26rem] w-[26rem] rounded-full bg-foreground/10 blur-3xl" />
@@ -39,9 +81,21 @@ export default function BannedPage() {
               <ShieldAlert className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Причина</p>
-                <p className="text-sm">{banReason}</p>
+                <p className="text-sm">{reasonText}</p>
               </div>
             </div>
+            {banInfo && (
+              <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="uppercase tracking-[0.2em]">Banned at</span>
+                  <span className="text-sm font-semibold text-foreground">{bannedAt}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="uppercase tracking-[0.2em]">Expires</span>
+                  <span className="text-sm font-semibold text-foreground">{expiresAt}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex justify-center">
