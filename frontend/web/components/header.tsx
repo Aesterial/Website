@@ -91,9 +91,9 @@ export function Header() {
   const mobileNavItems = [
     { href: "/voting", label: t("voting"), icon: Users },
     { href: "/suggest", label: t("suggestIdea"), icon: Lightbulb },
-    { href: "/support", label: "Задать вопрос", icon: MessageSquare },
+    { href: "/support", label: t("askQuestion"), icon: MessageSquare },
     ...(status === "authenticated"
-      ? [{ href: "/account", label: "Account", icon: UserCircle }]
+      ? [{ href: "/account", label: t("account"), icon: UserCircle }]
       : [{ href: "/auth", label: t("login"), icon: LogIn }]),
     ...(hasAdminAccess ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
@@ -337,9 +337,7 @@ export function Header() {
           <Link href="/suggest" className="text-foreground/70 hover:text-foreground transition-colors duration-300">
             {t("suggestIdea")}
           </Link>
-          <Link href="/support" className="text-foreground/70 hover:text-foreground transition-colors duration-300">
-            Задать вопрос
-          </Link>
+          <Link href="/support" className="text-foreground/70 hover:text-foreground transition-colors duration-300">{t("askQuestion")}</Link>
 
           <div className="relative" ref={cityRef}>
             <motion.button
@@ -500,14 +498,14 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Account</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{t("account")}</p>
                   <p className="text-sm font-semibold">{displayName || user.username}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/account">
                     <Settings className="h-4 w-4" />
-                    Account settings
+                    {t("accountSettings")}
                   </Link>
                 </DropdownMenuItem>
                 {hasAdminAccess ? (

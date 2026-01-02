@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Mail, Shield, User } from "lucide-react"
 import { Header } from "@/components/header"
+import { useLanguage } from "@/components/language-provider"
 import { useAuth } from "@/components/auth-provider"
 import { GradientButton } from "@/components/gradient-button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -23,10 +24,16 @@ const getInitials = (value: string) => {
 export default function AccountPage() {
   const router = useRouter()
   const { user, status, updateDisplayName } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
   const [displayName, setDisplayName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const languageOptions = [
+    { code: "RU" as const, label: "RU" },
+    { code: "EN" as const, label: "EN" },
+    { code: "KZ" as const, label: "KZ" },
+  ]
 
   useEffect(() => {
     if (status === "anonymous") {
@@ -91,8 +98,8 @@ export default function AccountPage() {
       <main className="pt-24 pb-12 px-4 sm:pt-28 sm:pb-16 sm:px-6">
         <div className="container mx-auto max-w-3xl space-y-6">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h1 className="text-3xl font-bold mb-2 sm:text-4xl">Account settings</h1>
-            <p className="text-muted-foreground">Update your display name and review account details.</p>
+            <h1 className="text-3xl font-bold mb-2 sm:text-4xl">{t("accountSettings")}</h1>
+            <p className="text-muted-foreground">{t("accountSettingsSubtitle")}</p>
           </motion.div>
 
           <motion.div
@@ -107,25 +114,33 @@ export default function AccountPage() {
               </Avatar>
               <div>
                 <p className="text-lg font-semibold">{user.displayName || user.username}</p>
-                <p className="text-sm text-muted-foreground">User ID: {user.uid}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("userIdLabel")}: {user.uid}
+                </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-3 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>Username: {user.username}</span>
+                <span>
+                  {t("usernameLabel")}: {user.username}
+                </span>
               </div>
               {user.email ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>Email: {user.email}</span>
+                  <span>
+                    {t("emailLabel")}: {user.email}
+                  </span>
                 </div>
               ) : null}
               {user.rank?.name ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>Role: {user.rank.name}</span>
+                  <span>
+                    {t("roleLabel")}: {user.rank.name}
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -139,12 +154,12 @@ export default function AccountPage() {
             transition={{ duration: 0.4, delay: 0.2 }}
           >
             <div className="space-y-3">
-              <label className="block text-sm font-medium">Display name</label>
+              <label className="block text-sm font-medium">{t("displayNameLabel")}</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Enter display name"
+                placeholder={t("displayNamePlaceholder")}
                 className="w-full bg-background border border-border rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
               />
               {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
@@ -153,10 +168,41 @@ export default function AccountPage() {
 
             <div className="mt-5">
               <GradientButton type="submit" className="w-full justify-center sm:w-auto" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save changes"}
+                {isSaving ? t("saving") : t("saveChanges")}
               </GradientButton>
             </div>
           </motion.form>
+
+          <motion.div
+            className="rounded-3xl border border-border/70 bg-card/90 p-6"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <div>
+              <p className="text-sm font-semibold">{t("languageLabel")}</p>
+              <p className="text-xs text-muted-foreground">{t("languageDescription")}</p>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {languageOptions.map((option) => {
+                const isActive = language === option.code
+                return (
+                  <button
+                    key={option.code}
+                    type="button"
+                    onClick={() => setLanguage(option.code)}
+                    className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
+                      isActive
+                        ? "bg-foreground text-background shadow-md shadow-foreground/20"
+                        : "bg-muted/60 text-foreground/70 hover:bg-foreground hover:text-background"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          </motion.div>
         </div>
       </main>
     </div>

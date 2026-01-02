@@ -53,8 +53,16 @@ const sidebarItems = [
   { id: "media", label: "Медиа", icon: ImageIcon, href: "#media" },
 ]
 
-const statsCards = [
+const statsCards: Array<{
+  id: StatCardId
+  title: string
+  value: string
+  delta: string
+  note: string
+  icon: typeof Users
+}> = [
   {
+    id: "activeUsers",
     title: "Активные пользователи",
     value: "3 482",
     delta: "+12%",
@@ -62,6 +70,7 @@ const statsCards = [
     icon: Users,
   },
   {
+    id: "offlineUsers",
     title: "Оффлайн",
     value: "214",
     delta: "-3%",
@@ -69,6 +78,7 @@ const statsCards = [
     icon: UserX,
   },
   {
+    id: "newIdeas",
     title: "Новых идей",
     value: "128",
     delta: "+18%",
@@ -76,6 +86,7 @@ const statsCards = [
     icon: TrendingUp,
   },
   {
+    id: "votes",
     title: "Голосов сегодня",
     value: "1 946",
     delta: "+9%",
@@ -127,16 +138,6 @@ type User = (typeof users)[number]
 
 type SubmissionState = "pending" | "approved" | "declined"
 
-type SubmissionsListResponse = {
-  data?: Array<{
-    state?: string
-    info?: {
-      createdAt?: string
-      created_at?: string
-    }
-  }>
-}
-
 type UsersActivityResponse = {
   data?: Record<string, { active?: number; offline?: number }>
 }
@@ -144,6 +145,35 @@ type UsersActivityResponse = {
 type VoteCategoriesResponse = {
   record?: Array<{ name?: string; posts?: number }>
 }
+
+type CountResponse = {
+  count?: number
+}
+
+type IdeasRecapResponse = {
+  approved?: number
+  waiting?: number
+  declined?: number
+}
+
+type EditorsGrade = {
+  good?: number
+  bad?: number
+}
+
+type EditorsGradeResponse = {
+  photos?: EditorsGrade
+  videos?: EditorsGrade
+  graphics?: EditorsGrade
+}
+
+type MediaCoverageResponse = {
+  medias?: Record<string, { photos?: number; videos?: number }>
+}
+
+type StatCardId = "activeUsers" | "offlineUsers" | "newIdeas" | "votes"
+
+type StatsSummary = Record<StatCardId, number | null>
 
 const timeRanges = [
   { id: "day", label: "24h", days: 1 },
@@ -195,11 +225,17 @@ const statusSeed = [
   { name: "Declined", value: 0, key: "declined" },
 ]
 
-const mediaData = [
+const mediaSeed = [
   { week: "Нед 1", photos: 240, videos: 110 },
   { week: "Нед 2", photos: 280, videos: 140 },
   { week: "Нед 3", photos: 320, videos: 160 },
   { week: "Нед 4", photos: 360, videos: 180 },
+]
+
+const qualitySeed = [
+  { key: "photos", label: "Photos", score: 0 },
+  { key: "videos", label: "Videos", score: 0 },
+  { key: "graphics", label: "Graphics", score: 0 },
 ]
 
 
@@ -293,26 +329,27 @@ const formatActivityLabel = (timestampMs: number, rangeDays: number) => {
   return rangeDays <= 1 ? timeLabelFormatter.format(date) : dayLabelFormatter.format(date)
 }
 
-const normalizeSubmissionState = (state?: string): SubmissionState | null => {
-  if (!state) {
-    return null
-  }
+const fullNumberFormatter = new Intl.NumberFormat("en-US")
 
-  switch (state.toLowerCase()) {
-    case "approved":
-      return "approved"
-    case "declined":
-      return "declined"
-    case "waiting":
-    case "pending":
-      return "pending"
-    default:
-      return null
+const formatFullNumber = (value: number) => fullNumberFormatter.format(value)
+
+const formatMediaLabel = (timestampMs: number) => dayLabelFormatter.format(new Date(timestampMs))
+
+const toQualityScore = (grade?: EditorsGrade) => {
+  const good = Number(grade?.good ?? 0)
+  const bad = Number(grade?.bad ?? 0)
+  const total = good + bad
+  if (total <= 0) {
+    return 0
   }
+  return Math.round((good / total) * 100)
 }
 
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080"
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, "")
+
 async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
     headers: {
       Accept: "application/json",
@@ -343,9 +380,17 @@ export default function AdminPage() {
   const { theme, toggleTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [rangeDays, setRangeDays] = useState(timeRanges[2].days)
+  const [statsSummary, setStatsSummary] = useState<StatsSummary>({
+    activeUsers: null,
+    offlineUsers: null,
+    newIdeas: null,
+    votes: null,
+  })
   const [activityData, setActivityData] = useState(activitySeed)
   const [statusData, setStatusData] = useState(statusSeed)
   const [votingData, setVotingData] = useState(votingSeed)
+  const [mediaData, setMediaData] = useState(mediaSeed)
+  const [qualityScores, setQualityScores] = useState(qualitySeed)
   const [selectedUserId, setSelectedUserId] = useState(users[0].id)
   const [banReason, setBanReason] = useState("Спам, мультиаккаунты, повторные жалобы")
   // const push = useRouter();
@@ -356,12 +401,29 @@ export default function AdminPage() {
   useEffect(() => {
     const controller = new AbortController()
     const sinceMs = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const sinceParam = encodeURIComponent(new Date(sinceMs).toISOString())
 
     const load = async () => {
-      const [activityResult, submissionsResult, votesResult] = await Promise.allSettled([
+      const [
+        activityResult,
+        categoriesResult,
+        votesDayResult,
+        ideasDayResult,
+        activeUsersResult,
+        offlineUsersResult,
+        ideasRecapResult,
+        qualityRecapResult,
+        mediaCoverageResult,
+      ] = await Promise.allSettled([
         requestJson<UsersActivityResponse>(`/api/statistics/activity/users/${rangeDays}`, controller.signal),
-        requestJson<SubmissionsListResponse>("/api/submissions/list", controller.signal),
         requestJson<VoteCategoriesResponse>("/api/statistics/categories/4", controller.signal),
+        requestJson<CountResponse>("/api/statistics/votes", controller.signal),
+        requestJson<CountResponse>("/api/statistics/ideas", controller.signal),
+        requestJson<CountResponse>(`/api/statistics/users/active/${sinceParam}`, controller.signal),
+        requestJson<CountResponse>(`/api/statistics/users/offline/${sinceParam}`, controller.signal),
+        requestJson<IdeasRecapResponse>("/api/statistics/ideas/recap", controller.signal),
+        requestJson<EditorsGradeResponse>("/api/statistics/quality/recap", controller.signal),
+        requestJson<MediaCoverageResponse>("/api/statistics/media/coverage?limit=4", controller.signal),
       ])
 
       if (controller.signal.aborted) {
@@ -396,54 +458,117 @@ export default function AdminPage() {
         })
       }
 
-      if (submissionsResult.status === "fulfilled") {
-        const counts: Record<SubmissionState, number> = {
-          pending: 0,
-          approved: 0,
-          declined: 0,
-        }
-
-        for (const item of submissionsResult.value?.data ?? []) {
-          const state = normalizeSubmissionState(item.state)
-          if (!state) {
-            continue
-          }
-
-          const createdAt = item.info?.createdAt ?? item.info?.created_at
-          if (createdAt) {
-            const parsed = Date.parse(createdAt)
-            if (!Number.isNaN(parsed) && parsed < sinceMs) {
-              continue
-            }
-          }
-
-          counts[state] += 1
-        }
-
-        setStatusData([
-          { key: "pending", name: submissionStatusLabels.pending, value: counts.pending },
-          { key: "approved", name: submissionStatusLabels.approved, value: counts.approved },
-          { key: "declined", name: submissionStatusLabels.declined, value: counts.declined },
-        ])
-      } else if (submissionsResult.reason) {
-        toast.error("Failed to load submission statuses", {
-          description: submissionsResult.reason instanceof Error ? submissionsResult.reason.message : undefined,
-        })
-      }
-
-      if (votesResult.status === "fulfilled") {
-        const records = votesResult.value?.record ?? []
+      if (categoriesResult.status === "fulfilled") {
+        const records = categoriesResult.value?.record ?? []
         setVotingData(
           records.map((record) => ({
             category: record?.name ?? "Unknown",
             votes: record?.posts ?? 0,
           })),
         )
-      } else if (votesResult.reason) {
+      } else if (categoriesResult.reason) {
         toast.error("Failed to load vote categories", {
-          description: votesResult.reason instanceof Error ? votesResult.reason.message : undefined,
+          description: categoriesResult.reason instanceof Error ? categoriesResult.reason.message : undefined,
         })
       }
+
+      if (votesDayResult.status !== "fulfilled" && votesDayResult.reason) {
+        toast.error("Failed to load vote count", {
+          description: votesDayResult.reason instanceof Error ? votesDayResult.reason.message : undefined,
+        })
+      }
+
+      if (ideasDayResult.status !== "fulfilled" && ideasDayResult.reason) {
+        toast.error("Failed to load ideas count", {
+          description: ideasDayResult.reason instanceof Error ? ideasDayResult.reason.message : undefined,
+        })
+      }
+
+      if (activeUsersResult.status !== "fulfilled" && activeUsersResult.reason) {
+        toast.error("Failed to load active users", {
+          description: activeUsersResult.reason instanceof Error ? activeUsersResult.reason.message : undefined,
+        })
+      }
+
+      if (offlineUsersResult.status !== "fulfilled" && offlineUsersResult.reason) {
+        toast.error("Failed to load offline users", {
+          description: offlineUsersResult.reason instanceof Error ? offlineUsersResult.reason.message : undefined,
+        })
+      }
+
+      if (ideasRecapResult.status === "fulfilled") {
+        const approved = Number(ideasRecapResult.value?.approved ?? 0)
+        const waiting = Number(ideasRecapResult.value?.waiting ?? 0)
+        const declined = Number(ideasRecapResult.value?.declined ?? 0)
+
+        setStatusData([
+          { key: "pending", name: submissionStatusLabels.pending, value: waiting },
+          { key: "approved", name: submissionStatusLabels.approved, value: approved },
+          { key: "declined", name: submissionStatusLabels.declined, value: declined },
+        ])
+      } else if (ideasRecapResult.reason) {
+        toast.error("Failed to load ideas recap", {
+          description: ideasRecapResult.reason instanceof Error ? ideasRecapResult.reason.message : undefined,
+        })
+      }
+
+      if (qualityRecapResult.status === "fulfilled") {
+        const grade = qualityRecapResult.value ?? {}
+        setQualityScores([
+          { key: "photos", label: "Photos", score: toQualityScore(grade.photos) },
+          { key: "videos", label: "Videos", score: toQualityScore(grade.videos) },
+          { key: "graphics", label: "Graphics", score: toQualityScore(grade.graphics) },
+        ])
+      } else if (qualityRecapResult.reason) {
+        toast.error("Failed to load quality recap", {
+          description: qualityRecapResult.reason instanceof Error ? qualityRecapResult.reason.message : undefined,
+        })
+      }
+
+      if (mediaCoverageResult.status === "fulfilled") {
+        const records = Object.entries(mediaCoverageResult.value?.medias ?? {})
+          .map(([key, value]) => {
+            const timestamp = Number(key)
+            if (!Number.isFinite(timestamp)) {
+              return null
+            }
+            return {
+              timestamp: normalizeTimestampMs(timestamp),
+              photos: Number(value?.photos ?? 0),
+              videos: Number(value?.videos ?? 0),
+            }
+          })
+          .filter((item): item is { timestamp: number; photos: number; videos: number } => Boolean(item))
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((item) => ({
+            week: formatMediaLabel(item.timestamp),
+            photos: item.photos,
+            videos: item.videos,
+          }))
+
+        setMediaData(records)
+      } else if (mediaCoverageResult.reason) {
+        toast.error("Failed to load media coverage", {
+          description: mediaCoverageResult.reason instanceof Error ? mediaCoverageResult.reason.message : undefined,
+        })
+      }
+
+      setStatsSummary((prev) => ({
+        activeUsers:
+          activeUsersResult.status === "fulfilled"
+            ? Number(activeUsersResult.value?.count ?? 0)
+            : prev.activeUsers,
+        offlineUsers:
+          offlineUsersResult.status === "fulfilled"
+            ? Number(offlineUsersResult.value?.count ?? 0)
+            : prev.offlineUsers,
+        newIdeas:
+          ideasDayResult.status === "fulfilled"
+            ? Number(ideasDayResult.value?.count ?? 0)
+            : prev.newIdeas,
+        votes:
+          votesDayResult.status === "fulfilled" ? Number(votesDayResult.value?.count ?? 0) : prev.votes,
+      }))
     }
 
     load()
@@ -862,9 +987,9 @@ export default function AdminPage() {
                     </div>
                     <div className="mt-4 space-y-3 text-sm">
                       {[
-                        { icon: CheckCircle2, label: "Проверить жалобы" },
-                        { icon: Lock, label: "Усилить модерацию" },
-                        { icon: MessageSquare, label: "Шаблоны ответов" },
+                        { icon: CheckCircle2, label: "Review approvals" },
+                        { icon: Lock, label: "Security audit" },
+                        { icon: MessageSquare, label: "Support inbox" },
                       ].map((item) => (
                         <button
                           key={item.label}
@@ -1013,23 +1138,28 @@ export default function AdminPage() {
                 viewport={{ once: true, amount: 0.3 }}
                 className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
               >
-                {statsCards.map((card) => (
-                  <motion.div
-                    key={card.title}
-                    variants={cardVariants}
-                    className="rounded-3xl border border-border/70 bg-card/90 p-5 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.5)]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-lg shadow-foreground/20">
-                        <card.icon className="h-5 w-5" />
+                {statsCards.map((card) => {
+                  const value = statsSummary[card.id]
+                  const displayValue = value == null ? card.value : formatFullNumber(value)
+
+                  return (
+                    <motion.div
+                      key={card.title}
+                      variants={cardVariants}
+                      className="rounded-3xl border border-border/70 bg-card/90 p-5 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.5)]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-lg shadow-foreground/20">
+                          <card.icon className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-semibold text-muted-foreground">{card.delta}</span>
                       </div>
-                      <span className="text-xs font-semibold text-muted-foreground">{card.delta}</span>
-                    </div>
-                    <div className="mt-4 text-2xl font-bold">{card.value}</div>
-                    <p className="text-sm font-semibold">{card.title}</p>
-                    <p className="text-xs text-muted-foreground">{card.note}</p>
-                  </motion.div>
-                ))}
+                      <div className="mt-4 text-2xl font-bold">{displayValue}</div>
+                      <p className="text-sm font-semibold">{card.title}</p>
+                      <p className="text-xs text-muted-foreground">{card.note}</p>
+                    </motion.div>
+                  )
+                })}
               </motion.div>
 
               <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -1203,17 +1333,14 @@ export default function AdminPage() {
                   <p className="text-sm font-semibold">Качество контента</p>
                   <p className="text-xs text-muted-foreground">Оценка редакторов</p>
                   <div className="mt-6 space-y-4 text-sm">
-                    {[
-                      { label: "Фотоотчеты", score: "92%" },
-                      { label: "Видеоистории", score: "87%" },
-                    ].map((item) => (
+                    {qualityScores.map((item) => (
                       <div key={item.label} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{item.label}</span>
-                          <span className="text-sm font-semibold">{item.score}</span>
+                          <span className="text-sm font-semibold">{item.score}%</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted">
-                          <div className="h-2 rounded-full bg-foreground" style={{ width: item.score }} />
+                          <div className="h-2 rounded-full bg-foreground" style={{ width: `${item.score}%` }} />
                         </div>
                       </div>
                     ))}

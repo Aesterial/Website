@@ -72,11 +72,17 @@ export class ApiError extends Error {
   }
 }
 
+
+function isApiUserResponse(payload: ApiUser | ApiUserResponse): payload is ApiUserResponse {
+  return typeof payload === "object" && payload !== null && "data" in payload
+}
+
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL
 
 function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
-  const user = "data" in payload ? payload.data ?? null : payload
+  const user: ApiUser | null = isApiUserResponse(payload) ? (payload.data ?? null) : payload
+
   if (!user) {
     throw new Error("Missing user payload.")
   }
@@ -84,6 +90,7 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const publicUser = user.public ?? undefined
   const uid = publicUser?.uid ?? publicUser?.userID ?? user.uid ?? user.userID
   const username = publicUser?.username ?? user.username
+
   if (uid == null || !username) {
     throw new Error("Missing user fields.")
   }
