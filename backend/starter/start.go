@@ -8,8 +8,10 @@ import (
 	userinfo "ascendant/backend/internal/app/info/user"
 	loggerservice "ascendant/backend/internal/app/logger"
 	usermodifier "ascendant/backend/internal/app/modifier/user"
+	appstatistics "ascendant/backend/internal/app/statistics"
 	loginpb "ascendant/backend/internal/gen/login/v1"
 	permspb "ascendant/backend/internal/gen/permissions/v1"
+	statpb "ascendant/backend/internal/gen/statistics/v1"
 	userpb "ascendant/backend/internal/gen/user/v1"
 	"ascendant/backend/internal/infra/db"
 	dbtest "ascendant/backend/internal/infra/db/test"
@@ -99,6 +101,7 @@ func main() {
 	loginRepo := db.NewLoginRepository(dbConn)
 	sessionsRepo := db.NewSessionsRepository(dbConn)
 	permissionsRepo := db.NewPermissionsRepository(dbConn)
+	statisticsRepo := db.NewStatisticsRepository(dbConn)
 
 	loggerServ := loggerservice.New(loggerRepo)
 
@@ -112,10 +115,12 @@ func main() {
 	userModifierService := usermodifier.New(userRepo)
 	permissionsService := permissionsinfo.New(permissionsRepo)
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
+	statService := appstatistics.New(statisticsRepo)
 
 	loginServer := grpcserver.NewLoginService(loginService)
 	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService)
 	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService)
+	statServer := grpcserver.NewStatService(statService)
 
 	gateway := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(gatewayHeaderMatcher),
@@ -131,6 +136,10 @@ func main() {
 	}
 	if err := permspb.RegisterPermissionsServiceHandlerServer(ctx, gateway, permissionsServer); err != nil {
 		logger.Error("Failed to register permissions gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
+	if err := statpb.RegisterStatisticsServiceHandlerServer(ctx, gateway, statServer); err != nil {
+		logger.Error("Failed to register statistics gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
 
@@ -154,6 +163,7 @@ func main() {
 	loginpb.RegisterLoginServiceServer(grpcServer, loginServer)
 	userpb.RegisterUserServiceServer(grpcServer, userServer)
 	permspb.RegisterPermissionsServiceServer(grpcServer, permissionsServer)
+	statpb.RegisterStatisticsServiceServer(grpcServer, statServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
 	handler := buildHTTPHandler(grpcServer, gateway, cors)
