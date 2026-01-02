@@ -23,3 +23,7 @@ message RegisterResponse {
   string data = 1;
   string tracing = 2;
 }
+
+message EmptyResponse {
+  string tracing = 1;
+}

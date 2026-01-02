@@ -237,6 +237,50 @@ func (x *RegisterResponse) GetTracing() string {
 	return ""
 }
 
+type EmptyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tracing       string                 `protobuf:"bytes,1,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmptyResponse) Reset() {
+	*x = EmptyResponse{}
+	mi := &file_login_domain_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmptyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmptyResponse) ProtoMessage() {}
+
+func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
+func (*EmptyResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *EmptyResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_login_domain_proto protoreflect.FileDescriptor
 
 const file_login_domain_proto_rawDesc = "" +
@@ -254,7 +298,9 @@ const file_login_domain_proto_rawDesc = "" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\"@\n" +
 	"\x10RegisterResponse\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\tR\x04data\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracingB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
+	"\atracing\x18\x02 \x01(\tR\atracing\")\n" +
+	"\rEmptyResponse\x12\x18\n" +
+	"\atracing\x18\x01 \x01(\tR\atracingB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var (
 	file_login_domain_proto_rawDescOnce sync.Once
@@ -268,12 +314,13 @@ func file_login_domain_proto_rawDescGZIP() []byte {
 	return file_login_domain_proto_rawDescData
 }
 
-var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_login_domain_proto_goTypes = []any{
 	(*AuthRequest)(nil),      // 0: login.v1.AuthRequest
 	(*AuthResponse)(nil),     // 1: login.v1.AuthResponse
 	(*RegisterRequest)(nil),  // 2: login.v1.RegisterRequest
 	(*RegisterResponse)(nil), // 3: login.v1.RegisterResponse
+	(*EmptyResponse)(nil),    // 4: login.v1.EmptyResponse
 }
 var file_login_domain_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -294,7 +341,7 @@ func file_login_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_login_domain_proto_rawDesc), len(file_login_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

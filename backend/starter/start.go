@@ -117,7 +117,7 @@ func main() {
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
 	statService := appstatistics.New(statisticsRepo)
 
-	loginServer := grpcserver.NewLoginService(loginService)
+	loginServer := grpcserver.NewLoginService(loginService, sessionsService, permissionsService)
 	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService)
 	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService)
 	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService)
