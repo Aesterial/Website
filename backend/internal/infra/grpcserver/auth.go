@@ -4,6 +4,7 @@ import (
 	"ascendant/backend/internal/app/config"
 	permissionsapp "ascendant/backend/internal/app/info/permissions"
 	sessionsapp "ascendant/backend/internal/app/info/sessions"
+	userapp "ascendant/backend/internal/app/info/user"
 	"ascendant/backend/internal/domain/permissions"
 	"ascendant/backend/internal/domain/user"
 	"ascendant/backend/internal/shared/types"
@@ -28,12 +29,14 @@ import (
 type Authenticator struct {
 	Sessions    *sessionsapp.Service
 	Permissions *permissionsapp.Service
+	User        *userapp.Service
 }
 
-func NewAuthenticator(sessions *sessionsapp.Service, perms *permissionsapp.Service) *Authenticator {
+func NewAuthenticator(sessions *sessionsapp.Service, perms *permissionsapp.Service, us *userapp.Service) *Authenticator {
 	return &Authenticator{
 		Sessions:    sessions,
 		Permissions: perms,
+		User:        us,
 	}
 }
 
@@ -68,6 +71,13 @@ func (a *Authenticator) RequireUser(ctx context.Context) (*user.RequestData, err
 	uid, err := a.Sessions.GetUID(ctx, sessionID)
 	if err != nil || uid == nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid session")
+	}
+	banned, _, err := a.User.IsBanned(ctx, *uid)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "failed to check ban state")
+	}
+	if banned {
+		return nil, status.Error(codes.Unauthenticated, "user is banned")
 	}
 
 	return &user.RequestData{UID: *uid, SessionID: sessionID}, nil

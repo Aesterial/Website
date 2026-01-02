@@ -89,7 +89,7 @@ func newLoginService(repo logindomain.Repository, sessionsRepo sessionsdomain.Re
 	userService := userinfo.New(userRepo, sessionsRepo)
 	loginService := loginapp.New(repo, sessionsService, userService)
 	permsService := permsapp.New(permsRepo)
-	return grpcserver.NewLoginService(loginService, sessionsService, permsService)
+	return grpcserver.NewLoginService(loginService, sessionsService, permsService, userService)
 }
 
 func newTestContext(method string) (context.Context, *transportStreamStub) {
@@ -184,6 +184,22 @@ func (s *sessionsRepoStub) UpdateLastSeen(ctx context.Context, sessionID uuid.UU
 
 type userRepoStub struct {
 	sessionLive time.Duration
+}
+
+func (u *userRepoStub) BanInfo(ctx context.Context, uid uint) (*userdomain.BanInfo, error) {
+	return nil, nil
+}
+
+func (u *userRepoStub) Ban(ctx context.Context, info userdomain.BanInfo) error {
+	return nil
+}
+
+func (u *userRepoStub) IsBanned(ctx context.Context, uid uint) (bool, *userdomain.BanInfo, error) {
+	return false, nil, nil
+}
+
+func (u *userRepoStub) UnBan(ctx context.Context, uid uint) error {
+	return nil
 }
 
 func (u *userRepoStub) GetList(ctx context.Context) ([]*userpb.UserSelf, error) {

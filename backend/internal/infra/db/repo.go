@@ -294,6 +294,52 @@ func (u *UserRepository) UpdateDisplayName(ctx context.Context, uid uint, displa
 	return nil
 }
 
+func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {
+	if uid == 0 {
+		return false, nil, errors.New("uid is zero")
+	}
+	var found bool
+	var id uuid.UUID
+	if err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM bans b WHERE b.target = $1) id FROM bans b WHERE b.target = $1", uid).Scan(&found, &id); err != nil {
+		return false, nil, err
+	}
+	if !found {
+		return false, nil, nil
+	}
+	info, err := u.BanInfo(ctx, uid)
+	if err != nil {
+		return false, nil, err
+	}
+	return found, info, nil
+}
+
+func (u *UserRepository) Ban(ctx context.Context, info user.BanInfo) error {
+	if info.Executor == 0 || info.Target == 0 || info.Reason == "" || info.Expires.Time.IsZero() {
+		return errors.New("invalid argument")
+	}
+	_, err := u.DB.ExecContext(ctx, "INSERT INTO bans (executor, target, reason, expires) VALUES ($1, $2, $3, $4)", info.Executor, info.Target, info.Reason, info.Expires.Time)
+	return err
+}
+
+func (u *UserRepository) UnBan(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return errors.New("uid is zero")
+	}
+	_, err := u.DB.ExecContext(ctx, "DELETE FROM bans b WHERE b.target = $1", uid)
+	return err
+}
+
+func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is zero")
+	}
+	var info user.BanInfo
+	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
 	if event.TraceID == "" {
 		event.TraceID = "-"

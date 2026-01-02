@@ -217,7 +217,7 @@ create trigger users_permissions_from_rank
 create table bans (
     id uuid primary key default pg_catalog.gen_random_uuid(),
     executor bigint not null references users(uid) on delete restrict,
-    target bigint not null references users(uid) on delete restrict,
+    target bigint not null unique references users(uid) on delete restrict,
     reason varchar(255),
     at timestamptz not null default now(),
     expires timestamptz,

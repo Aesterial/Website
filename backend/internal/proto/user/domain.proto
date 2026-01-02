@@ -87,6 +87,11 @@ message UserPublicResponse {
   string tracing = 2;
 }
 
+message UsersResponse {
+  repeated UserPublic data = 1;
+  string tracing = 2;
+}
+
 message UserSessionsResponse {
   UserSessions data = 1;
   string tracing = 2;
@@ -99,4 +104,13 @@ message MessagesResponse {
 
 message EmptyResponse {
   string tracing = 1;
+}
+
+message BanInfoResponse {
+  string id = 1;
+  UserPublic executor = 2;
+  string reason = 3;
+  google.protobuf.Timestamp at = 4;
+  google.protobuf.Timestamp expires = 5;
+  string tracing = 6;
 }

@@ -3,6 +3,7 @@ package grpcserver
 import (
 	permissionsapp "ascendant/backend/internal/app/info/permissions"
 	sessionsapp "ascendant/backend/internal/app/info/sessions"
+	userapp "ascendant/backend/internal/app/info/user"
 	"ascendant/backend/internal/domain/permissions"
 	permspb "ascendant/backend/internal/gen/permissions/v1"
 	"ascendant/backend/internal/infra/logger"
@@ -20,10 +21,10 @@ type PermissionsService struct {
 	auth        *Authenticator
 }
 
-func NewPermissionsService(perms *permissionsapp.Service, sessions *sessionsapp.Service) *PermissionsService {
+func NewPermissionsService(perms *permissionsapp.Service, sessions *sessionsapp.Service, us *userapp.Service) *PermissionsService {
 	return &PermissionsService{
 		permissions: perms,
-		auth:        NewAuthenticator(sessions, perms),
+		auth:        NewAuthenticator(sessions, perms, us),
 	}
 }
 

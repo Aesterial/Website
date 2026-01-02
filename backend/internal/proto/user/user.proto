@@ -19,6 +19,11 @@ service UserService {
       get: "/api/user/{userID}"
     };
   }
+  rpc Users(google.protobuf.Empty) returns (UsersResponse) {
+    option (google.api.http) = {
+      get: "/api/user/list"
+    };
+  }
   rpc Sessions(google.protobuf.Empty) returns (UserSessionsResponse) {
     option (google.api.http) = {
       get: "/api/user/sessions"
@@ -34,6 +39,16 @@ service UserService {
   rpc Unban(OtherUserRequest) returns (EmptyResponse) {
     option (google.api.http) = {
       post: "/api/user/{userID}/unban"
+    };
+  }
+  rpc BanInfo(google.protobuf.Empty) returns (BanInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/user/ban/info"
+    };
+  }
+  rpc BanInfoOther(OtherUserRequest) returns (BanInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/user/{userID}/ban/info"
     };
   }
   rpc UpdateSelfName(ChangeSelfNameRequest) returns (EmptyResponse) {   

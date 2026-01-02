@@ -117,10 +117,10 @@ func main() {
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
 	statService := appstatistics.New(statisticsRepo)
 
-	loginServer := grpcserver.NewLoginService(loginService, sessionsService, permissionsService)
+	loginServer := grpcserver.NewLoginService(loginService, sessionsService, permissionsService, userInfoService)
 	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService)
-	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService)
-	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService)
+	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService, userInfoService)
+	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService, userInfoService)
 
 	gateway := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(gatewayHeaderMatcher),

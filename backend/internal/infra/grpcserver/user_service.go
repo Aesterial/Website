@@ -29,7 +29,7 @@ func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sess
 		info:     info,
 		modifier: modifier,
 		sessions: sessions,
-		auth:     NewAuthenticator(sessions, perms),
+		auth:     NewAuthenticator(sessions, perms, info),
 	}
 }
 

@@ -47,3 +47,16 @@ type RequestData struct {
 	SessionID uuid.UUID
 	UID       uint
 }
+
+type BanInfo struct {
+	ID       uuid.UUID
+	Executor uint
+	Target   uint
+	Reason   string
+	At       time.Time
+	Expires  sql.NullTime
+}
+
+func (b BanInfo) Empty() bool {
+	return b.Executor == 0 || b.Target == 0 || b.Reason == "" || b.Expires.Time.IsZero()
+}

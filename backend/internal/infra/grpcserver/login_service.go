@@ -4,6 +4,7 @@ import (
 	loginapp "ascendant/backend/internal/app/auth"
 	"ascendant/backend/internal/app/info/permissions"
 	"ascendant/backend/internal/app/info/sessions"
+	userapp "ascendant/backend/internal/app/info/user"
 	logindomain "ascendant/backend/internal/domain/login"
 	loginpb "ascendant/backend/internal/gen/login/v1"
 	"ascendant/backend/internal/infra/logger"
@@ -24,8 +25,8 @@ type LoginService struct {
 	auth  *Authenticator
 }
 
-func NewLoginService(login *loginapp.Service, ses *sessions.Service, perms *permissions.Service) *LoginService {
-	return &LoginService{login: login, auth: NewAuthenticator(ses, perms)}
+func NewLoginService(login *loginapp.Service, ses *sessions.Service, perms *permissions.Service, us *userapp.Service) *LoginService {
+	return &LoginService{login: login, auth: NewAuthenticator(ses, perms, us)}
 }
 
 func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthRequest) (*loginpb.AuthResponse, error) {

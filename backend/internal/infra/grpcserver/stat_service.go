@@ -3,6 +3,7 @@ package grpcserver
 import (
 	"ascendant/backend/internal/app/info/permissions"
 	"ascendant/backend/internal/app/info/sessions"
+	userapp "ascendant/backend/internal/app/info/user"
 	appstatistics "ascendant/backend/internal/app/statistics"
 	permsdomain "ascendant/backend/internal/domain/permissions"
 	"ascendant/backend/internal/domain/user"
@@ -28,8 +29,8 @@ func oClock() time.Time {
 	return startOfDay
 }
 
-func NewStatService(stat *appstatistics.StatService, ses *sessions.Service, perms *permissions.Service) *StatService {
-	return &StatService{stat: stat, auth: NewAuthenticator(ses, perms)}
+func NewStatService(stat *appstatistics.StatService, ses *sessions.Service, perms *permissions.Service, us *userapp.Service) *StatService {
+	return &StatService{stat: stat, auth: NewAuthenticator(ses, perms, us)}
 }
 
 func authorize(ctx context.Context, auth *Authenticator) (*user.RequestData, error) {

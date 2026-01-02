@@ -57,6 +57,27 @@ func (s *Service) GetSelf(ctx context.Context, sessionID uuid.UUID) (*user.User,
 	return usr, nil
 }
 
+func (s *Service) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {
+	if uid == 0 {
+		return false, nil, errors.New("uid is empty")
+	}
+	return s.repo.IsBanned(ctx, uid)
+}
+
+func (s *Service) Ban(ctx context.Context, info user.BanInfo) error {
+	if info.Empty() {
+		return errors.New("argument is empty")
+	}
+	return s.repo.Ban(ctx, info)
+}
+
+func (s *Service) UnBan(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return nil
+	}
+	return s.repo.UnBan(ctx, uid)
+}
+
 func (s *Service) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.SessionTime, error) {
 	if uid == 0 {
 		return nil, errors.New("uid is null")
