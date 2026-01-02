@@ -94,11 +94,15 @@ func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, err
 	}()
 	for rows.Next() {
 		var usr = user.User{Settings: &user.Settings{Avatar: &user.Avatar{}}, Rank: &rank.Rank{}, Email: &user.Email{}}
-		var av user.Avatar
 		if err := rows.Scan(&usr.UID, &usr.Username, &usr.Email.Address, &usr.Email.Verified, &usr.Settings.Avatar.Data, &usr.Settings.Avatar.ContentType, &usr.Rank.Name, &usr.Rank.Expires, &usr.Joined); err != nil {
 			return nil, err
 		}
-		usrs = append(usrs, usr.ToPublic())
+		pub := usr.ToPublic()
+		pub.Banned, _, err = u.IsBanned(ctx, usr.UID)
+		if err != nil {
+			return nil, err
+		}
+		usrs = append(usrs, pub)
 	}
 	return usrs, nil
 }

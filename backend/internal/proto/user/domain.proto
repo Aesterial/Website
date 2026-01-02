@@ -11,7 +11,8 @@ message UserPublic {
   string username = 2;
   Rank rank = 3;
   optional UserPublicSettings settings = 4;
-  google.protobuf.Timestamp joinedAt = 5;
+  bool banned = 5;
+  google.protobuf.Timestamp joinedAt = 6;
 }
 
 message UserSelf{
