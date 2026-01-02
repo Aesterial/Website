@@ -154,6 +154,12 @@ export async function authorizeUser(payload: AuthorizationPayload): Promise<void
   })
 }
 
+export async function logoutUser(): Promise<void> {
+  await apiRequest("/api/login/logout", {
+    method: "POST",
+  })
+}
+
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const payload = await apiRequest<ApiUser | ApiUserResponse>("/api/user", { method: "GET" })
   return toAuthUser(payload)

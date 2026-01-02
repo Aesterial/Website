@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { CheckCircle2, Clock, XCircle } from "lucide-react"
+import { CheckCircle2, Clock, LogOut, XCircle } from "lucide-react"
 import { Logo } from "@/components/logo"
+import { useAuth } from "@/components/auth-provider"
 import { submissions, statusMeta, type SubmissionStatus } from "./data"
 
 const statusOrder: SubmissionStatus[] = ["pending", "approved", "declined"]
@@ -21,6 +23,14 @@ const statusStyles: Record<SubmissionStatus, string> = {
 }
 
 export default function SubmissionsLandingPage() {
+  const router = useRouter()
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
+
   const counts = statusOrder.reduce<Record<SubmissionStatus, number>>((acc, status) => {
     acc[status] = submissions.filter((item) => item.status === status).length
     return acc
@@ -35,18 +45,30 @@ export default function SubmissionsLandingPage() {
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Logo className="h-9 w-9 text-foreground" showText={false} />
+            <Link href="/" aria-label="Go to main site">
+              <Logo className="h-9 w-9 text-foreground" showText={false} />
+            </Link>
             <div>
               <p className="text-lg font-semibold">Модерация проектов</p>
               <p className="text-xs text-muted-foreground">Категории заявок и быстрый переход к проверке.</p>
             </div>
           </div>
-          <Link
-            href="/admin"
-            className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-          >
-            Назад в админку
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+            <Link
+              href="/admin"
+              className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+            >
+              Admin panel
+            </Link>
+          </div>
         </div>
       </header>
 

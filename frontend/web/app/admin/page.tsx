@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Lock,
+  LogOut,
   MessageSquare,
   Moon,
   Shield,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import {
   Area,
@@ -42,6 +44,7 @@ import {
   YAxis,
 } from "recharts"
 import { toast } from "sonner"
+import { useAuth } from "@/components/auth-provider"
 
 // import { useRouter } from "next/navigation"
 
@@ -377,7 +380,9 @@ async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 export default function AdminPage() {
+  const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const { logout, user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [rangeDays, setRangeDays] = useState(timeRanges[2].days)
   const [statsSummary, setStatsSummary] = useState<StatsSummary>({
@@ -394,6 +399,12 @@ export default function AdminPage() {
   const [selectedUserId, setSelectedUserId] = useState(users[0].id)
   const [banReason, setBanReason] = useState("Спам, мультиаккаунты, повторные жалобы")
   // const push = useRouter();
+  const displayName = user?.displayName || user?.username || ""
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -619,7 +630,9 @@ export default function AdminPage() {
       <aside className="relative z-30 w-full border-b border-border/60 bg-background/90 backdrop-blur lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
         <div className="flex flex-col gap-6 p-4 sm:p-6">
           <div className="flex items-center justify-between lg:justify-start lg:gap-3">
-            <Logo className="h-9 w-9 text-foreground" showText={false} />
+            <Link href="/" aria-label="Go to main site">
+              <Logo className="h-9 w-9 text-foreground" showText={false} />
+            </Link>
             <div className="leading-tight">
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Город идей</p>
               <p className="text-sm font-semibold">Админ-панель</p>
@@ -709,19 +722,31 @@ export default function AdminPage() {
         <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-4">
-              <Logo className="h-9 w-9 text-foreground" showText={false} />
+              <Link href="/" aria-label="Go to main site">
+                <Logo className="h-9 w-9 text-foreground" showText={false} />
+              </Link>
               <div>
                 <p className="text-lg font-semibold">Город идей | Административная панель</p>
                 <p className="text-xs text-muted-foreground">Контроль, аналитика и модерация</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold">
-                A
-              </span>
-              <div className="text-right leading-tight">
-                <p className="text-sm font-semibold">admin</p>
-                <p className="text-xs text-muted-foreground">Главный администратор</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+              <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold">
+                  A
+                </span>
+                <div className="text-right leading-tight">
+                  <p className="text-sm font-semibold">{displayName || user?.username || "admin"}</p>
+                  <p className="text-xs text-muted-foreground">{user?.rank?.name || "Admin"}</p>
+                </div>
               </div>
             </div>
           </div>

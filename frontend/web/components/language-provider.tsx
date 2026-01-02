@@ -333,6 +333,11 @@ export const translations: Translations = {
     EN: "Choose the interface language.",
     KZ: "\u0418\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441 \u0442\u0456\u043b\u0456\u043d \u0442\u0430\u04a3\u0434\u0430\u04a3\u044b\u0437.",
   },
+  logout: {
+    RU: "\u0412\u044b\u0439\u0442\u0438",
+    EN: "Logout",
+    KZ: "\u0428\u044b\u0493\u0443",
+  },
 
 }
 

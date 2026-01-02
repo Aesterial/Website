@@ -172,37 +172,6 @@ export default function AccountPage() {
               </GradientButton>
             </div>
           </motion.form>
-
-          <motion.div
-            className="rounded-3xl border border-border/70 bg-card/90 p-6"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <div>
-              <p className="text-sm font-semibold">{t("languageLabel")}</p>
-              <p className="text-xs text-muted-foreground">{t("languageDescription")}</p>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {languageOptions.map((option) => {
-                const isActive = language === option.code
-                return (
-                  <button
-                    key={option.code}
-                    type="button"
-                    onClick={() => setLanguage(option.code)}
-                    className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
-                      isActive
-                        ? "bg-foreground text-background shadow-md shadow-foreground/20"
-                        : "bg-muted/60 text-foreground/70 hover:bg-foreground hover:text-background"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
-          </motion.div>
         </div>
       </main>
     </div>

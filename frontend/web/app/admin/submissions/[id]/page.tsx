@@ -2,16 +2,19 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   CalendarDays,
   CheckCircle2,
   ExternalLink,
+  LogOut,
   MapPin,
   UserCircle2,
   XCircle,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
+import { useAuth } from "@/components/auth-provider"
 import {
   Dialog,
   DialogContent,
@@ -74,6 +77,13 @@ async function postDecision(path: string, payload?: unknown) {
 }
 
 export default function SubmissionDetailPage({ params }: SubmissionDetailPageProps) {
+  const router = useRouter()
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
   const submission = useMemo(() => submissions.find((item) => item.id === params.id) ?? null, [params.id])
   const [currentStatus, setCurrentStatus] = useState<SubmissionStatus | null>(submission?.status ?? null)
   const [actionLoading, setActionLoading] = useState<"approve" | "decline" | null>(null)
@@ -84,7 +94,9 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   if (!submission) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <Logo className="h-10 w-10 text-foreground" showText={false} />
+        <Link href="/" aria-label="Go to main site">
+          <Logo className="h-10 w-10 text-foreground" showText={false} />
+        </Link>
         <div>
           <p className="text-lg font-semibold">Проект не найден.</p>
           <p className="text-sm text-muted-foreground">Проверьте ссылку или вернитесь к списку.</p>
@@ -160,13 +172,23 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Logo className="h-9 w-9 text-foreground" showText={false} />
+            <Link href="/" aria-label="Go to main site">
+              <Logo className="h-9 w-9 text-foreground" showText={false} />
+            </Link>
             <div>
               <p className="text-lg font-semibold">Карточка проекта</p>
               <p className="text-xs text-muted-foreground">{statusInfo.label}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
             <Link
               href={`/admin/submissions/${activeStatus}`}
               className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"

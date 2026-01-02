@@ -6,6 +6,7 @@ import {
   Globe,
   Lightbulb,
   LogIn,
+  LogOut,
   MapPin,
   Menu,
   MessageSquare,
@@ -71,7 +72,7 @@ const getInitials = (value: string) => {
 export function Header() {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
-  const { user, status, hasAdminAccess } = useAuth()
+  const { user, status, hasAdminAccess, logout } = useAuth()
   const [langOpen, setLangOpen] = useState(false)
   const [cityOpen, setCityOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -81,6 +82,10 @@ export function Header() {
   const cityRef = useRef<HTMLDivElement>(null)
   const displayName = user?.displayName || user?.username || ""
   const avatarLabel = getInitials(displayName || user?.username || "User")
+
+  const handleLogout = async () => {
+    await logout()
+  }
 
   const languages = [
     { code: "RU" as const, label: "RU" },
@@ -507,6 +512,15 @@ export function Header() {
                     <Settings className="h-4 w-4" />
                     {t("accountSettings")}
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void handleLogout()
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t("logout")}
                 </DropdownMenuItem>
                 {hasAdminAccess ? (
                   <DropdownMenuItem asChild>

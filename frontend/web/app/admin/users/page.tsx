@@ -2,13 +2,16 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Logo } from "@/components/logo"
 import { useTheme } from "@/components/theme-provider"
+import { useAuth } from "@/components/auth-provider"
 import {
   Ban,
   CheckCircle2,
+  LogOut,
   MessageSquare,
   Moon,
   Search,
@@ -68,12 +71,19 @@ const statusLabels: Record<StatusFilter, string> = {
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const { logout } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [page, setPage] = useState(1)
 
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -139,7 +149,9 @@ export default function AdminUsersPage() {
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Logo className="h-9 w-9 text-foreground" showText={false} />
+            <Link href="/" aria-label="Go to main site">
+              <Logo className="h-9 w-9 text-foreground" showText={false} />
+            </Link>
             <div>
               <p className="text-lg font-semibold">Таблица пользователей</p>
               <p className="text-xs text-muted-foreground">Город идей | Админ-панель</p>
@@ -154,13 +166,21 @@ export default function AdminUsersPage() {
               {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : null}
               Тема
             </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
             <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold">
                 A
               </span>
               <div className="text-right leading-tight">
                 <p className="text-sm font-semibold">admin</p>
-                <p className="text-xs text-muted-foreground">Главный администратор</p>
+                <p className="text-xs text-muted-foreground">Super admin</p>
               </div>
             </div>
           </div>

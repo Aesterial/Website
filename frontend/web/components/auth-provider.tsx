@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import type { AuthorizationPayload, AuthUser, RegisterPayload } from "@/lib/api"
-import { authorizeUser, fetchCurrentUser, registerUser, updateDisplayName } from "@/lib/api"
+import { authorizeUser, fetchCurrentUser, logoutUser, registerUser, updateDisplayName } from "@/lib/api"
 
 type AuthStatus = "loading" | "authenticated" | "anonymous"
 
@@ -11,6 +11,7 @@ type AuthContextValue = {
   user: AuthUser | null
   login: (payload: AuthorizationPayload) => Promise<void>
   register: (payload: RegisterPayload) => Promise<void>
+  logout: () => Promise<void>
   refreshUser: (options?: { silent?: boolean }) => Promise<void>
   updateDisplayName: (displayName: string) => Promise<AuthUser | null>
   hasAdminAccess: boolean
@@ -67,6 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refreshUser],
   )
 
+  const logout = useCallback(async () => {
+    try {
+      await logoutUser()
+    } catch {
+      // Ignore logout errors and clear local state.
+    } finally {
+      setUser(null)
+      setStatus("anonymous")
+    }
+  }, [])
+
   const handleUpdateDisplayName = useCallback(
     async (displayName: string) => {
       if (!user) {
@@ -90,11 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       login,
       register,
+      logout,
       refreshUser,
       updateDisplayName: handleUpdateDisplayName,
       hasAdminAccess,
     }),
-    [status, user, login, register, refreshUser, handleUpdateDisplayName, hasAdminAccess],
+    [status, user, login, register, logout, refreshUser, handleUpdateDisplayName, hasAdminAccess],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

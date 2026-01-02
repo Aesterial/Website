@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarDays, ExternalLink, MapPin, UserCircle2 } from "lucide-react"
+import { CalendarDays, ExternalLink, LogOut, MapPin, UserCircle2 } from "lucide-react"
 import { Logo } from "@/components/logo"
+import { useAuth } from "@/components/auth-provider"
 import { submissions, statusMeta, type Submission, type SubmissionStatus } from "../data"
 
 const statusBadgeStyles: Record<SubmissionStatus, string> = {
@@ -24,6 +26,13 @@ type StatusPageProps = {
 }
 
 export default function SubmissionStatusPage({ status }: StatusPageProps) {
+  const router = useRouter()
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
   const filtered = useMemo(
     () => submissions.filter((item) => item.status === status),
     [status],
@@ -45,13 +54,23 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Logo className="h-9 w-9 text-foreground" showText={false} />
+            <Link href="/" aria-label="Go to main site">
+              <Logo className="h-9 w-9 text-foreground" showText={false} />
+            </Link>
             <div>
               <p className="text-lg font-semibold">{statusMeta[status].label}</p>
               <p className="text-xs text-muted-foreground">{statusMeta[status].description}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
             <Link
               href="/admin/submissions"
               className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
