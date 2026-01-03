@@ -80,7 +80,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { type } from "node:os";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -249,13 +248,11 @@ export default function AdminPage() {
   });
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [banReasonOption, setBanReasonOption] = useState("default");
-  const [banReason, setBanReason] = useState(() => t("adminBanReasonDefault"));
+  const [banReason, setBanReason] = useState("");
   const [banDuration, setBanDuration] = useState(0);
   const [banUntilDate, setBanUntilDate] = useState<Date | undefined>();
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [banDialogUser, setBanDialogUser] = useState<User | null>(null);
-  const [banDialogReasonOption, setBanDialogReasonOption] = useState("default");
   const [banDialogReason, setBanDialogReason] = useState("");
   const [banDialogDuration, setBanDialogDuration] = useState(0);
   const [banDialogDate, setBanDialogDate] = useState<Date | undefined>();
@@ -297,8 +294,6 @@ export default function AdminPage() {
   const locale =
     language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
 
-
-
   const banDateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, {
@@ -314,14 +309,6 @@ export default function AdminPage() {
     value.setHours(0, 0, 0, 0);
     return value;
   }, []);
-
-  const resolveBanReason = (option: string, custom: string) => {
-    if (option === "custom") {
-      return custom;
-    }
-    const match = banReasonOptions.find((item) => item.value === option);
-    return match ? match.label : custom;
-  };
 
   const resolveBanDurationSeconds = (
     durationValue: number,
@@ -896,8 +883,7 @@ export default function AdminPage() {
 
   const openBanDialog = (target: User) => {
     setBanDialogUser(target);
-    setBanDialogReasonOption("default");
-    setBanDialogReason(t("adminBanReasonDefault"));
+    setBanDialogReason("");
     setBanDialogDuration(0);
     setBanDialogDate(undefined);
     setBanDialogOpen(true);
@@ -907,10 +893,7 @@ export default function AdminPage() {
     if (!banDialogUser) {
       return;
     }
-    const reason = resolveBanReason(
-      banDialogReasonOption,
-      banDialogReason,
-    ).trim();
+    const reason = banDialogReason.trim();
     if (!reason) {
       toast.error(t("adminBanReasonRequired"));
       return;
@@ -949,7 +932,7 @@ export default function AdminPage() {
     action: "block" | "unblock" | "reset" | "message",
   ) => {
     if (action === "block") {
-      const reason = resolveBanReason(banReasonOption, banReason).trim();
+      const reason = banReason.trim();
       if (!reason) {
         toast.error(t("adminBanReasonRequired"));
         return;
@@ -1886,13 +1869,12 @@ export default function AdminPage() {
                         <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                           {t("adminBanReason")}
                         </label>
-                        
+
                         <textarea
                           className="min-h-[90px] w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
                           value={banReason}
                           onChange={(event) => {
                             setBanReason(event.target.value);
-                            setBanReasonOption("custom");
                           }}
                         />
                         <p className="text-xs text-muted-foreground">
@@ -1983,7 +1965,6 @@ export default function AdminPage() {
               setBanDialogOpen(open);
               if (!open) {
                 setBanDialogUser(null);
-                setBanDialogReasonOption("default");
                 setBanDialogReason("");
                 setBanDialogDuration(0);
                 setBanDialogDate(undefined);
@@ -2002,12 +1983,11 @@ export default function AdminPage() {
                 <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   {t("adminBanReason")}
                 </label>
-                
+
                 <Textarea
                   value={banDialogReason}
                   onChange={(event) => {
                     setBanDialogReason(event.target.value);
-                    setBanDialogReasonOption("custom");
                   }}
                   placeholder={t("adminBanReason")}
                   rows={4}

@@ -113,7 +113,6 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [banDialogUser, setBanDialogUser] = useState<User | null>(null);
-  const [banDialogReasonOption, setBanDialogReasonOption] = useState("default");
   const [banDialogReason, setBanDialogReason] = useState("");
   const [banDialogDuration, setBanDialogDuration] = useState(0);
   const [banDialogDate, setBanDialogDate] = useState<Date | undefined>();
@@ -125,7 +124,6 @@ export default function AdminUsersPage() {
     active: t("statusActive"),
     banned: t("statusBanned"),
   };
-  const defaultBanReason = t("adminBanReasonDefault");
   const languageOptions = [
     { code: "RU" as const, label: "RU" },
     { code: "EN" as const, label: "EN" },
@@ -147,13 +145,6 @@ export default function AdminUsersPage() {
     value.setHours(0, 0, 0, 0);
     return value;
   }, []);
-  const resolveBanReason = (option: string, custom: string) => {
-    if (option === "custom") {
-      return custom;
-    }
-    const match = banReasonOptions.find((item) => item.value === option);
-    return match ? match.label : custom;
-  };
   const resolveBanDurationSeconds = (
     durationValue: number,
     untilDate?: Date,
@@ -285,8 +276,7 @@ export default function AdminUsersPage() {
 
   const openBanDialog = (target: User) => {
     setBanDialogUser(target);
-    setBanDialogReasonOption("default");
-    setBanDialogReason(defaultBanReason);
+    setBanDialogReason("");
     setBanDialogDuration(0);
     setBanDialogDate(undefined);
     setBanDialogOpen(true);
@@ -296,10 +286,7 @@ export default function AdminUsersPage() {
     if (!banDialogUser) {
       return;
     }
-    const reason = resolveBanReason(
-      banDialogReasonOption,
-      banDialogReason,
-    ).trim();
+    const reason = banDialogReason.trim();
     if (!reason) {
       toast.error(t("adminBanReasonRequired"));
       return;
@@ -788,7 +775,6 @@ export default function AdminUsersPage() {
           setBanDialogOpen(open);
           if (!open) {
             setBanDialogUser(null);
-            setBanDialogReasonOption("default");
             setBanDialogReason("");
             setBanDialogDuration(0);
             setBanDialogDate(undefined);
@@ -807,12 +793,11 @@ export default function AdminUsersPage() {
             <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {t("adminBanReason")}
             </label>
-            
+
             <Textarea
               value={banDialogReason}
               onChange={(event) => {
                 setBanDialogReason(event.target.value);
-                setBanDialogReasonOption("custom");
               }}
               placeholder={t("adminBanReason")}
               rows={4}
