@@ -40,6 +40,7 @@ type ApiUserPublic = {
   rank?: ApiRank | null;
   joined?: string;
   joinedAt?: string;
+  banned?: boolean;
 };
 
 type ApiUser = {
@@ -86,6 +87,7 @@ export type UserListItem = {
   userID: number;
   username: string;
   displayName?: string;
+  banned: boolean;
   rank?: ApiRank | null;
   joined?: string;
 };
@@ -304,11 +306,13 @@ function toUserListItem(payload: ApiUserPublic): UserListItem | null {
   const displayName =
     settings?.display_name ?? settings?.displayName ?? undefined;
   const joined = payload.joined ?? payload.joinedAt;
+  const banned = payload.banned ?? false
 
   return {
     userID,
     username,
     displayName,
+    banned,
     rank: payload.rank ?? undefined,
     joined,
   };
@@ -345,8 +349,12 @@ export async function fetchUsers(options?: {
 
 export async function fetchUserBanInfo(
   userID: number,
+  banned?: boolean,
   options?: { signal?: AbortSignal },
 ): Promise<BanInfo | null> {
+  if (banned === false) {
+    return null;
+  }
   try {
     const payload = await apiRequest<ApiBanInfoResponse>(
       `/api/user/${userID}/ban/info`,

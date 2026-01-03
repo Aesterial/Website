@@ -215,9 +215,9 @@ func (s *UserService) BanInfo(ctx context.Context, _ *emptypb.Empty) (*userpb.Ba
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Error(codes.NotFound, "User is not banned")
 		}
-		logger.Debug("err message: "+err.Error(), "a")
 		return nil, statusFromError(err)
 	}
+
 	return formateBanInfoResponse(ctx, info, s.info)
 }
 
@@ -234,6 +234,9 @@ func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserReq
 	}
 	info, err := s.info.BanInfo(ctx, uint(req.UserID))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "User is not banned")
+		}
 		return nil, statusFromError(err)
 	}
 	return formateBanInfoResponse(ctx, info, s.info)

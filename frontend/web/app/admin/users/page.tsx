@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
         const list = await fetchUsers({ signal: controller.signal });
         const banResults = await Promise.allSettled(
           list.map((item) =>
-            fetchUserBanInfo(item.userID, { signal: controller.signal }),
+            fetchUserBanInfo(item.userID, item.banned, { signal: controller.signal }),
           ),
         );
         if (controller.signal.aborted) {
@@ -203,7 +203,7 @@ export default function AdminUsersPage() {
             banResults[index].status === "fulfilled"
               ? banResults[index].value
               : null;
-          const isBanned = isBanActive(banInfo);
+          const isBanned = item.banned || isBanActive(banInfo);
           return {
             id: `USR-${item.userID}`,
             userID: item.userID,
