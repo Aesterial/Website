@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
@@ -117,6 +117,7 @@ export default function AdminUsersPage() {
   const [banDialogDuration, setBanDialogDuration] = useState(0);
   const [banDialogDate, setBanDialogDate] = useState<Date | undefined>();
   const [banDialogLoading, setBanDialogLoading] = useState(false);
+  const usersLoadGuardRef = useRef(false);
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
   const statusLabels: Record<StatusFilter, string> = {
@@ -189,7 +190,7 @@ export default function AdminUsersPage() {
         const list = await fetchUsers({ signal: controller.signal });
         const banResults = await Promise.allSettled(
           list.map((item) =>
-            fetchUserBanInfo(item.userID, item.banned, { signal: controller.signal }),
+            fetchUserBanInfo(item.userID, { signal: controller.signal }),
           ),
         );
         if (controller.signal.aborted) {
@@ -203,7 +204,7 @@ export default function AdminUsersPage() {
             banResults[index].status === "fulfilled"
               ? banResults[index].value
               : null;
-          const isBanned = item.banned || isBanActive(banInfo);
+          const isBanned = isBanActive(banInfo);
           return {
             id: `USR-${item.userID}`,
             userID: item.userID,
@@ -291,18 +292,22 @@ export default function AdminUsersPage() {
       toast.error(t("adminBanReasonRequired"));
       return;
     }
-    const durationSeconds = resolveBanDurationSeconds(
+    const durationSeconds: number | null = resolveBanDurationSeconds(
       banDialogDuration,
       banDialogDate,
     );
-    if (banDialogDuration === -1 && durationSeconds == null) {
-      toast.error(t("adminBanDateRequired"));
-      return;
+
+    if (banDialogDuration === -1) {
+      if (durationSeconds == null) {
+        toast.error(t("adminBanDateRequired"));
+        return;
+      }
+      if (durationSeconds <= 0) {
+        toast.error(t("adminBanDateInvalid"));
+        return;
+      }
     }
-    if (banDialogDuration === -1 && durationSeconds <= 0) {
-      toast.error(t("adminBanDateInvalid"));
-      return;
-    }
+
     setBanDialogLoading(true);
     try {
       await banUser(banDialogUser.userID, reason, durationSeconds ?? 0);

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
@@ -281,6 +281,9 @@ export default function AdminPage() {
     active: null,
     offline: null,
   });
+
+  const statsLoadGuardRef = useRef(false);
+  const usersLoadGuardRef = useRef(false);
 
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
@@ -545,58 +548,37 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const sinceMs = Date.now() - 24 * 60 * 60 * 1000;
-    const sinceParam = encodeURIComponent(new Date(sinceMs).toISOString());
-    const activityLimit = activityRangeDays;
+    let cancelled = false;
+    let controller = new AbortController();
 
-    const load = async () => {
-      const [
-        votesDayResult,
-        ideasDayResult,
-        activeUsersResult,
-        offlineUsersResult,
-        categoriesResult,
-        ideasRecapResult,
-        usersActivityResult,
-        qualityRecapResult,
-        mediaCoverageResult,
-      ] = await Promise.allSettled([
-        requestJson<CountResponse>("/api/statistics/votes", controller.signal),
-        requestJson<CountResponse>("/api/statistics/ideas", controller.signal),
-        requestJson<CountResponse>(
-          `/api/statistics/users/active/${sinceParam}`,
-          controller.signal,
-        ),
-        requestJson<CountResponse>(
-          `/api/statistics/users/offline/${sinceParam}`,
-          controller.signal,
-        ),
-        requestJson<TopCategoriesResponse>(
-          "/api/statistics/categories/5",
-          controller.signal,
-        ),
-        requestJson<IdeasRecapResponse>(
-          "/api/statistics/ideas/recap",
-          controller.signal,
-        ),
-        requestJson<UsersActivityResponse>(
-          `/api/statistics/activity/users/${activityLimit}`,
-          controller.signal,
-        ),
-        requestJson<EditorsGradeResponse>(
-          "/api/statistics/quality/recap",
-          controller.signal,
-        ),
-        requestJson<MediaCoverageResponse>(
-          "/api/statistics/media/coverage",
-          controller.signal,
-        ),
-      ]);
-
-      if (controller.signal.aborted) {
+    const run = () => {
+      if (cancelled) {
         return;
       }
+<<<<<<< HEAD
+      controller = new AbortController();
+      const sinceMs = Date.now() - 24 * 60 * 60 * 1000;
+      const sinceParam = encodeURIComponent(new Date(sinceMs).toISOString());
+      const activityLimit = activityRangeDays;
+  
+      const load = async () => {
+        const [
+          votesDayResult,
+          ideasDayResult,
+          activeUsersResult,
+          offlineUsersResult,
+          categoriesResult,
+          ideasRecapResult,
+          usersActivityResult,
+          qualityRecapResult,
+          mediaCoverageResult,
+        ] = await Promise.allSettled([
+          requestJson<CountResponse>("/api/statistics/votes", controller.signal),
+          requestJson<CountResponse>("/api/statistics/ideas", controller.signal),
+          requestJson<CountResponse>(
+            `/api/statistics/users/active/${sinceParam}`,
+            controller.signal,
+=======
 
       if (votesDayResult.status !== "fulfilled" && votesDayResult.reason) {
         toast.error(t("adminErrorLoadVoteCount"), {
@@ -836,11 +818,46 @@ export default function AdminPage() {
             fetchUserBanInfo(item.userID, item.banned, {
               signal: controller.signal,
             }),
+>>>>>>> b1f0a4669e4b9382094e4677e9fbebba96e257f0
           ),
-        );
+          requestJson<CountResponse>(
+            `/api/statistics/users/offline/${sinceParam}`,
+            controller.signal,
+          ),
+          requestJson<TopCategoriesResponse>(
+            "/api/statistics/categories/5",
+            controller.signal,
+          ),
+          requestJson<IdeasRecapResponse>(
+            "/api/statistics/ideas/recap",
+            controller.signal,
+          ),
+          requestJson<UsersActivityResponse>(
+            `/api/statistics/activity/users/${activityLimit}`,
+            controller.signal,
+          ),
+          requestJson<EditorsGradeResponse>(
+            "/api/statistics/quality/recap",
+            controller.signal,
+          ),
+          requestJson<MediaCoverageResponse>(
+            "/api/statistics/media/coverage",
+            controller.signal,
+          ),
+        ]);
+  
         if (controller.signal.aborted) {
           return;
         }
+<<<<<<< HEAD
+  
+        if (votesDayResult.status !== "fulfilled" && votesDayResult.reason) {
+          toast.error(t("adminErrorLoadVoteCount"), {
+            description:
+              votesDayResult.reason instanceof Error
+                ? votesDayResult.reason.message
+                : undefined,
+=======
         if (banResults.some((result) => result.status === "rejected")) {
           toast.error(t("adminErrorLoadBanStatuses"));
         }
@@ -867,15 +884,307 @@ export default function AdminPage() {
         if (!controller.signal.aborted) {
           toast.error(t("adminErrorLoadUsers"), {
             description: error instanceof Error ? error.message : undefined,
+>>>>>>> b1f0a4669e4b9382094e4677e9fbebba96e257f0
           });
-          setUsers([]);
         }
-      }
+  
+        if (ideasDayResult.status !== "fulfilled" && ideasDayResult.reason) {
+          toast.error(t("adminErrorLoadIdeasCount"), {
+            description:
+              ideasDayResult.reason instanceof Error
+                ? ideasDayResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (
+          activeUsersResult.status !== "fulfilled" &&
+          activeUsersResult.reason
+        ) {
+          toast.error(t("adminErrorLoadActiveUsers"), {
+            description:
+              activeUsersResult.reason instanceof Error
+                ? activeUsersResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (
+          offlineUsersResult.status !== "fulfilled" &&
+          offlineUsersResult.reason
+        ) {
+          toast.error(t("adminErrorLoadOfflineUsers"), {
+            description:
+              offlineUsersResult.reason instanceof Error
+                ? offlineUsersResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (categoriesResult.status !== "fulfilled" && categoriesResult.reason) {
+          toast.error(t("adminErrorLoadVoteCategories"), {
+            description:
+              categoriesResult.reason instanceof Error
+                ? categoriesResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (ideasRecapResult.status !== "fulfilled" && ideasRecapResult.reason) {
+          toast.error(t("adminErrorLoadIdeasRecap"), {
+            description:
+              ideasRecapResult.reason instanceof Error
+                ? ideasRecapResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (
+          usersActivityResult.status !== "fulfilled" &&
+          usersActivityResult.reason
+        ) {
+          toast.error(t("adminErrorLoadAudience"), {
+            description:
+              usersActivityResult.reason instanceof Error
+                ? usersActivityResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (
+          qualityRecapResult.status !== "fulfilled" &&
+          qualityRecapResult.reason
+        ) {
+          toast.error(t("adminErrorLoadQualityRecap"), {
+            description:
+              qualityRecapResult.reason instanceof Error
+                ? qualityRecapResult.reason.message
+                : undefined,
+          });
+        }
+  
+        if (
+          mediaCoverageResult.status !== "fulfilled" &&
+          mediaCoverageResult.reason
+        ) {
+          toast.error(t("adminErrorLoadMediaCoverage"), {
+            description:
+              mediaCoverageResult.reason instanceof Error
+                ? mediaCoverageResult.reason.message
+                : undefined,
+          });
+        }
+  
+        setStatsSummary((prev) => ({
+          activeUsers:
+            activeUsersResult.status === "fulfilled"
+              ? Number(activeUsersResult.value?.count ?? 0)
+              : prev.activeUsers,
+          offlineUsers:
+            offlineUsersResult.status === "fulfilled"
+              ? Number(offlineUsersResult.value?.count ?? 0)
+              : prev.offlineUsers,
+          newIdeas:
+            ideasDayResult.status === "fulfilled"
+              ? Number(ideasDayResult.value?.count ?? 0)
+              : prev.newIdeas,
+          votes:
+            votesDayResult.status === "fulfilled"
+              ? Number(votesDayResult.value?.count ?? 0)
+              : prev.votes,
+        }));
+  
+        if (categoriesResult.status === "fulfilled") {
+          const mapped = (categoriesResult.value.record ?? []).map((item) => ({
+            category: item.name || t("other"),
+            votes: Number(item.posts ?? 0),
+          }));
+          setVoteCategories(mapped);
+        }
+  
+        if (ideasRecapResult.status === "fulfilled") {
+          setIdeasApproval({
+            approved: Number(ideasRecapResult.value?.approved ?? 0),
+            waiting: Number(ideasRecapResult.value?.waiting ?? 0),
+            declined: Number(ideasRecapResult.value?.declined ?? 0),
+          });
+        }
+  
+        if (usersActivityResult.status === "fulfilled") {
+          const formatter = new Intl.DateTimeFormat(locale, {
+            month: "short",
+            day: "numeric",
+          });
+          const mapped = Object.entries(usersActivityResult.value?.data ?? {})
+            .map(([key, value]) => {
+              const timestamp = Number(key) * 1000;
+              if (!Number.isFinite(timestamp)) return null;
+              const active = Number(value?.active ?? 0);
+              const offline = Number(value?.offline ?? 0);
+              return {
+                label: formatter.format(new Date(timestamp)),
+                timestamp,
+                active,
+                offline,
+              };
+            })
+            .filter((item): item is ActivityPoint => Boolean(item))
+            .sort((a, b) => a.timestamp - b.timestamp);
+  
+          setActivityPoints(mapped);
+  
+          const latest = mapped[mapped.length - 1];
+          if (latest) {
+            setAudienceSnapshot((prev) => ({
+              active: latest.active ?? prev.active,
+              offline: latest.offline ?? prev.offline,
+            }));
+          }
+        }
+  
+        if (qualityRecapResult.status === "fulfilled") {
+          const computeScore = (grade?: Grade) => {
+            const good = Number(grade?.good ?? 0);
+            const bad = Number(grade?.bad ?? 0);
+            const total = good + bad;
+            if (total === 0) return 0;
+            return Math.round((good / total) * 100);
+          };
+          setQualityScores([
+            {
+              type: t("adminMediaLabelPhotos"),
+              score: computeScore(qualityRecapResult.value.photos),
+            },
+            {
+              type: t("adminMediaLabelVideos"),
+              score: computeScore(qualityRecapResult.value.videos),
+            },
+            {
+              type: t("adminMediaLabelGraphics"),
+              score: computeScore(qualityRecapResult.value.graphics),
+            },
+          ]);
+        }
+  
+        if (mediaCoverageResult.status === "fulfilled") {
+          const formatter = new Intl.DateTimeFormat(locale, {
+            month: "short",
+            day: "numeric",
+          });
+          const mapped = Object.entries(mediaCoverageResult.value?.medias ?? {})
+            .map(([key, value]) => {
+              const timestamp = Number(key) * 1000;
+              if (!Number.isFinite(timestamp)) return null;
+              return {
+                label: formatter.format(new Date(timestamp)),
+                timestamp,
+                photos: Number(value?.photos ?? 0),
+                videos: Number(value?.videos ?? 0),
+              };
+            })
+            .filter((item): item is MediaCoveragePoint => Boolean(item))
+            .sort((a, b) => a.timestamp - b.timestamp);
+  
+          setMediaCoveragePoints(mapped);
+        }
+  
+        setAudienceSnapshot((prev) => ({
+          active:
+            prev.active ??
+            (activeUsersResult.status === "fulfilled"
+              ? Number(activeUsersResult.value?.count ?? 0)
+              : null),
+          offline:
+            prev.offline ??
+            (offlineUsersResult.status === "fulfilled"
+              ? Number(offlineUsersResult.value?.count ?? 0)
+              : null),
+        }));
+      };
+  
+      void load();
     };
 
-    void loadUsers();
-    return () => controller.abort();
-  }, [t]);
+    if (statsLoadGuardRef.current) {
+      run();
+    } else {
+      statsLoadGuardRef.current = true;
+      queueMicrotask(run);
+    }
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [activityRangeDays, locale, language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let controller = new AbortController();
+
+    const run = () => {
+      if (cancelled) {
+        return;
+      }
+      controller = new AbortController();
+      const loadUsers = async () => {
+        try {
+          const list = await fetchUsers({ signal: controller.signal });
+          const banResults = await Promise.allSettled(
+            list.map((item) =>
+              fetchUserBanInfo(item.userID, { signal: controller.signal }),
+            ),
+          );
+          if (controller.signal.aborted) {
+            return;
+          }
+          if (banResults.some((result) => result.status === "rejected")) {
+            toast.error(t("adminErrorLoadBanStatuses"));
+          }
+          const mapped: User[] = list.map((item, index) => {
+            const banInfo =
+              banResults[index].status === "fulfilled"
+                ? banResults[index].value
+                : null;
+            const isBanned = isBanActive(banInfo);
+            return {
+              id: `USR-${item.userID}`,
+              userID: item.userID,
+              name: item.displayName || item.username,
+              username: item.username,
+              email: item.username || "-",
+              role: item.rank?.name || t("labelUser"),
+              status: isBanned ? "banned" : "active",
+              lastActive: formatUserDate(item.joined),
+              reports: 0,
+            };
+          });
+          setUsers(mapped);
+        } catch (error) {
+          if (!controller.signal.aborted) {
+            toast.error(t("adminErrorLoadUsers"), {
+              description: error instanceof Error ? error.message : undefined,
+            });
+            setUsers([]);
+          }
+        }
+      };
+  
+      void loadUsers();
+    };
+
+    if (usersLoadGuardRef.current) {
+      run();
+    } else {
+      usersLoadGuardRef.current = true;
+      queueMicrotask(run);
+    }
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [language]);
 
   const updateUserStatus = (userID: number, status: UserStatus) => {
     setUsers((prev) =>
@@ -900,17 +1209,20 @@ export default function AdminPage() {
       toast.error(t("adminBanReasonRequired"));
       return;
     }
-    const durationSeconds = resolveBanDurationSeconds(
+    const durationSeconds: number | null = resolveBanDurationSeconds(
       banDialogDuration,
       banDialogDate,
     );
-    if (banDialogDuration === -1 && durationSeconds == null) {
-      toast.error(t("adminBanDateRequired"));
-      return;
-    }
-    if (banDialogDuration === -1 && durationSeconds <= 0) {
-      toast.error(t("adminBanDateInvalid"));
-      return;
+
+    if (banDialogDuration === -1) {
+      if (durationSeconds == null) {
+        toast.error(t("adminBanDateRequired"));
+        return;
+      }
+      if (durationSeconds <= 0) {
+        toast.error(t("adminBanDateInvalid"));
+        return;
+      }
     }
     setBanDialogLoading(true);
     try {
@@ -939,17 +1251,20 @@ export default function AdminPage() {
         toast.error(t("adminBanReasonRequired"));
         return;
       }
-      const durationSeconds = resolveBanDurationSeconds(
+      const durationSeconds: number | null = resolveBanDurationSeconds(
         banDuration,
         banUntilDate,
       );
-      if (banDuration === -1 && durationSeconds == null) {
-        toast.error(t("adminBanDateRequired"));
-        return;
-      }
-      if (banDuration === -1 && durationSeconds <= 0) {
-        toast.error(t("adminBanDateInvalid"));
-        return;
+
+      if (banDuration === -1) {
+        if (durationSeconds == null) {
+          toast.error(t("adminBanDateRequired"));
+          return;
+        }
+        if (durationSeconds <= 0) {
+          toast.error(t("adminBanDateInvalid"));
+          return;
+        }
       }
       try {
         await banUser(user.userID, reason, durationSeconds ?? 0);
