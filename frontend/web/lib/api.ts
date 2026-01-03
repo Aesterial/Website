@@ -19,12 +19,17 @@ export type ApiRank = {
   expires?: string | null;
 };
 
+export type ApiAvatar = {
+  contentType: string;
+  data: string;
+};
+
 type ApiUserSettings = {
   display_name?: string | null;
   displayName?: string | null;
   session_live_time?: number | null;
   sessionLiveTime?: number | null;
-  avatar?: unknown;
+  avatar?: ApiAvatar | null;
 };
 
 type ApiUserPublic = {
@@ -72,6 +77,7 @@ export type AuthUser = {
   username: string;
   email?: string;
   displayName?: string;
+  avatar?: ApiAvatar | null;
   rank?: ApiRank | null;
   joined?: string;
 };
@@ -104,6 +110,25 @@ function isApiUserResponse(
   payload: ApiUser | ApiUserResponse,
 ): payload is ApiUserResponse {
   return typeof payload === "object" && payload !== null && "data" in payload;
+}
+
+function toAvatar(value: unknown): ApiAvatar | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const payload = value as {
+    contentType?: unknown;
+    content_type?: unknown;
+    data?: unknown;
+  };
+  const contentType =
+    (typeof payload.contentType === "string" && payload.contentType.trim()) ||
+    (typeof payload.content_type === "string" && payload.content_type.trim());
+  const data = typeof payload.data === "string" ? payload.data.trim() : "";
+  if (!contentType || !data) {
+    return undefined;
+  }
+  return { contentType, data };
 }
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
@@ -152,6 +177,7 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const settings = publicUser?.settings ?? user.settings;
   const displayName =
     settings?.display_name ?? settings?.displayName ?? undefined;
+  const avatar = toAvatar(settings?.avatar);
   const rank = publicUser?.rank ?? user.rank ?? undefined;
   const joined =
     publicUser?.joined ?? publicUser?.joinedAt ?? user.joined ?? user.joinedAt;
@@ -161,6 +187,7 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
     username,
     email: user.email?.address,
     displayName,
+    avatar,
     rank,
     joined,
   };
@@ -372,6 +399,19 @@ export async function updateDisplayName(name: string): Promise<AuthUser> {
   const encoded = encodeURIComponent(name);
   await apiRequest(`/api/user/change/name/${encoded}`, {
     method: "PATCH",
+  });
+  return fetchCurrentUser();
+}
+
+export async function updateAvatar(payload: ApiAvatar): Promise<AuthUser> {
+  const contentType = payload?.contentType?.trim();
+  const data = payload?.data?.trim();
+  if (!contentType || !data) {
+    throw new Error("Avatar payload is required.");
+  }
+  await apiRequest("/api/user/avatar", {
+    method: "POST",
+    body: JSON.stringify({ contentType, data }),
   });
   return fetchCurrentUser();
 }
