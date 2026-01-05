@@ -1,0 +1,32 @@
+syntax = "proto3";
+package storage.v1;
+
+option go_package = "ascendant/backend/internal/gen/storage/v1;storage";
+
+message PresignGetRequest {
+  string key = 1;
+}
+
+message PresignPutRequest {
+  string contentType = 1;
+  string key = 2;
+}
+
+message PresignResponse {
+  string presign = 1;
+  string tracing = 2;
+}
+
+message UserAvatarRequest {
+  string userID = 1;
+  string picID = 2;
+}
+
+message ProjectAvatarsRequest {
+  string projectID = 1;
+}
+
+message ProjectAvatarsResponse {
+  repeated string picIDs = 1;
+  string tracing = 2;
+}

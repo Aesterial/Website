@@ -70,13 +70,22 @@ func toProtoUserSettings(s *user.Settings) *userpb.UserPublicSettings {
 }
 
 func toProtoAvatar(a *user.Avatar) *userpb.Avatar {
-	if a == nil || a.Data == nil {
+	if a == nil {
 		return nil
 	}
-	return &userpb.Avatar{
+	avatar := &userpb.Avatar{
 		ContentType: a.ContentType,
-		Data:        a.Data,
 	}
+	if len(a.Data) > 0 {
+		avatar.Data = a.Data
+	}
+	if strings.TrimSpace(a.Key) != "" {
+		avatar.Key = a.Key
+	}
+	if len(avatar.Data) == 0 && avatar.Key == "" && strings.TrimSpace(avatar.ContentType) == "" {
+		return nil
+	}
+	return avatar
 }
 
 func fromProtoAvatar(a *userpb.Avatar) *user.Avatar {
@@ -87,6 +96,9 @@ func fromProtoAvatar(a *userpb.Avatar) *user.Avatar {
 		ContentType: a.ContentType,
 		Data:        a.Data,
 		SizeBytes:   len(a.Data),
+	}
+	if strings.TrimSpace(a.Key) != "" {
+		avatar.Key = strings.TrimSpace(a.Key)
 	}
 	return avatar
 }

@@ -10,11 +10,9 @@ create type submissions_state as enum ('approved', 'declined', 'waiting');
 create type picture_owner_type as enum ('user', 'project', 'unspecified');
 create type picture_rate_state as enum ('good', 'bad', 'neutral');
 
-create type avatar_t as (
+create type picture_t as (
     content_type varchar(64),
-    data bytea,
-    width int,
-    height int,
+    pic_id uuid,
     size_bytes int,
     updated timestamptz
 );
@@ -78,7 +76,7 @@ create type users_rank_t as (
 
 create type user_settings_t as (
     display_name varchar(255),
-    avatar avatar_t,
+    avatar picture_t,
     session_live_time int
 );
 
@@ -88,7 +86,7 @@ create table users (
     username varchar(64) not null,
 
     email users_email_t not null default ROW('', false)::users_email_t,
-    settings user_settings_t not null default ROW('', ROW(NULL, NULL, NULL, NULL, NULL, NULL)::avatar_t, 30)::user_settings_t,
+    settings user_settings_t not null default ROW('', ROW(NULL, NULL, NULL, NULL)::picture_t, 30)::user_settings_t,
     rank users_rank_t not null default ROW('user', NULL)::users_rank_t,
     permissions permissions_t not null default ROW(true, false, true, false, false, false, true, true, true, false, false, true, true, true, false, true, true, false, false, false, false, false, false, false, false)::permissions_t,
 
@@ -117,10 +115,20 @@ create table pictures (
     id uuid primary key default pg_catalog.gen_random_uuid(),
     owner text not null,
     owner_type picture_owner_type not null default 'unspecified',
-    info avatar_t,
+    info picture_t,
     rate picture_rate_state not null default 'neutral',
     at timestamptz default now()
 );
+
+create table user_avatars (
+    user_id bigint primary key references users(uid) on delete cascade,
+    object_key text not null,
+    content_type varchar(64),
+    size_bytes bigint,
+    updated_at timestamptz not null default now()
+);
+
+create unique index user_avatars_object_key_uq on user_avatars (object_key);
 
 -- projects
 create table projects (
@@ -139,6 +147,18 @@ create index projects_author_uid_idx on projects (author_uid);
 create index project_category_idx on projects (((info).category));
 create index projects_city_idx on projects ((((info).location).city));
 create index projects_created_at_idx on projects (created_at);
+
+create table project_photos (
+    id uuid primary key default pg_catalog.gen_random_uuid(),
+    project_id uuid not null references projects(id) on delete cascade,
+    object_key text not null,
+    content_type varchar(64),
+    size_bytes bigint,
+    created_at timestamptz not null default now()
+);
+
+create index project_photos_project_id_idx on project_photos (project_id);
+create unique index project_photos_object_key_uq on project_photos (object_key);
 
 create table project_likes (
     project_id uuid not null references projects(id) on delete cascade,

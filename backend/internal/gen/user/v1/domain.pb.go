@@ -163,6 +163,8 @@ type Avatar struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ContentType   string                 `protobuf:"bytes,1,opt,name=contentType,proto3" json:"contentType,omitempty"`
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
+	Key           string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -209,6 +211,20 @@ func (x *Avatar) GetData() []byte {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *Avatar) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *Avatar) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
 }
 
 type UserSettings struct {
@@ -1211,10 +1227,12 @@ const file_user_domain_proto_rawDesc = "" +
 	"\t_settings\"a\n" +
 	"\bUserSelf\x12+\n" +
 	"\x06public\x18\x01 \x01(\v2\x13.user.v1.UserPublicR\x06public\x12(\n" +
-	"\x05email\x18\x02 \x01(\v2\x12.user.v1.UserEmailR\x05email\">\n" +
+	"\x05email\x18\x02 \x01(\v2\x12.user.v1.UserEmailR\x05email\"b\n" +
 	"\x06Avatar\x12 \n" +
 	"\vcontentType\x18\x01 \x01(\tR\vcontentType\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\xa8\x01\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\x12\x10\n" +
+	"\x03url\x18\x03 \x01(\tR\x03url\x12\x10\n" +
+	"\x03key\x18\x04 \x01(\tR\x03key\"\xa8\x01\n" +
 	"\fUserSettings\x12%\n" +
 	"\vdisplayName\x18\x01 \x01(\tH\x00R\vdisplayName\x88\x01\x01\x12,\n" +
 	"\x06avatar\x18\x02 \x01(\v2\x0f.user.v1.AvatarH\x01R\x06avatar\x88\x01\x01\x12(\n" +

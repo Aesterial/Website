@@ -26,6 +26,17 @@ type CORS struct {
 	AllowedOrigins []string
 }
 
+type Storage struct {
+	Endpoint          string
+	Region            string
+	Bucket            string
+	AccessKey         string
+	SecretKey         string
+	UseSSL            bool
+	ForcePathStyle    bool
+	PresignTTLSeconds int
+}
+
 type Services struct {
 	IPService string
 }
@@ -41,6 +52,7 @@ type Environment struct {
 	TLS      TLS
 	Cookies  Cookies
 	Services Services
+	Storage  Storage
 	Cors     CORS
 	Database Database
 

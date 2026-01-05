@@ -10,10 +10,12 @@ import (
 	usermodifier "ascendant/backend/internal/app/modifier/user"
 	projectsapp "ascendant/backend/internal/app/projects"
 	appstatistics "ascendant/backend/internal/app/statistics"
+	storageapp "ascendant/backend/internal/app/storage"
 	loginpb "ascendant/backend/internal/gen/login/v1"
 	permspb "ascendant/backend/internal/gen/permissions/v1"
 	projpb "ascendant/backend/internal/gen/projects/v1"
 	statpb "ascendant/backend/internal/gen/statistics/v1"
+	storagepb "ascendant/backend/internal/gen/storage/v1"
 	userpb "ascendant/backend/internal/gen/user/v1"
 	"ascendant/backend/internal/infra/db"
 	dbtest "ascendant/backend/internal/infra/db/test"
@@ -120,12 +122,18 @@ func main() {
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
 	statService := appstatistics.New(statisticsRepo)
 	projectsService := projectsapp.New(projectsRepo)
+	storageService, err := storageapp.New()
+	if err != nil {
+		logger.Error("Failed to init storage: "+err.Error(), "service.storage.init", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
 
 	loginServer := grpcserver.NewLoginService(loginService, sessionsService, permissionsService, userInfoService)
-	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService)
+	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService, storageService)
 	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService, userInfoService)
 	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService, userInfoService)
 	projectServer := grpcserver.NewProjectService(projectsService, sessionsService, permissionsService, userInfoService)
+	storageServer := grpcserver.NewStorageService(storageService)
 
 	gateway := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(gatewayHeaderMatcher),
@@ -151,6 +159,10 @@ func main() {
 		logger.Error("Failed to register projects gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
+	if err := storagepb.RegisterStorageHandlerServer(ctx, gateway, storageServer); err != nil {
+		logger.Error("Failed to register storage gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
 
 	grpcPort := normalizePort(env.Startup.GRPCPort, env.Startup.Port, "8080")
 	httpPort := normalizePort(env.Startup.HTTPPort, env.Startup.Port, grpcPort)
@@ -174,6 +186,7 @@ func main() {
 	permspb.RegisterPermissionsServiceServer(grpcServer, permissionsServer)
 	statpb.RegisterStatisticsServiceServer(grpcServer, statServer)
 	projpb.RegisterProjectServiceServer(grpcServer, projectServer)
+	storagepb.RegisterStorageServer(grpcServer, storageServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
 	handler := buildHTTPHandler(grpcServer, gateway, cors)

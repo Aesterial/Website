@@ -36,6 +36,18 @@ func parseBool(key string, def bool) bool {
 	return b
 }
 
+func parseInt(key string, def int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return def
+	}
+	val, err := strconv.Atoi(raw)
+	if err != nil {
+		return def
+	}
+	return val
+}
+
 func ensure() {
 	_ = godotenv.Load(".env")
 
@@ -76,6 +88,16 @@ func ensure() {
 		},
 		Services: domain.Services{
 			IPService: envValue("SERVICES_IP", "BOOT_IPSERVICE"),
+		},
+		Storage: domain.Storage{
+			Endpoint:          envValue("STORAGE_ENDPOINT"),
+			Region:            envValue("STORAGE_REGION"),
+			Bucket:            envValue("STORAGE_BUCKET"),
+			AccessKey:         envValue("STORAGE_ACCESS_KEY"),
+			SecretKey:         envValue("STORAGE_SECRET_KEY"),
+			UseSSL:            parseBool("STORAGE_USE_SSL", false),
+			ForcePathStyle:    parseBool("STORAGE_FORCE_PATH_STYLE", false),
+			PresignTTLSeconds: parseInt("STORAGE_PRESIGN_TTL_SECONDS", 900),
 		},
 	}
 	env.MarkLoaded()
