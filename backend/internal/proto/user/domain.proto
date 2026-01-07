@@ -23,6 +23,8 @@ message UserSelf{
 message Avatar {
   string contentType = 1;
   bytes data = 2;
+  string url = 3;
+  string key = 4;
 }
 
 message UserSettings  {

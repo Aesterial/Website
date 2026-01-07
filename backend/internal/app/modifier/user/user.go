@@ -66,8 +66,8 @@ func (s *Service) UpdateAvatar(ctx context.Context, id uint, avatar user.Avatar)
 			"",
 		)
 	}
-	if avatar.Data == nil || len(avatar.Data) == 0 {
-		return nil, errors.New("avatar data is empty")
+	if strings.TrimSpace(avatar.Key) == "" {
+		return nil, errors.New("avatar key is empty")
 	}
 
 	u, err := s.repo.GetUserByUID(ctx, id)

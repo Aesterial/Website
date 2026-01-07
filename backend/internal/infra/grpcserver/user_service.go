@@ -5,6 +5,7 @@ import (
 	sessionsapp "ascendant/backend/internal/app/info/sessions"
 	userinfo "ascendant/backend/internal/app/info/user"
 	usermodifier "ascendant/backend/internal/app/modifier/user"
+	storageapp "ascendant/backend/internal/app/storage"
 	"ascendant/backend/internal/domain/permissions"
 	"ascendant/backend/internal/domain/user"
 	userpb "ascendant/backend/internal/gen/user/v1"
@@ -28,14 +29,16 @@ type UserService struct {
 	modifier *usermodifier.Service
 	sessions *sessionsapp.Service
 	auth     *Authenticator
+	storage  *storageapp.Service
 }
 
-func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sessions *sessionsapp.Service, perms *permissionsapp.Service) *UserService {
+func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sessions *sessionsapp.Service, perms *permissionsapp.Service, storage *storageapp.Service) *UserService {
 	return &UserService{
 		info:     info,
 		modifier: modifier,
 		sessions: sessions,
 		auth:     NewAuthenticator(sessions, perms, info),
+		storage:  storage,
 	}
 }
 
@@ -53,7 +56,9 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Got information about self", "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.UserSelfResponse{Data: toProtoUserSelf(u), Tracing: traceID}, nil
+	self := toProtoUserSelf(u)
+	s.applyAvatarURL(ctx, self.GetPublic())
+	return &userpb.UserSelfResponse{Data: self, Tracing: traceID}, nil
 }
 
 func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.UserPublicResponse, error) {
@@ -76,7 +81,9 @@ func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info(fmt.Sprintf("Got information about user with id: %d", req.UserID), "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.UserPublicResponse{Data: toProtoUserPublic(u), Tracing: traceID}, nil
+	public := toProtoUserPublic(u)
+	s.applyAvatarURL(ctx, public)
+	return &userpb.UserPublicResponse{Data: public, Tracing: traceID}, nil
 }
 
 func (s *UserService) Sessions(ctx context.Context, _ *emptypb.Empty) (*userpb.UserSessionsResponse, error) {
@@ -142,9 +149,23 @@ func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) 
 	if s.modifier == nil {
 		return nil, status.Error(codes.Internal, "modifier service not configured")
 	}
+	if s.storage == nil {
+		return nil, status.Error(codes.Internal, "storage service not configured")
+	}
 	avatar := fromProtoAvatar(req)
-	if avatar == nil || len(avatar.Data) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "avatar data is empty")
+	if avatar == nil || strings.TrimSpace(avatar.Key) == "" {
+		return nil, status.Error(codes.InvalidArgument, "avatar key is empty")
+	}
+	expectedPrefix := fmt.Sprintf("avatars/%d/", requestor.UID)
+	if !strings.HasPrefix(avatar.Key, expectedPrefix) {
+		return nil, status.Error(codes.PermissionDenied, "avatar key is invalid")
+	}
+	exists, err := s.storage.Exists(ctx, avatar.Key)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to validate avatar object")
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, "avatar object not found")
 	}
 
 	traceID := TraceIDOrNew(ctx)
@@ -190,8 +211,8 @@ func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (
 	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, err
 }
 
-func formateBanInfoResponse(ctx context.Context, info *user.BanInfo, srv *userinfo.Service) (*userpb.BanInfoResponse, error) {
-	executor, err := srv.GetByID(ctx, info.Executor)
+func (s *UserService) formateBanInfoResponse(ctx context.Context, info *user.BanInfo) (*userpb.BanInfoResponse, error) {
+	executor, err := s.info.GetByID(ctx, info.Executor)
 	if err != nil {
 		return nil, statusFromError(err)
 	}
@@ -199,7 +220,16 @@ func formateBanInfoResponse(ctx context.Context, info *user.BanInfo, srv *userin
 	if info.Expires.Valid {
 		expr = timestamppb.New(info.Expires.Time)
 	}
-	return &userpb.BanInfoResponse{Id: info.ID.String(), Executor: executor.ToPublic(), Reason: info.Reason, At: timestamppb.New(info.At), Expires: expr, Tracing: TraceIDOrNew(ctx)}, nil
+	executorProto := toProtoUserPublic(executor)
+	s.applyAvatarURL(ctx, executorProto)
+	return &userpb.BanInfoResponse{
+		Id:       info.ID.String(),
+		Executor: executorProto,
+		Reason:   info.Reason,
+		At:       timestamppb.New(info.At),
+		Expires:  expr,
+		Tracing:  TraceIDOrNew(ctx),
+	}, nil
 }
 
 func (s *UserService) BanInfo(ctx context.Context, _ *emptypb.Empty) (*userpb.BanInfoResponse, error) {
@@ -218,7 +248,7 @@ func (s *UserService) BanInfo(ctx context.Context, _ *emptypb.Empty) (*userpb.Ba
 		return nil, statusFromError(err)
 	}
 
-	return formateBanInfoResponse(ctx, info, s.info)
+	return s.formateBanInfoResponse(ctx, info)
 }
 
 func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.BanInfoResponse, error) {
@@ -239,7 +269,7 @@ func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserReq
 		}
 		return nil, statusFromError(err)
 	}
-	return formateBanInfoResponse(ctx, info, s.info)
+	return s.formateBanInfoResponse(ctx, info)
 }
 
 func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.UsersResponse, error) {
@@ -257,6 +287,9 @@ func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.User
 	if err != nil {
 		return nil, statusFromError(err)
 	}
+	for _, u := range info {
+		s.applyAvatarURL(ctx, u)
+	}
 	return &userpb.UsersResponse{Data: info, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
@@ -266,4 +299,21 @@ func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*
 
 func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "DeleteUserAvatar is not implemented")
+}
+
+func (s *UserService) applyAvatarURL(ctx context.Context, u *userpb.UserPublic) {
+	if s == nil || s.storage == nil || u == nil || u.Settings == nil || u.Settings.Avatar == nil {
+		return
+	}
+	key := strings.TrimSpace(u.Settings.Avatar.Key)
+	if key == "" {
+		return
+	}
+	url, err := s.storage.PresignGet(ctx, key)
+	if err != nil || strings.TrimSpace(url) == "" {
+		return
+	}
+	u.Settings.Avatar.Url = url
+	u.Settings.Avatar.Data = nil
+	u.Settings.Avatar.Key = ""
 }

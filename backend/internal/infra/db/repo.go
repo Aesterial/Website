@@ -258,27 +258,33 @@ func (u *UserRepository) GetAvatar(ctx context.Context, uid uint) (*user.Avatar,
 		return nil, errors.New("uid is zero")
 	}
 	var avatar user.Avatar
-	var av struct {
+	var record struct {
+		key         sql.NullString
 		contentType sql.NullString
-		bytes       []byte
-		height      sql.NullInt32
-		width       sql.NullInt32
-		size        sql.NullInt32
+		sizeBytes   sql.NullInt64
+		updatedAt   sql.NullTime
 	}
-	if err := u.DB.QueryRowContext(ctx, "SELECT (p.info).content_type, (p.info).data, (p.info).height, (p.info).width, (p.info).size_bytes FROM pictures p WHERE p.owner = $1 AND p.owner_type = 'user'", uid).Scan(&av.contentType, &av.bytes, &av.height, &av.width, &av.size); err != nil {
+	if err := u.DB.QueryRowContext(ctx, `
+		SELECT a.object_key, a.content_type, a.size_bytes, a.updated_at
+		FROM user_avatars a
+		WHERE a.user_id = $1
+	`, uid).Scan(&record.key, &record.contentType, &record.sizeBytes, &record.updatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if av.bytes == nil {
-		return &avatar, nil
+	if !record.key.Valid || strings.TrimSpace(record.key.String) == "" {
+		return nil, nil
 	}
-	avatar.ContentType = av.contentType.String
-	avatar.Data = av.bytes
-	avatar.Height = int(av.height.Int32)
-	avatar.Width = int(av.width.Int32)
-	avatar.SizeBytes = int(av.size.Int32)
+	avatar.Key = record.key.String
+	avatar.ContentType = record.contentType.String
+	if record.sizeBytes.Valid {
+		avatar.SizeBytes = int(record.sizeBytes.Int64)
+	}
+	if record.updatedAt.Valid {
+		avatar.Updated = record.updatedAt.Time
+	}
 	return &avatar, nil
 }
 
@@ -379,28 +385,20 @@ func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Av
 	if uid == 0 {
 		return errors.New("uid is zero")
 	}
-	if avatar.Data == nil {
-		return errors.New("avatar data is nil")
+	if strings.TrimSpace(avatar.Key) == "" {
+		return errors.New("avatar key is empty")
 	}
-	tx, err := u.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-		_ = tx.Commit()
-	}()
-
-	if _, err = tx.ExecContext(ctx, "DELETE FROM pictures WHERE owner = $1 AND owner_type = 'user'", uid); err != nil {
-		return err
-	}
-	if _, err = tx.ExecContext(ctx, "INSERT INTO pictures (owner, owner_type, info) VALUES ($1, $2, ROW($3, $4, $5, $6, $7)::avatar_t)", uid, "user", avatar.ContentType, avatar.Data, avatar.Width, avatar.Height, avatar.SizeBytes); err != nil {
-		return err
-	}
-	return nil
+	_, err := u.DB.ExecContext(ctx, `
+		INSERT INTO user_avatars (user_id, object_key, content_type, size_bytes, updated_at)
+		VALUES ($1, $2, $3, $4, now())
+		ON CONFLICT (user_id)
+		DO UPDATE SET
+			object_key = excluded.object_key,
+			content_type = excluded.content_type,
+			size_bytes = excluded.size_bytes,
+			updated_at = now()
+	`, uid, avatar.Key, avatar.ContentType, avatar.SizeBytes)
+	return err
 }
 
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
