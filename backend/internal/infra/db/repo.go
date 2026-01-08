@@ -1293,21 +1293,21 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 	return data, nil
 }
 
-func (s *SubmissionsRepository) Approve(ctx context.Context, id uuid.UUID) error {
-	if id == uuid.Nil {
+func (s *SubmissionsRepository) Approve(ctx context.Context, id int32) error {
+	if id == 0 {
 		return errors.New("invalid id")
 	}
-	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'approved' WHERE project_id = $1", id); err != nil {
+	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'approved' WHERE id = $1", id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *SubmissionsRepository) Decline(ctx context.Context, id uuid.UUID, reason string) error {
-	if id == uuid.Nil {
+func (s *SubmissionsRepository) Decline(ctx context.Context, id int32, reason string) error {
+	if id == 0 {
 		return errors.New("invalid id")
 	}
-	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'declined', reason = $1 WHERE project_id = $2", reason, id); err != nil {
+	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'declined', reason = $1 WHERE id = $2", reason, id); err != nil {
 		return err
 	}
 	return nil

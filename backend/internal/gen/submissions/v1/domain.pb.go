@@ -68,7 +68,7 @@ func (x *DataResponse) GetTracing() string {
 
 type ApproveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -103,16 +103,16 @@ func (*ApproveRequest) Descriptor() ([]byte, []int) {
 	return file_submissions_domain_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ApproveRequest) GetId() string {
+func (x *ApproveRequest) GetId() int32 {
 	if x != nil {
 		return x.Id
 	}
-	return ""
+	return 0
 }
 
 type DeclineRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -148,11 +148,11 @@ func (*DeclineRequest) Descriptor() ([]byte, []int) {
 	return file_submissions_domain_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *DeclineRequest) GetId() string {
+func (x *DeclineRequest) GetId() int32 {
 	if x != nil {
 		return x.Id
 	}
-	return ""
+	return 0
 }
 
 func (x *DeclineRequest) GetReason() string {
@@ -274,9 +274,9 @@ const file_submissions_domain_proto_rawDesc = "" +
 	"\fDataResponse\x12\x18\n" +
 	"\atracing\x18\x01 \x01(\tR\atracing\" \n" +
 	"\x0eApproveRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\"8\n" +
 	"\x0eDeclineRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xab\x01\n" +
 	"\fListResponse\x127\n" +
 	"\x04data\x18\x01 \x03(\v2#.submissions.v1.ListResponse.targetR\x04data\x12\x18\n" +

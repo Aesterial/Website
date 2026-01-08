@@ -11,8 +11,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -115,15 +113,15 @@ func (s *Service) GetActive(ctx context.Context) ([]*submpb.ListResponseTarget, 
 	return response, nil
 }
 
-func (s *Service) Approve(ctx context.Context, id uuid.UUID) error {
-	if id == uuid.Nil {
+func (s *Service) Approve(ctx context.Context, id int32) error {
+	if id == 0 {
 		return errors.New("invalid id")
 	}
 	return s.repo.Approve(ctx, id)
 }
 
-func (s *Service) Decline(ctx context.Context, id uuid.UUID, reason string) error {
-	if id == uuid.Nil || reason == "" {
+func (s *Service) Decline(ctx context.Context, id int32, reason string) error {
+	if id == 0 || reason == "" {
 		return errors.New("invalid data")
 	}
 	return s.repo.Decline(ctx, id, reason)

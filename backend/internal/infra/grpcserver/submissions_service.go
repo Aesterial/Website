@@ -9,7 +9,6 @@ import (
 	submpb "ascendant/backend/internal/gen/submissions/v1"
 	"context"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -39,11 +38,7 @@ func (s *SubmissionsService) Approve(ctx context.Context, req *submpb.ApproveReq
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.BanProfile); err != nil {
 		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
-	id, err := uuid.Parse(req.Id)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	if err := s.submissions.Approve(ctx, id); err != nil {
+	if err := s.submissions.Approve(ctx, req.Id); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &submpb.DataResponse{Tracing: TraceIDOrNew(ctx)}, nil
@@ -60,11 +55,7 @@ func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineReq
 	if err = s.auth.RequirePermissions(ctx, requestor.UID, permissions.BanProfile); err != nil {
 		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
-	id, err := uuid.Parse(req.Id)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	if err := s.submissions.Decline(ctx, id, req.Reason); err != nil {
+	if err := s.submissions.Decline(ctx, req.Id, req.Reason); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &submpb.DataResponse{Tracing: TraceIDOrNew(ctx)}, nil
