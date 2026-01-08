@@ -76,9 +76,6 @@ func toProtoAvatar(a *user.Avatar) *userpb.Avatar {
 	avatar := &userpb.Avatar{
 		ContentType: a.ContentType,
 	}
-	if len(a.Data) > 0 {
-		avatar.Data = a.Data
-	}
 	if strings.TrimSpace(a.Key) != "" {
 		avatar.Key = a.Key
 	}
@@ -94,7 +91,7 @@ func fromProtoAvatar(a *userpb.Avatar) *user.Avatar {
 	}
 	avatar := &user.Avatar{
 		ContentType: a.ContentType,
-		Data:        a.Data,
+		Key:         a.Key,
 		SizeBytes:   len(a.Data),
 	}
 	if strings.TrimSpace(a.Key) != "" {

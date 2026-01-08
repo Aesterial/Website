@@ -26,4 +26,14 @@ service LoginService {
       body: "*"
     };
   }
+  rpc VkStart(google.protobuf.Empty) returns (VKStartResponse) {
+    option (google.api.http) = {
+      get: "/api/login/vk/start"
+    };
+  }
+  rpc VkCallback(VKCallbackRequest) returns (VKCallbackResponse) {
+    option (google.api.http) = {
+      get: "/api/login/vk/callback"
+    };
+  }
 }

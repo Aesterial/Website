@@ -23,6 +23,8 @@ const (
 	LoginService_Authorization_FullMethodName = "/login.v1.LoginService/Authorization"
 	LoginService_Register_FullMethodName      = "/login.v1.LoginService/Register"
 	LoginService_Logout_FullMethodName        = "/login.v1.LoginService/Logout"
+	LoginService_VkStart_FullMethodName       = "/login.v1.LoginService/VkStart"
+	LoginService_VkCallback_FullMethodName    = "/login.v1.LoginService/VkCallback"
 )
 
 // LoginServiceClient is the client API for LoginService service.
@@ -32,6 +34,8 @@ type LoginServiceClient interface {
 	Authorization(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
+	VkStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*VKStartResponse, error)
+	VkCallback(ctx context.Context, in *VKCallbackRequest, opts ...grpc.CallOption) (*VKCallbackResponse, error)
 }
 
 type loginServiceClient struct {
@@ -72,6 +76,26 @@ func (c *loginServiceClient) Logout(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *loginServiceClient) VkStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*VKStartResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VKStartResponse)
+	err := c.cc.Invoke(ctx, LoginService_VkStart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *loginServiceClient) VkCallback(ctx context.Context, in *VKCallbackRequest, opts ...grpc.CallOption) (*VKCallbackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VKCallbackResponse)
+	err := c.cc.Invoke(ctx, LoginService_VkCallback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LoginServiceServer is the server API for LoginService service.
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility.
@@ -79,6 +103,8 @@ type LoginServiceServer interface {
 	Authorization(context.Context, *AuthRequest) (*AuthResponse, error)
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	Logout(context.Context, *emptypb.Empty) (*EmptyResponse, error)
+	VkStart(context.Context, *emptypb.Empty) (*VKStartResponse, error)
+	VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
 
@@ -97,6 +123,12 @@ func (UnimplementedLoginServiceServer) Register(context.Context, *RegisterReques
 }
 func (UnimplementedLoginServiceServer) Logout(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedLoginServiceServer) VkStart(context.Context, *emptypb.Empty) (*VKStartResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VkStart not implemented")
+}
+func (UnimplementedLoginServiceServer) VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VkCallback not implemented")
 }
 func (UnimplementedLoginServiceServer) mustEmbedUnimplementedLoginServiceServer() {}
 func (UnimplementedLoginServiceServer) testEmbeddedByValue()                      {}
@@ -173,6 +205,42 @@ func _LoginService_Logout_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LoginService_VkStart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).VkStart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_VkStart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).VkStart(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LoginService_VkCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VKCallbackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).VkCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_VkCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).VkCallback(ctx, req.(*VKCallbackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LoginService_ServiceDesc is the grpc.ServiceDesc for LoginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +259,14 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _LoginService_Logout_Handler,
+		},
+		{
+			MethodName: "VkStart",
+			Handler:    _LoginService_VkStart_Handler,
+		},
+		{
+			MethodName: "VkCallback",
+			Handler:    _LoginService_VkCallback_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

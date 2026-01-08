@@ -10,6 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -25,21 +26,25 @@ var File_projects_projects_proto protoreflect.FileDescriptor
 
 const file_projects_projects_proto_rawDesc = "" +
 	"\n" +
-	"\x17projects/projects.proto\x12\vprojects.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x15projects/domain.proto2\x8f\x04\n" +
+	"\x17projects/projects.proto\x12\vprojects.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15projects/domain.proto2\xf8\x04\n" +
 	"\x0eProjectService\x12O\n" +
 	"\x03Get\x12\x17.projects.v1.GetRequest\x1a\x18.projects.v1.GetResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/projects\x12a\n" +
 	"\x06Create\x12\x1a.projects.v1.CreateRequest\x1a\x1a.projects.v1.EmptyResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/projects/create\x12k\n" +
 	"\vChangeTitle\x12\x1a.projects.v1.ChangeRequest\x1a\x1a.projects.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e2\x1c/api/projects/{id}/name/{to}\x12w\n" +
 	"\x11ChangeDescription\x12\x1a.projects.v1.ChangeRequest\x1a\x1a.projects.v1.EmptyResponse\"*\x82\xd3\xe4\x93\x02$2\"/api/project/{id}/description/{to}\x12c\n" +
-	"\x06Delete\x12\x1a.projects.v1.RequestWithID\x1a\x1a.projects.v1.EmptyResponse\"!\x82\xd3\xe4\x93\x02\x1b*\x19/api/projects/{id}/deleteB5Z3ascendant/backend/internal/gen/projects/v1;projectsb\x06proto3"
+	"\x06Delete\x12\x1a.projects.v1.RequestWithID\x1a\x1a.projects.v1.EmptyResponse\"!\x82\xd3\xe4\x93\x02\x1b*\x19/api/projects/{id}/delete\x12g\n" +
+	"\n" +
+	"Categories\x12\x16.google.protobuf.Empty\x1a\x1f.projects.v1.CategoriesResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/projects/categoriesB5Z3ascendant/backend/internal/gen/projects/v1;projectsb\x06proto3"
 
 var file_projects_projects_proto_goTypes = []any{
-	(*GetRequest)(nil),    // 0: projects.v1.GetRequest
-	(*CreateRequest)(nil), // 1: projects.v1.CreateRequest
-	(*ChangeRequest)(nil), // 2: projects.v1.ChangeRequest
-	(*RequestWithID)(nil), // 3: projects.v1.RequestWithID
-	(*GetResponse)(nil),   // 4: projects.v1.GetResponse
-	(*EmptyResponse)(nil), // 5: projects.v1.EmptyResponse
+	(*GetRequest)(nil),         // 0: projects.v1.GetRequest
+	(*CreateRequest)(nil),      // 1: projects.v1.CreateRequest
+	(*ChangeRequest)(nil),      // 2: projects.v1.ChangeRequest
+	(*RequestWithID)(nil),      // 3: projects.v1.RequestWithID
+	(*emptypb.Empty)(nil),      // 4: google.protobuf.Empty
+	(*GetResponse)(nil),        // 5: projects.v1.GetResponse
+	(*EmptyResponse)(nil),      // 6: projects.v1.EmptyResponse
+	(*CategoriesResponse)(nil), // 7: projects.v1.CategoriesResponse
 }
 var file_projects_projects_proto_depIdxs = []int32{
 	0, // 0: projects.v1.ProjectService.Get:input_type -> projects.v1.GetRequest
@@ -47,13 +52,15 @@ var file_projects_projects_proto_depIdxs = []int32{
 	2, // 2: projects.v1.ProjectService.ChangeTitle:input_type -> projects.v1.ChangeRequest
 	2, // 3: projects.v1.ProjectService.ChangeDescription:input_type -> projects.v1.ChangeRequest
 	3, // 4: projects.v1.ProjectService.Delete:input_type -> projects.v1.RequestWithID
-	4, // 5: projects.v1.ProjectService.Get:output_type -> projects.v1.GetResponse
-	5, // 6: projects.v1.ProjectService.Create:output_type -> projects.v1.EmptyResponse
-	5, // 7: projects.v1.ProjectService.ChangeTitle:output_type -> projects.v1.EmptyResponse
-	5, // 8: projects.v1.ProjectService.ChangeDescription:output_type -> projects.v1.EmptyResponse
-	5, // 9: projects.v1.ProjectService.Delete:output_type -> projects.v1.EmptyResponse
-	5, // [5:10] is the sub-list for method output_type
-	0, // [0:5] is the sub-list for method input_type
+	4, // 5: projects.v1.ProjectService.Categories:input_type -> google.protobuf.Empty
+	5, // 6: projects.v1.ProjectService.Get:output_type -> projects.v1.GetResponse
+	6, // 7: projects.v1.ProjectService.Create:output_type -> projects.v1.EmptyResponse
+	6, // 8: projects.v1.ProjectService.ChangeTitle:output_type -> projects.v1.EmptyResponse
+	6, // 9: projects.v1.ProjectService.ChangeDescription:output_type -> projects.v1.EmptyResponse
+	6, // 10: projects.v1.ProjectService.Delete:output_type -> projects.v1.EmptyResponse
+	7, // 11: projects.v1.ProjectService.Categories:output_type -> projects.v1.CategoriesResponse
+	6, // [6:12] is the sub-list for method output_type
+	0, // [0:6] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

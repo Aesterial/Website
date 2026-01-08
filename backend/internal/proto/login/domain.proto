@@ -27,3 +27,18 @@ message RegisterResponse {
 message EmptyResponse {
   string tracing = 1;
 }
+
+message VKStartResponse {
+  string auth_url = 1;
+  string state = 2;
+}
+
+message VKCallbackRequest {
+  string code = 1;
+  string state = 2;
+}
+
+message VKCallbackResponse {
+  string redirect_url = 1;
+  string tracing = 2;
+}

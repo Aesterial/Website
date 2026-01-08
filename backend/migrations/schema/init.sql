@@ -9,6 +9,7 @@ create type project_vote_status as enum ('archived', 'implementing', 'vote in pr
 create type submissions_state as enum ('approved', 'declined', 'waiting');
 create type picture_owner_type as enum ('user', 'project', 'unspecified');
 create type picture_rate_state as enum ('good', 'bad', 'neutral');
+create type oauth_service_enum as enum ('vk');
 
 create type picture_t as (
     content_type varchar(64),
@@ -109,6 +110,15 @@ create unique index users_username_uq on users (username);
 create unique index users_email_uq on users (lower(((email).address)));
 create index users_rank_name_idx on users (((rank).name));
 create index users_joined_idx on users (joined);
+
+-- oauth users
+create table oauth (
+    uid bigint not null,
+    service oauth_service_enum not null,
+    linked_id text not null,
+    at timestamptz not null default now(),
+    constraint oauth_service_uid_uniq unique (service, uid)
+);
 
 -- pictures (avatars/photos)
 create table pictures (

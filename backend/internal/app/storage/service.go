@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultPresignTTL = 15 * time.Minute
-	defaultRegion     = "us-east-1"
+	defaultRegion     = "eu-central-1"
 	avatarsPrefix     = "avatars"
 	photosPrefix      = "photos"
 	defaultAvatarID   = "current"

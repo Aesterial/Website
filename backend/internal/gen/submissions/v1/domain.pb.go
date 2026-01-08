@@ -165,6 +165,7 @@ func (x *DeclineRequest) GetReason() string {
 type ListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          []*ListResponseTarget  `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -204,6 +205,13 @@ func (x *ListResponse) GetData() []*ListResponseTarget {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *ListResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
 }
 
 type ListResponseTarget struct {
@@ -269,9 +277,10 @@ const file_submissions_domain_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
 	"\x0eDeclineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x91\x01\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xab\x01\n" +
 	"\fListResponse\x127\n" +
-	"\x04data\x18\x01 \x03(\v2#.submissions.v1.ListResponse.targetR\x04data\x1aH\n" +
+	"\x04data\x18\x01 \x03(\v2#.submissions.v1.ListResponse.targetR\x04data\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing\x1aH\n" +
 	"\x06target\x12(\n" +
 	"\x04info\x18\x01 \x01(\v2\x14.projects.v1.ProjectR\x04info\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05stateB;Z9ascendant/backend/internal/gen/submissions/v1;submissionsb\x06proto3"

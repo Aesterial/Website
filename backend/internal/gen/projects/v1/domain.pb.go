@@ -142,6 +142,7 @@ func (ProjectVoteStatus) EnumDescriptor() ([]byte, []int) {
 type GetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -179,6 +180,13 @@ func (*GetRequest) Descriptor() ([]byte, []int) {
 func (x *GetRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
 	}
 	return 0
 }
@@ -679,14 +687,67 @@ func (x *EmptyResponse) GetTracing() string {
 	return ""
 }
 
+type CategoriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    []string               `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CategoriesResponse) Reset() {
+	*x = CategoriesResponse{}
+	mi := &file_projects_domain_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategoriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoriesResponse) ProtoMessage() {}
+
+func (x *CategoriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_projects_domain_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategoriesResponse.ProtoReflect.Descriptor instead.
+func (*CategoriesResponse) Descriptor() ([]byte, []int) {
+	return file_projects_domain_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CategoriesResponse) GetCategories() []string {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+func (x *CategoriesResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_projects_domain_proto protoreflect.FileDescriptor
 
 const file_projects_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x15projects/domain.proto\x12\vprojects.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11user/domain.proto\"\"\n" +
+	"\x15projects/domain.proto\x12\vprojects.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11user/domain.proto\":\n" +
 	"\n" +
 	"GetRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\"Y\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"Y\n" +
 	"\vGetResponse\x120\n" +
 	"\bprojects\x18\x01 \x03(\v2\x14.projects.v1.ProjectR\bprojects\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"S\n" +
@@ -722,7 +783,12 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\")\n" +
 	"\rEmptyResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracing*{\n" +
+	"\atracing\x18\x01 \x01(\tR\atracing\"N\n" +
+	"\x12CategoriesResponse\x12\x1e\n" +
+	"\n" +
+	"categories\x18\x01 \x03(\tR\n" +
+	"categories\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing*{\n" +
 	"\x0fProjectCategory\x12\x0f\n" +
 	"\vUNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vIMPROVEMENT\x10\x01\x12\x11\n" +
@@ -752,7 +818,7 @@ func file_projects_domain_proto_rawDescGZIP() []byte {
 }
 
 var file_projects_domain_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_projects_domain_proto_goTypes = []any{
 	(ProjectCategory)(0),          // 0: projects.v1.ProjectCategory
 	(ProjectVoteStatus)(0),        // 1: projects.v1.ProjectVoteStatus
@@ -765,21 +831,22 @@ var file_projects_domain_proto_goTypes = []any{
 	(*RequestWithID)(nil),         // 8: projects.v1.RequestWithID
 	(*ChangeRequest)(nil),         // 9: projects.v1.ChangeRequest
 	(*EmptyResponse)(nil),         // 10: projects.v1.EmptyResponse
-	(*v1.Avatar)(nil),             // 11: user.v1.Avatar
-	(*v1.UserPublic)(nil),         // 12: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
+	(*CategoriesResponse)(nil),    // 11: projects.v1.CategoriesResponse
+	(*v1.Avatar)(nil),             // 12: user.v1.Avatar
+	(*v1.UserPublic)(nil),         // 13: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
 }
 var file_projects_domain_proto_depIdxs = []int32{
 	6,  // 0: projects.v1.GetResponse.projects:type_name -> projects.v1.Project
-	11, // 1: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
+	12, // 1: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
 	0,  // 2: projects.v1.ProjectInfo.category:type_name -> projects.v1.ProjectCategory
 	4,  // 3: projects.v1.ProjectInfo.location:type_name -> projects.v1.ProjectLocation
-	12, // 4: projects.v1.Project.author:type_name -> user.v1.UserPublic
+	13, // 4: projects.v1.Project.author:type_name -> user.v1.UserPublic
 	5,  // 5: projects.v1.Project.info:type_name -> projects.v1.ProjectInfo
 	1,  // 6: projects.v1.Project.status:type_name -> projects.v1.ProjectVoteStatus
-	12, // 7: projects.v1.Project.liked:type_name -> user.v1.UserPublic
-	13, // 8: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
-	11, // 9: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
+	13, // 7: projects.v1.Project.liked:type_name -> user.v1.UserPublic
+	14, // 8: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
+	12, // 9: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
 	4,  // 10: projects.v1.CreateRequest.location:type_name -> projects.v1.ProjectLocation
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
@@ -800,7 +867,7 @@ func file_projects_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_projects_domain_proto_rawDesc), len(file_projects_domain_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

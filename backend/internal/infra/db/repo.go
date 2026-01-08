@@ -82,12 +82,9 @@ func NewSubmissionRepository(db *sql.DB) *SubmissionsRepository {
 	return &SubmissionsRepository{DB: db}
 }
 
-func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, error) {
-	var usrs []*userpb.UserPublic
-	rows, err := u.DB.QueryContext(ctx, "SELECT u.uid, u.username, (u.email).address, (u.email).verified, (u.rank).name, (u.rank).expires, u.joined FROM users u ORDER BY u.joined")
-	if err != nil {
-		return nil, err
-	}
+func parseRowsToUsers(ctx context.Context, rows *sql.Rows, getAvatar func(context.Context, uint) (*user.Avatar, error), isBanned func(context.Context, uint) (bool, *user.BanInfo, error)) (user.Users, error) {
+	var usrs user.Users
+	var err error
 	defer func() {
 		_ = rows.Close()
 	}()
@@ -96,18 +93,29 @@ func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, err
 		if err := rows.Scan(&usr.UID, &usr.Username, &usr.Email.Address, &usr.Email.Verified, &usr.Rank.Name, &usr.Rank.Expires, &usr.Joined); err != nil {
 			return nil, err
 		}
-		usr.Settings.Avatar, err = u.GetAvatar(ctx, usr.UID)
+		usr.Settings.Avatar, err = getAvatar(ctx, usr.UID)
 		if err != nil {
 			return nil, err
 		}
-		pub := usr.ToPublic()
-		pub.Banned, _, err = u.IsBanned(ctx, usr.UID)
+		usr.Banned, _, err = isBanned(ctx, usr.UID)
 		if err != nil {
 			return nil, err
 		}
-		usrs = append(usrs, pub)
+		usrs = append(usrs, &usr)
 	}
 	return usrs, nil
+}
+
+func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, error) {
+	rows, err := u.DB.QueryContext(ctx, "SELECT u.uid, u.username, (u.email).address, (u.email).verified, (u.rank).name, (u.rank).expires, u.joined FROM users u ORDER BY u.joined")
+	if err != nil {
+		return nil, err
+	}
+	usrs, err := parseRowsToUsers(ctx, rows, u.GetAvatar, u.IsBanned)
+	if err != nil {
+		return nil, err
+	}
+	return usrs.ToPublic(), nil
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
@@ -783,44 +791,63 @@ func (p *PermissionsRepository) SetForRank(ctx context.Context, rank string, per
 	return updateRankPermissions(p.DB, ctx, rank, perms)
 }
 
-func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *sql.DB) ([]*user.Avatar, error) {
-	rows, err := db.QueryContext(ctx, "SELECT (p.info).content_type, (p.info).data, (p.info).width, (p.info).height, (p.info).size_bytes FROM pictures p WHERE p.owner = $1 AND p.owner_type = 'project' ", projId.String())
+func getProjectAuthor(ctx context.Context, uid uint, db *sql.DB) (*user.User, error) {
+	usr, err := NewUserRepository(db).GetUserByUID(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	return usr, nil
+}
+
+func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *sql.DB) (user.Avatars, error) {
+	rows, err := db.QueryContext(ctx, "SELECT (p.info).content_type, (p.info).pic_id, (p.info).size_bytes, (p.info).updated FROM pictures p WHERE p.owner = $1 AND p.owner_type = 'project' ", projId.String())
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
 	avatars := make([]*user.Avatar, 0)
 	for rows.Next() {
 		var avatar user.Avatar
-		var av struct {
-			contentType sql.NullString
-			bytes       []byte
-			height      sql.NullInt32
-			width       sql.NullInt32
-			size        sql.NullInt32
-		}
-		if err := rows.Scan(&av.contentType, &av.bytes, &av.height, &av.width, &av.size); err != nil {
+		if err := rows.Scan(&avatar.ContentType, &avatar.Key, &avatar.SizeBytes, &avatar.Updated); err != nil {
 			return nil, err
 		}
-		avatar.ContentType = av.contentType.String
-		avatar.Data = av.bytes
-		avatar.Height = int(av.height.Int32)
-		avatar.Width = int(av.width.Int32)
-		avatar.SizeBytes = int(av.size.Int32)
 		avatars = append(avatars, &avatar)
 	}
 	return avatars, nil
 }
 
+func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *sql.DB) (user.Users, error) {
+	rows, err := db.QueryContext(ctx, "SELECT l.project_id, l.user_uid, l.created_at, u.* FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC OFFSET $2", id, 0)
+	if err != nil {
+		return nil, err
+	}
+	u := NewUserRepository(db)
+	return parseRowsToUsers(ctx, rows, u.GetAvatar, u.IsBanned)
+}
+
 func getProject(ctx context.Context, id uuid.UUID, db *sql.DB) (*projectdomain.Project, error) {
 	var project projectdomain.Project
 	var err error
-	if err = db.QueryRowContext(ctx, "SELECT * FROM projects p WHERE p.id = $1", id).Scan(&project.ID, &project.Author, &project.Info.Title, &project.Info.Description, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At); err != nil {
+	var authorID uint
+	if err = db.QueryRowContext(ctx, "SELECT p.id, p.author_uid, (p.info).title, (p.info).description, (p.info).category, ((p.info).location).city, ((p.info).location).street, ((p.info).location).house, p.likes_count, p.created_at FROM projects p WHERE p.id = $1", id).Scan(&project.ID, &authorID, &project.Info.Title, &project.Info.Description, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At); err != nil {
+		return nil, err
+	}
+	project.Author, err = getProjectAuthor(ctx, authorID, db)
+	if err != nil {
 		return nil, err
 	}
 	project.Info.Photos, err = getProjectPhotos(ctx, project.ID, db)
 	if err != nil {
 		return nil, err
+	}
+	if project.Likes > 0 {
+		liked, err := getWhoLikedProject(ctx, project.ID, db)
+		if err != nil {
+			return nil, err
+		}
+		project.Liked = &liked
 	}
 	return &project, nil
 }
@@ -857,27 +884,89 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) ([]*
 
 func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdomain.Project) error {
 	var projectId uuid.UUID
-	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author, info.Info.Title, info.Info.Description, info.Info.Category, info.Info.Location.City, info.Info.Location.Street, info.Info.Location.House).Scan(&projectId); err != nil {
+	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, info.Info.Location.City, info.Info.Location.Street, info.Info.Location.House).Scan(&projectId); err != nil {
 		return err
 	}
-	stmt, err := p.DB.PrepareContext(ctx, "INSERT INTO pictures (owner, owner_type, info) VALUES ($1, $2, ROW($3, $4, $5, $6, $7)::avatar_t)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	for _, pic := range info.Info.Photos {
-		if pic == nil {
-			continue
-		}
-		if _, err = stmt.Exec(projectId.String(), "project", pic.ContentType, pic.Data, pic.Width, pic.Height, pic.SizeBytes); err != nil {
-			logger.Debug("Failed to save project photo: "+err.Error(), "projects.photos.save")
-			continue
-		}
-	}
+	//stmt, err := p.DB.PrepareContext(ctx, "INSERT INTO pictures (owner, owner_type, info) VALUES ($1, $2, ROW($3, $4, $5, $6, $7)::picture_t)")
+	//if err != nil {
+	//	return err
+	//}
+	//defer stmt.Close()
+	//for _, pic := range info.Info.Photos {
+	//	if pic == nil {
+	//		continue
+	//	}
+	//	if _, err = stmt.Exec(projectId.String(), "project", pic.ContentType, pic.Data, pic.Width, pic.Height, pic.SizeBytes); err != nil {
+	//		logger.Debug("Failed to save project photo: "+err.Error(), "projects.photos.save")
+	//		continue
+	//	}
+	//}
 	if _, err := p.DB.ExecContext(ctx, "INSERT INTO submissions (project_id) VALUES ($1)", projectId); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (p *ProjectsRepository) GetCategories(ctx context.Context) ([]string, error) {
+	var enumName = "project_categories"
+	var result []string
+	rows, err := p.DB.QueryContext(ctx, "SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = $1 ORDER BY e.enumsortorder", enumName)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	for rows.Next() {
+		var label string
+		if err := rows.Scan(&label); err != nil {
+			return nil, err
+		}
+		result = append(result, label)
+	}
+	return result, nil
+}
+
+func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit int) (projectdomain.Projects, error) {
+	var projects []*projectdomain.Project
+
+	var query string
+	var args []any
+
+	if limit <= 0 {
+		query = "SELECT p.id FROM projects p ORDER BY p.created_at DESC, p.id DESC OFFSET $1"
+		args = []any{offset}
+	} else {
+		query = "SELECT p.id FROM projects p ORDER BY p.created_at DESC, p.id DESC OFFSET $1 LIMIT $2"
+		args = []any{offset, limit}
+	}
+
+	rows, err := p.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	for rows.Next() {
+		var id uuid.UUID
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		project, err := getProject(ctx, id, p.DB)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, project)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }
 
 var _ statistics.Repository = (*StatisticsRepository)(nil)
@@ -1156,7 +1245,7 @@ func (s *StatisticsRepository) IdeasRecap(ctx context.Context) (*statpb.IdeasApp
 	return &resp, nil
 }
 
-func (s *StatisticsRepository) MediaCoverage(ctx context.Context) (map[int64]*statpb.MediaCoverageResponseMedia, error) {
+func (s *StatisticsRepository) MediaCoverage(context.Context) (map[int64]*statpb.MediaCoverageResponseMedia, error) {
 	return make(map[int64]*statpb.MediaCoverageResponseMedia), nil
 }
 
@@ -1183,11 +1272,13 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug("Received rows", "")
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var sub submissions.Submission
 		var reason sql.NullString
-		if err := rows.Scan(&sub.ID, &sub.ProjectID, &sub.State); err != nil {
+		logger.Debug("Scanning rows", "")
+		if err := rows.Scan(&sub.ID, &sub.ProjectID, &sub.State, &sub.Reason); err != nil {
 			return nil, err
 		}
 		if sub.State == "declined" {
@@ -1195,8 +1286,10 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 				sub.Reason = &reason.String
 			}
 		}
+		logger.Debug("Appending: "+sub.ProjectID.String(), "")
 		data = append(data, &sub)
 	}
+	logger.Debug("Returning", "")
 	return data, nil
 }
 

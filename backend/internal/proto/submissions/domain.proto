@@ -24,4 +24,5 @@ message ListResponse {
     string state = 2;
   }
   repeated target data = 1;
+  string tracing = 2; 
 }

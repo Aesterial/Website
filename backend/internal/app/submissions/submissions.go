@@ -7,9 +7,9 @@ import (
 	projpb "ascendant/backend/internal/gen/projects/v1"
 	submpb "ascendant/backend/internal/gen/submissions/v1"
 	userpb "ascendant/backend/internal/gen/user/v1"
+	"ascendant/backend/internal/infra/logger"
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -30,8 +30,8 @@ type Service struct {
 	usrs user.Repository
 }
 
-func New(repo submissions.Repository) *Service {
-	return &Service{repo: repo}
+func New(repo submissions.Repository, proj projects.Repository, usrs user.Repository) *Service {
+	return &Service{repo: repo, proj: proj, usrs: usrs}
 }
 
 func toGenProject(p *projects.Project) *projpb.Project {
@@ -43,10 +43,10 @@ func toGenProject(p *projects.Project) *projpb.Project {
 		return photos
 	}
 	cat := func() projpb.ProjectCategory {
-		if v, ok := projpb.ProjectCategory_value[p.Info.Category]; ok {
+		if v, ok := projpb.ProjectCategory_value[p.Info.Category.String()]; ok {
 			return projpb.ProjectCategory(v)
 		}
-		switch strings.ToLower(strings.TrimSpace(p.Info.Category)) {
+		switch strings.ToLower(strings.TrimSpace(p.Info.Category.String())) {
 		case projectCategoryImprovement:
 			return projpb.ProjectCategory_IMPROVEMENT
 		case projectCategoryRoadsSidewalk:
@@ -86,21 +86,17 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, er
 	}
 	var response []*submpb.ListResponseTarget
 	for _, v := range data {
-		id, err := uuid.Parse(strconv.Itoa(int(v.ID)))
+		p, err := s.proj.GetProject(ctx, v.ProjectID)
 		if err != nil {
 			return nil, err
 		}
-		p, err := s.proj.GetProject(ctx, id)
+		logger.Debug("Project created at: "+p.At.String(), "")
+		author, err := s.usrs.GetUserByUID(ctx, p.Author.UID)
 		if err != nil {
 			return nil, err
 		}
-		author, err := s.usrs.GetUserByUID(ctx, p.Author)
-		if err != nil {
-			return nil, err
-		}
-		project := toGenProject(p)
-		project.Author = author.ToPublic()
-		response = append(response, &submpb.ListResponseTarget{Info: project, State: v.State})
+		p.Author = author
+		response = append(response, &submpb.ListResponseTarget{Info: p.ToProto(), State: v.State})
 	}
 	return response, nil
 }

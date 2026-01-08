@@ -11,11 +11,13 @@ import (
 	projectsapp "ascendant/backend/internal/app/projects"
 	appstatistics "ascendant/backend/internal/app/statistics"
 	storageapp "ascendant/backend/internal/app/storage"
+	"ascendant/backend/internal/app/submissions"
 	loginpb "ascendant/backend/internal/gen/login/v1"
 	permspb "ascendant/backend/internal/gen/permissions/v1"
 	projpb "ascendant/backend/internal/gen/projects/v1"
 	statpb "ascendant/backend/internal/gen/statistics/v1"
 	storagepb "ascendant/backend/internal/gen/storage/v1"
+	submpb "ascendant/backend/internal/gen/submissions/v1"
 	userpb "ascendant/backend/internal/gen/user/v1"
 	"ascendant/backend/internal/infra/db"
 	dbtest "ascendant/backend/internal/infra/db/test"
@@ -107,6 +109,7 @@ func main() {
 	permissionsRepo := db.NewPermissionsRepository(dbConn)
 	statisticsRepo := db.NewStatisticsRepository(dbConn)
 	projectsRepo := db.NewProjectsRepository(dbConn)
+	submissionsRepo := db.NewSubmissionRepository(dbConn)
 
 	loggerServ := loggerservice.New(loggerRepo)
 
@@ -122,6 +125,7 @@ func main() {
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
 	statService := appstatistics.New(statisticsRepo)
 	projectsService := projectsapp.New(projectsRepo)
+	submissionService := submissions.New(submissionsRepo, projectsService, userInfoService)
 	storageService, err := storageapp.New()
 	if err != nil {
 		logger.Error("Failed to init storage: "+err.Error(), "service.storage.init", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
@@ -134,6 +138,7 @@ func main() {
 	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService, userInfoService)
 	projectServer := grpcserver.NewProjectService(projectsService, sessionsService, permissionsService, userInfoService)
 	storageServer := grpcserver.NewStorageService(storageService)
+	submissionServer := grpcserver.NewSubmissionsService(submissionService, sessionsService, permissionsService, userInfoService)
 
 	gateway := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(gatewayHeaderMatcher),
@@ -163,6 +168,10 @@ func main() {
 		logger.Error("Failed to register storage gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
+	if err := submpb.RegisterSubmissionsServiceHandlerServer(ctx, gateway, submissionServer); err != nil {
+		logger.Error("Failed to register submissions storage gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
 
 	grpcPort := normalizePort(env.Startup.GRPCPort, env.Startup.Port, "8080")
 	httpPort := normalizePort(env.Startup.HTTPPort, env.Startup.Port, grpcPort)
@@ -187,6 +196,7 @@ func main() {
 	statpb.RegisterStatisticsServiceServer(grpcServer, statServer)
 	projpb.RegisterProjectServiceServer(grpcServer, projectServer)
 	storagepb.RegisterStorageServer(grpcServer, storageServer)
+	submpb.RegisterSubmissionsServiceServer(grpcServer, submissionServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
 	handler := buildHTTPHandler(grpcServer, gateway, cors)

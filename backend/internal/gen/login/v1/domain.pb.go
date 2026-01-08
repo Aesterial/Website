@@ -281,6 +281,162 @@ func (x *EmptyResponse) GetTracing() string {
 	return ""
 }
 
+type VKStartResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AuthUrl       string                 `protobuf:"bytes,1,opt,name=auth_url,json=authUrl,proto3" json:"auth_url,omitempty"`
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VKStartResponse) Reset() {
+	*x = VKStartResponse{}
+	mi := &file_login_domain_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VKStartResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VKStartResponse) ProtoMessage() {}
+
+func (x *VKStartResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VKStartResponse.ProtoReflect.Descriptor instead.
+func (*VKStartResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *VKStartResponse) GetAuthUrl() string {
+	if x != nil {
+		return x.AuthUrl
+	}
+	return ""
+}
+
+func (x *VKStartResponse) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+type VKCallbackRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VKCallbackRequest) Reset() {
+	*x = VKCallbackRequest{}
+	mi := &file_login_domain_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VKCallbackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VKCallbackRequest) ProtoMessage() {}
+
+func (x *VKCallbackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VKCallbackRequest.ProtoReflect.Descriptor instead.
+func (*VKCallbackRequest) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *VKCallbackRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *VKCallbackRequest) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+type VKCallbackResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RedirectUrl   string                 `protobuf:"bytes,1,opt,name=redirect_url,json=redirectUrl,proto3" json:"redirect_url,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VKCallbackResponse) Reset() {
+	*x = VKCallbackResponse{}
+	mi := &file_login_domain_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VKCallbackResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VKCallbackResponse) ProtoMessage() {}
+
+func (x *VKCallbackResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VKCallbackResponse.ProtoReflect.Descriptor instead.
+func (*VKCallbackResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *VKCallbackResponse) GetRedirectUrl() string {
+	if x != nil {
+		return x.RedirectUrl
+	}
+	return ""
+}
+
+func (x *VKCallbackResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_login_domain_proto protoreflect.FileDescriptor
 
 const file_login_domain_proto_rawDesc = "" +
@@ -300,7 +456,16 @@ const file_login_domain_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x01(\tR\x04data\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\")\n" +
 	"\rEmptyResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracingB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
+	"\atracing\x18\x01 \x01(\tR\atracing\"B\n" +
+	"\x0fVKStartResponse\x12\x19\n" +
+	"\bauth_url\x18\x01 \x01(\tR\aauthUrl\x12\x14\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"=\n" +
+	"\x11VKCallbackRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"Q\n" +
+	"\x12VKCallbackResponse\x12!\n" +
+	"\fredirect_url\x18\x01 \x01(\tR\vredirectUrl\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracingB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var (
 	file_login_domain_proto_rawDescOnce sync.Once
@@ -314,13 +479,16 @@ func file_login_domain_proto_rawDescGZIP() []byte {
 	return file_login_domain_proto_rawDescData
 }
 
-var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_login_domain_proto_goTypes = []any{
-	(*AuthRequest)(nil),      // 0: login.v1.AuthRequest
-	(*AuthResponse)(nil),     // 1: login.v1.AuthResponse
-	(*RegisterRequest)(nil),  // 2: login.v1.RegisterRequest
-	(*RegisterResponse)(nil), // 3: login.v1.RegisterResponse
-	(*EmptyResponse)(nil),    // 4: login.v1.EmptyResponse
+	(*AuthRequest)(nil),        // 0: login.v1.AuthRequest
+	(*AuthResponse)(nil),       // 1: login.v1.AuthResponse
+	(*RegisterRequest)(nil),    // 2: login.v1.RegisterRequest
+	(*RegisterResponse)(nil),   // 3: login.v1.RegisterResponse
+	(*EmptyResponse)(nil),      // 4: login.v1.EmptyResponse
+	(*VKStartResponse)(nil),    // 5: login.v1.VKStartResponse
+	(*VKCallbackRequest)(nil),  // 6: login.v1.VKCallbackRequest
+	(*VKCallbackResponse)(nil), // 7: login.v1.VKCallbackResponse
 }
 var file_login_domain_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -341,7 +509,7 @@ func file_login_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_login_domain_proto_rawDesc), len(file_login_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

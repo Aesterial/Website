@@ -18,10 +18,7 @@ type Email struct {
 
 type Avatar struct {
 	ContentType string
-	Data        []byte
 	Key         string
-	Width       int
-	Height      int
 	SizeBytes   int
 	Updated     time.Time
 }
@@ -33,13 +30,20 @@ func (a *Avatar) ToPublic() *userpb.Avatar {
 	avatar := &userpb.Avatar{
 		ContentType: a.ContentType,
 	}
-	if len(a.Data) > 0 {
-		avatar.Data = a.Data
-	}
 	if strings.TrimSpace(a.Key) != "" {
 		avatar.Key = a.Key
 	}
 	return avatar
+}
+
+type Avatars []*Avatar
+
+func (a Avatars) ToProto() []*userpb.Avatar {
+	var pbs []*userpb.Avatar
+	for _, avatar := range a {
+		pbs = append(pbs, avatar.ToPublic())
+	}
+	return pbs
 }
 
 type SessionTime struct {
@@ -60,11 +64,14 @@ type User struct {
 	Email    *Email
 	Settings *Settings
 	Rank     *rank.Rank
+	Banned   bool
 	Joined   time.Time
 }
 
+type Users []*User
+
 func (u User) ToPublic() *userpb.UserPublic {
-	rank_expires := func() *timestamppb.Timestamp {
+	rankExpires := func() *timestamppb.Timestamp {
 		if u.Rank.Expires == nil {
 			return nil
 		}
@@ -81,13 +88,25 @@ func (u User) ToPublic() *userpb.UserPublic {
 	return &userpb.UserPublic{
 		UserID:   uint32(u.UID),
 		Username: u.Username,
-		Rank:     &userpb.Rank{Name: u.Rank.Name, Expires: rank_expires()},
+		Rank:     &userpb.Rank{Name: u.Rank.Name, Expires: rankExpires()},
 		Settings: &userpb.UserPublicSettings{
 			DisplayName: displayName,
 			Avatar:      avatar,
 		},
+		Banned:   u.Banned,
 		JoinedAt: timestamppb.New(u.Joined),
 	}
+}
+
+func (u Users) ToPublic() []*userpb.UserPublic {
+	var list []*userpb.UserPublic
+	for _, user := range u {
+		if user == nil {
+			continue
+		}
+		list = append(list, user.ToPublic())
+	}
+	return list
 }
 
 type RequestData struct {

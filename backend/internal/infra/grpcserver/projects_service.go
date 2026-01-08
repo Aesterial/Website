@@ -7,6 +7,7 @@ import (
 	projectsapp "ascendant/backend/internal/app/projects"
 	permsdomain "ascendant/backend/internal/domain/permissions"
 	projectsdomain "ascendant/backend/internal/domain/projects"
+	"ascendant/backend/internal/domain/user"
 	projpb "ascendant/backend/internal/gen/projects/v1"
 	"ascendant/backend/internal/infra/logger"
 	"context"
@@ -14,6 +15,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -55,7 +57,7 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 	}
 
 	var project projectsdomain.Project
-	project.Author = requestor.UID
+	project.Author = &user.User{UID: requestor.UID}
 	project.Info.Title = strings.TrimSpace(req.Title)
 	if project.Info.Title == "" {
 		return nil, status.Error(codes.InvalidArgument, "title is empty")
@@ -63,7 +65,7 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 	if req.Description != nil {
 		project.Info.Description = strings.TrimSpace(*req.Description)
 	}
-	project.Info.Category = normalizeProjectCategory(req.Category)
+	project.Info.Category = projectsdomain.ProjectCategory(normalizeProjectCategory(req.Category))
 	if project.Info.Category == "" {
 		return nil, status.Error(codes.InvalidArgument, "category is empty")
 	}
@@ -74,19 +76,54 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 	}
 	for _, photo := range req.Photos {
 		avatar := fromProtoAvatar(photo)
-		if avatar == nil || len(avatar.Data) == 0 {
+		if avatar == nil {
 			continue
 		}
 		project.Info.Photos = append(project.Info.Photos, avatar)
 	}
 
-	if err := s.projects.Create(ctx, project); err != nil {
+	if err := s.projects.CreateProject(ctx, project); err != nil {
 		return nil, statusFromError(err)
 	}
 
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Project created", "projects.create.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &projpb.EmptyResponse{Tracing: traceID}, nil
+}
+
+func (s *ProjectService) Categories(ctx context.Context, _ *emptypb.Empty) (*projpb.CategoriesResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, status.Error(codes.Internal, "projects service not configured")
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	_ = requestor
+	var resp projpb.CategoriesResponse
+	resp.Categories, err = s.projects.GetCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp.Tracing = TraceIDOrNew(ctx)
+	return &resp, nil
+}
+
+func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, status.Error(codes.Internal, "projects service not configured")
+	}
+	trace := TraceIDOrNew(ctx)
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	logger.Info("Requested list of projects", "projects.list.get", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
+	list, err := s.projects.GetProjects(ctx, int(req.Offset), int(req.Limit))
+	if err != nil {
+		return nil, err
+	}
+	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func normalizeProjectCategory(raw string) string {

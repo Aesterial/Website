@@ -1,6 +1,7 @@
 package user
 
 import (
+	"ascendant/backend/internal/domain/rank"
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/user"
 	userpb "ascendant/backend/internal/gen/user/v1"
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -58,6 +60,90 @@ func (s *Service) GetSelf(ctx context.Context, sessionID uuid.UUID) (*user.User,
 		return nil, err
 	}
 	return usr, nil
+}
+
+func (s *Service) GetUID(ctx context.Context, username string) (uint, error) {
+	if username == "" {
+		return 0, errors.New("username is empty")
+	}
+	return s.repo.GetUID(ctx, username)
+}
+
+func (s *Service) GetUsername(ctx context.Context, uid uint) (string, error) {
+	if uid == 0 {
+		return "", errors.New("uid is empty")
+	}
+	return s.repo.GetUsername(ctx, uid)
+}
+
+func (s *Service) GetUserByUsername(ctx context.Context, username string) (*user.User, error) {
+	if username == "" {
+		return nil, errors.New("username is empty")
+	}
+	return s.repo.GetUserByUsername(ctx, username)
+}
+
+func (s *Service) GetUserByUID(ctx context.Context, uid uint) (*user.User, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetUserByUID(ctx, uid)
+}
+
+func (s *Service) GetAvatar(ctx context.Context, uid uint) (*user.Avatar, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetAvatar(ctx, uid)
+}
+
+func (s *Service) AddAvatar(ctx context.Context, uid uint, avatar user.Avatar) error {
+	if uid == 0 {
+		return errors.New("uid is empty")
+	}
+	return s.repo.AddAvatar(ctx, uid, avatar)
+}
+
+func (s *Service) UpdateDisplayName(ctx context.Context, uid uint, displayName string) error {
+	if uid == 0 || displayName == "" {
+		return errors.New("some argument is empty")
+	}
+	return s.repo.UpdateDisplayName(ctx, uid, displayName)
+}
+
+func (s *Service) IsExists(ctx context.Context, user user.User) (bool, error) {
+	if user.UID == 0 {
+		return false, errors.New("user uid is empty")
+	}
+	return s.repo.IsExists(ctx, user)
+}
+
+func (s *Service) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetSettings(ctx, uid)
+}
+
+func (s *Service) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetJoinedAT(ctx, uid)
+}
+
+func (s *Service) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetRank(ctx, uid)
+}
+
+func (s *Service) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.GetEmail(ctx, uid)
 }
 
 func (s *Service) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {

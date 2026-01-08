@@ -26,29 +26,39 @@ var File_login_authorization_proto protoreflect.FileDescriptor
 
 const file_login_authorization_proto_rawDesc = "" +
 	"\n" +
-	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xaf\x02\n" +
+	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xf3\x03\n" +
 	"\fLoginService\x12c\n" +
 	"\rAuthorization\x12\x15.login.v1.AuthRequest\x1a\x16.login.v1.AuthResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/login/authorization\x12a\n" +
 	"\bRegister\x12\x19.login.v1.RegisterRequest\x1a\x1a.login.v1.RegisterResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/register\x12W\n" +
-	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logoutB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
+	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logout\x12Y\n" +
+	"\aVkStart\x12\x16.google.protobuf.Empty\x1a\x19.login.v1.VKStartResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/login/vk/start\x12g\n" +
+	"\n" +
+	"VkCallback\x12\x1b.login.v1.VKCallbackRequest\x1a\x1c.login.v1.VKCallbackResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/login/vk/callbackB/Z-ascendant/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var file_login_authorization_proto_goTypes = []any{
-	(*AuthRequest)(nil),      // 0: login.v1.AuthRequest
-	(*RegisterRequest)(nil),  // 1: login.v1.RegisterRequest
-	(*emptypb.Empty)(nil),    // 2: google.protobuf.Empty
-	(*AuthResponse)(nil),     // 3: login.v1.AuthResponse
-	(*RegisterResponse)(nil), // 4: login.v1.RegisterResponse
-	(*EmptyResponse)(nil),    // 5: login.v1.EmptyResponse
+	(*AuthRequest)(nil),        // 0: login.v1.AuthRequest
+	(*RegisterRequest)(nil),    // 1: login.v1.RegisterRequest
+	(*emptypb.Empty)(nil),      // 2: google.protobuf.Empty
+	(*VKCallbackRequest)(nil),  // 3: login.v1.VKCallbackRequest
+	(*AuthResponse)(nil),       // 4: login.v1.AuthResponse
+	(*RegisterResponse)(nil),   // 5: login.v1.RegisterResponse
+	(*EmptyResponse)(nil),      // 6: login.v1.EmptyResponse
+	(*VKStartResponse)(nil),    // 7: login.v1.VKStartResponse
+	(*VKCallbackResponse)(nil), // 8: login.v1.VKCallbackResponse
 }
 var file_login_authorization_proto_depIdxs = []int32{
 	0, // 0: login.v1.LoginService.Authorization:input_type -> login.v1.AuthRequest
 	1, // 1: login.v1.LoginService.Register:input_type -> login.v1.RegisterRequest
 	2, // 2: login.v1.LoginService.Logout:input_type -> google.protobuf.Empty
-	3, // 3: login.v1.LoginService.Authorization:output_type -> login.v1.AuthResponse
-	4, // 4: login.v1.LoginService.Register:output_type -> login.v1.RegisterResponse
-	5, // 5: login.v1.LoginService.Logout:output_type -> login.v1.EmptyResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	2, // 3: login.v1.LoginService.VkStart:input_type -> google.protobuf.Empty
+	3, // 4: login.v1.LoginService.VkCallback:input_type -> login.v1.VKCallbackRequest
+	4, // 5: login.v1.LoginService.Authorization:output_type -> login.v1.AuthResponse
+	5, // 6: login.v1.LoginService.Register:output_type -> login.v1.RegisterResponse
+	6, // 7: login.v1.LoginService.Logout:output_type -> login.v1.EmptyResponse
+	7, // 8: login.v1.LoginService.VkStart:output_type -> login.v1.VKStartResponse
+	8, // 9: login.v1.LoginService.VkCallback:output_type -> login.v1.VKCallbackResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

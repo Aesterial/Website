@@ -4,6 +4,7 @@ package projects.v1;
 option go_package = "ascendant/backend/internal/gen/projects/v1;projects";
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "projects/domain.proto";
 
 service ProjectService {
@@ -31,6 +32,11 @@ service ProjectService {
   rpc Delete(RequestWithID) returns (EmptyResponse) {
     option (google.api.http) = {
       delete: "/api/projects/{id}/delete"
+    };
+  }
+  rpc Categories(google.protobuf.Empty) returns (CategoriesResponse) {
+    option (google.api.http) = {
+      get: "/api/projects/categories"
     };
   }
 }
