@@ -32,7 +32,7 @@ type ApiUserSettings = {
   avatar?: ApiAvatar | null;
 };
 
-type ApiUserPublic = {
+export type ApiUserPublic = {
   uid?: number;
   userID?: number;
   username?: string;
@@ -41,6 +41,36 @@ type ApiUserPublic = {
   joined?: string;
   joinedAt?: string;
   banned?: boolean;
+};
+
+export type ApiProjectLocation = {
+  city?: string;
+  street?: string;
+  house?: string;
+};
+
+export type ApiProjectInfo = {
+  title?: string;
+  description?: string;
+  photos?: ApiAvatar[] | null;
+  category?: string | number;
+  location?: ApiProjectLocation | null;
+};
+
+export type ApiProject = {
+  id?: string;
+  info?: ApiProjectInfo | null;
+  likesCount?: number;
+  likes_count?: number;
+  liked?: ApiUserPublic[] | null;
+  createdAt?: string | { seconds?: number | string; nanos?: number } | null;
+  created_at?: string | { seconds?: number | string; nanos?: number } | null;
+  status?: string | number;
+};
+
+export type ApiSubmissionTarget = {
+  info?: ApiProject | null;
+  state?: string;
 };
 
 type ApiUser = {
@@ -62,6 +92,16 @@ type ApiUserResponse = {
 
 type ApiUsersResponse = {
   data?: ApiUserPublic[] | null;
+  tracing?: string;
+};
+
+type ApiProjectsResponse = {
+  projects?: ApiProject[] | null;
+  tracing?: string;
+};
+
+type ApiSubmissionsResponse = {
+  data?: ApiSubmissionTarget[] | null;
   tracing?: string;
 };
 
@@ -306,7 +346,7 @@ function toUserListItem(payload: ApiUserPublic): UserListItem | null {
   const displayName =
     settings?.display_name ?? settings?.displayName ?? undefined;
   const joined = payload.joined ?? payload.joinedAt;
-  const banned = payload.banned ?? false
+  const banned = payload.banned ?? false;
 
   return {
     userID,
@@ -422,4 +462,53 @@ export async function updateAvatar(payload: ApiAvatar): Promise<AuthUser> {
     body: JSON.stringify({ contentType, data }),
   });
   return fetchCurrentUser();
+}
+
+export async function fetchProjects(options?: {
+  limit?: number;
+  signal?: AbortSignal;
+}): Promise<ApiProject[]> {
+  const query =
+    typeof options?.limit === "number"
+      ? `?limit=${encodeURIComponent(String(options.limit))}`
+      : "";
+  const payload = await apiRequest<ApiProjectsResponse>(
+    `/api/projects${query}`,
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  const records = payload?.projects ?? [];
+  return Array.isArray(records) ? records : [];
+}
+
+export async function fetchSubmissions(options?: {
+  signal?: AbortSignal;
+}): Promise<ApiSubmissionTarget[]> {
+  const payload = await apiRequest<ApiSubmissionsResponse>(
+    "/api/submissions/list",
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  const records = payload?.data ?? [];
+  return Array.isArray(records) ? records : [];
+}
+
+export async function toggleProjectLike(projectID: string): Promise<void> {
+  const encoded = encodeURIComponent(projectID);
+  await apiRequest(`/api/projects/${encoded}/like`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function voteForProject(projectID: string): Promise<void> {
+  const encoded = encodeURIComponent(projectID);
+  await apiRequest(`/api/projects/${encoded}/vote`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
 }

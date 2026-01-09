@@ -1,15 +1,24 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Heart, ListFilter, MapPin, Sparkles } from "lucide-react";
 import { Header, cities as availableCities } from "@/components/header";
 import { GradientButton } from "@/components/gradient-button";
+import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
+import {
+  fetchProjects,
+  fetchSubmissions,
+  toggleProjectLike,
+  voteForProject,
+  type ApiProject,
+  type ApiSubmissionTarget,
+} from "@/lib/api";
 import type { Variants } from "framer-motion";
 
 interface IdeaCard {
-  id: number;
+  id: string;
   title: string;
   address: string;
   description: string;
@@ -24,290 +33,82 @@ interface IdeaCard {
   createdAt: string;
 }
 
-const mockIdeas: IdeaCard[] = [
-  {
-    id: 1,
-    title: "Построить ледяные горки",
-    address: "Парк Ангелов, сектор Б",
-    description:
-      "Зимой не хватает обустроенного места для катания: нужен безопасный склон и освещение.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/building-entrance-with-awning-kemerovo.jpg",
-    category: "Зимний отдых",
-    city: "Барнаул",
-    votes: 214,
-    likes: 86,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-08",
-  },
-  {
-    id: 2,
-    title: "Освещение двора на Советской",
-    address: "ул. Советская, 77",
-    description:
-      "Во дворе темно, вечером небезопасно. Просим установить фонари и подсветить детскую площадку.",
-    mapImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    photoImage: "/pub-building-facade-harats-kemerovo.jpg",
-    category: "Освещение",
-    city: "Бийск",
-    votes: 132,
-    likes: 54,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-06",
-  },
-  {
-    id: 3,
-    title: "Безопасный переход на Ленина",
-    address: "пр. Ленина, 14",
-    description:
-      "Нужна зебра, освещение и понижение бордюров, чтобы дети и пешеходы переходили дорогу без риска.",
-    mapImage: "/aerial-view-street-intersection-kemerovo.jpg",
-    photoImage: "/busy-street-without-crosswalk.jpg",
-    category: "Дороги",
-    city: "Прокопьевск",
-    votes: 198,
-    likes: 112,
-    isLiked: true,
-    isVoted: true,
-    createdAt: "2026-01-03",
-  },
-  {
-    id: 4,
-    title: "Обновить детскую площадку",
-    address: "ул. Набережная, 3",
-    description:
-      "Площадке нужно мягкое покрытие, новые качели и зона для малышей.",
-    mapImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    photoImage: "/aerial-view-residential-area-kemerovo.jpg",
-    category: "Детские площадки",
-    city: "Рубцовск",
-    votes: 156,
-    likes: 74,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-04",
-  },
-  {
-    id: 5,
-    title: "Обновить остановки в центре",
-    address: "пл. Советская",
-    description:
-      "Нужны новые навесы, скамьи и расписание маршрутов в хорошем состоянии.",
-    mapImage: "/aerial-view-street-intersection-kemerovo.jpg",
-    photoImage: "/busy-street-without-crosswalk.jpg",
-    category: "Транспорт",
-    city: "Котельниково",
-    votes: 104,
-    likes: 41,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-02",
-  },
-  {
-    id: 6,
-    title: "Ремонт велодорожки",
-    address: "пр. Шахтеров, 12",
-    description:
-      "Полоса для велосипедов изношена, нужен новый асфальт и разметка.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/building-entrance-with-awning-kemerovo.jpg",
-    category: "Спорт и движение",
-    city: "Ленинск-Кузнецкий",
-    votes: 88,
-    likes: 33,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2025-12-29",
-  },
-  {
-    id: 7,
-    title: "Светофор у школы",
-    address: "ул. Прибрежная, 18",
-    description:
-      "Школьники переходят дорогу без светофора. Нужен пешеходный узел и подсветка.",
-    mapImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    photoImage: "/busy-street-without-crosswalk.jpg",
-    category: "Безопасность",
-    city: "Полысаево",
-    votes: 121,
-    likes: 52,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-05",
-  },
-  {
-    id: 8,
-    title: "Благоустройство набережной",
-    address: "наб. Речная",
-    description:
-      "Нужны дорожки, урны и освещение, чтобы набережная была безопасной вечером.",
-    mapImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    photoImage: "/aerial-view-residential-area-kemerovo.jpg",
-    category: "Благоустройство",
-    city: "Мыски",
-    votes: 97,
-    likes: 29,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-01",
-  },
-  {
-    id: 9,
-    title: "Озеленение дворов",
-    address: "ул. Комсомольская, 5",
-    description:
-      "Не хватает деревьев и кустарников. Просим высадить зелень и установить автополив.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    category: "Озеленение",
-    city: "Бородино",
-    votes: 66,
-    likes: 18,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2025-12-27",
-  },
-  {
-    id: 10,
-    title: "Крытая сцена для праздников",
-    address: "пл. Дружбы",
-    description: "Хочется небольшую сцену с навесом для городских событий.",
-    mapImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    photoImage: "/pub-building-facade-harats-kemerovo.jpg",
-    category: "Культура",
-    city: "Назарово",
-    votes: 75,
-    likes: 24,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-07",
-  },
-  {
-    id: 11,
-    title: "Освещение парка",
-    address: "парк Северный",
-    description:
-      "Установить фонари вдоль главных аллей и на детских площадках.",
-    mapImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    photoImage: "/aerial-view-residential-area-kemerovo.jpg",
-    category: "Освещение",
-    city: "Шарыпово",
-    votes: 89,
-    likes: 37,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2025-12-26",
-  },
-  {
-    id: 12,
-    title: "Скейт-площадка для подростков",
-    address: "ул. Молодежная, 2",
-    description: "Просим выделить площадку и установить рампы и рейлы.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/pub-building-facade-harats-kemerovo.jpg",
-    category: "Спорт",
-    city: "Ковдор",
-    votes: 112,
-    likes: 46,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-09",
-  },
-  {
-    id: 13,
-    title: "Безопасный пешеходный переход",
-    address: "пр. Лесной, 40",
-    description: "Не хватает зебры и освещения, а трафик интенсивный.",
-    mapImage: "/aerial-view-street-intersection-kemerovo.jpg",
-    photoImage: "/busy-street-without-crosswalk.jpg",
-    category: "Дороги",
-    city: "Кингисепп",
-    votes: 93,
-    likes: 39,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2025-12-30",
-  },
-  {
-    id: 14,
-    title: "Ремонт тротуара",
-    address: "ул. Гоголя, 15",
-    description:
-      "Плитка разбита, лужи и ямы. Нужен новый тротуар с пониженными бордюрами.",
-    mapImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    photoImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    category: "Дороги",
-    city: "Березники",
-    votes: 115,
-    likes: 44,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-03",
-  },
-  {
-    id: 15,
-    title: "Новые контейнеры для сортировки",
-    address: "ул. Арбузова, 9",
-    description: "Нужны контейнеры для бумаги и пластика во дворах.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/building-entrance-with-awning-kemerovo.jpg",
-    category: "Экология",
-    city: "Абакан",
-    votes: 102,
-    likes: 32,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-10",
-  },
-  {
-    id: 16,
-    title: "Новая детская площадка",
-    address: "ул. Полевая, 8",
-    description:
-      "Старая площадка изношена. Нужно обновить оборудование и покрытие.",
-    mapImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    photoImage: "/aerial-view-residential-area-kemerovo.jpg",
-    category: "Детские площадки",
-    city: "Черногорск",
-    votes: 128,
-    likes: 51,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-11",
-  },
-  {
-    id: 17,
-    title: "Лыжная трасса в парке",
-    address: "парк Южный",
-    description: "Зимой хотим иметь освещенную трассу для лыжников и прогулок.",
-    mapImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    photoImage: "/aerial-view-residential-area-kemerovo.jpg",
-    category: "Зимний отдых",
-    city: "Рефтинский",
-    votes: 91,
-    likes: 27,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2026-01-12",
-  },
-  {
-    id: 18,
-    title: "Новая навигация и указатели",
-    address: "вокзальная площадь",
-    description: "Нужны указатели к социальным объектам и нумерация домов.",
-    mapImage: "/aerial-satellite-view-kemerovo-city-block.jpg",
-    photoImage: "/pub-building-facade-harats-kemerovo.jpg",
-    category: "Инфраструктура",
-    city: "Чегдомын",
-    votes: 73,
-    likes: 21,
-    isLiked: false,
-    isVoted: false,
-    createdAt: "2025-12-25",
-  },
-];
+const CATEGORY_ENUM_MAP: Record<number, string> = {
+  1: "improvement",
+  2: "roadsidewalks",
+  3: "lighting",
+  4: "playgrounds",
+  5: "parks",
+  6: "other",
+};
+
+const CATEGORY_ALIAS_MAP: Record<string, string> = {
+  improvement: "improvement",
+  landscaping: "improvement",
+  благоустройство: "improvement",
+  roadsidewalks: "roadsidewalks",
+  roadsandsidewalks: "roadsidewalks",
+  roads_and_sidewalks: "roadsidewalks",
+  "дороги и тротуары": "roadsidewalks",
+  lighting: "lighting",
+  освещение: "lighting",
+  playgrounds: "playgrounds",
+  "детские площадки": "playgrounds",
+  parks: "parks",
+  parksandsquares: "parks",
+  parks_and_squares: "parks",
+  "парки и скверы": "parks",
+  other: "other",
+  другое: "other",
+};
+
+const UNKNOWN_CITY_LABEL = "Не указан";
+const UNKNOWN_ADDRESS_LABEL = "Адрес не указан";
+
+const extractUserId = (value: unknown) => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const payload = value as {
+    uid?: unknown;
+    userID?: unknown;
+    userId?: unknown;
+  };
+  const id = payload.uid ?? payload.userID ?? payload.userId;
+  return typeof id === "number" ? id : null;
+};
+
+const toImageSrc = (
+  photo?: {
+    contentType?: string;
+    data?: string;
+    url?: string;
+  } | null,
+) => {
+  if (!photo) {
+    return "";
+  }
+  if (photo.url) {
+    return photo.url;
+  }
+  if (photo.contentType && photo.data) {
+    return `data:${photo.contentType};base64,${photo.data}`;
+  }
+  return "";
+};
+
+const parseTimestamp = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value && typeof value === "object" && "seconds" in value) {
+    const seconds = Number((value as { seconds?: number | string }).seconds);
+    if (!Number.isNaN(seconds) && seconds > 0) {
+      return new Date(seconds * 1000).toISOString();
+    }
+  }
+  return "";
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -338,17 +139,179 @@ const sortOptions = [
   { id: "newest", label: "Новые" },
 ] as const;
 
-type CityFilter = "all" | (typeof availableCities)[number];
+type CityFilter = "all" | string;
 const normalizeKey = (value: string) => value.trim().toLowerCase();
 const ALL_FILTER = "all";
 
 export default function VotingPage() {
-  const [ideas, setIdeas] = useState<IdeaCard[]>(mockIdeas);
+  const [ideas, setIdeas] = useState<IdeaCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState(ALL_FILTER);
   const [selectedCity, setSelectedCity] = useState<CityFilter>(ALL_FILTER);
   const [sortBy, setSortBy] =
     useState<(typeof sortOptions)[number]["id"]>("popular");
+  const { user } = useAuth();
   const { t } = useLanguage();
+  const categoryLabels = useMemo<Record<string, string>>(
+    () => ({
+      improvement: t("landscaping"),
+      roadsidewalks: t("roadsAndSidewalks"),
+      lighting: t("lighting"),
+      playgrounds: t("playgrounds"),
+      parks: t("parksAndSquares"),
+      other: t("other"),
+    }),
+    [t],
+  );
+
+  const loadIdeas = useCallback(
+    async (signal?: AbortSignal) => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      const resolveCategoryLabel = (value: unknown) => {
+        let key: string | undefined;
+        if (typeof value === "number") {
+          key = CATEGORY_ENUM_MAP[value];
+        } else if (typeof value === "string") {
+          key = CATEGORY_ALIAS_MAP[normalizeKey(value)];
+        }
+
+        if (key && categoryLabels[key]) {
+          return categoryLabels[key];
+        }
+        if (typeof value === "string" && value.trim()) {
+          return value.trim();
+        }
+        return categoryLabels.other;
+      };
+
+      const mapProjectToIdea = (project?: ApiProject | null) => {
+        const id = project?.id?.trim();
+        if (!id) {
+          return null;
+        }
+        const info = project.info ?? null;
+        const title = info?.title?.trim() || "Без названия";
+        const description =
+          info?.description?.trim() || "Описание пока не добавлено.";
+        const location = info?.location ?? null;
+        const city = location?.city?.trim() || UNKNOWN_CITY_LABEL;
+        const addressParts = [
+          location?.street?.trim(),
+          location?.house?.trim(),
+        ].filter((part): part is string => Boolean(part));
+        const address = addressParts.length
+          ? addressParts.join(" ")
+          : UNKNOWN_ADDRESS_LABEL;
+
+        const photos = Array.isArray(info?.photos) ? info?.photos : [];
+        const mapImage = toImageSrc(photos[0]) || "/placeholder.svg";
+        const photoImage =
+          toImageSrc(photos[1] ?? photos[0]) || "/placeholder.svg";
+
+        const likesCount = Number(
+          project.likesCount ?? project.likes_count ?? 0,
+        );
+        const liked = Array.isArray(project.liked) ? project.liked : [];
+        const userId = user?.uid ?? null;
+        const isLiked =
+          userId !== null
+            ? liked.some((item) => extractUserId(item) === userId)
+            : false;
+
+        return {
+          id,
+          title,
+          address,
+          description,
+          mapImage,
+          photoImage,
+          category: resolveCategoryLabel(info?.category),
+          city,
+          votes: likesCount,
+          likes: likesCount,
+          isLiked,
+          isVoted: isLiked,
+          createdAt:
+            parseTimestamp(project.createdAt ?? project.created_at) || "",
+        };
+      };
+
+      try {
+        const [projectsResult, submissionsResult] = await Promise.allSettled([
+          fetchProjects({ signal }),
+          fetchSubmissions({ signal }),
+        ]);
+
+        if (signal?.aborted) {
+          return;
+        }
+
+        const projects =
+          projectsResult.status === "fulfilled" ? projectsResult.value : [];
+        const submissions =
+          submissionsResult.status === "fulfilled"
+            ? submissionsResult.value
+            : [];
+
+        const merged = new Map<string, IdeaCard>();
+        const addIdea = (idea: IdeaCard | null) => {
+          if (idea) {
+            merged.set(idea.id, idea);
+          }
+        };
+
+        submissions.forEach((item: ApiSubmissionTarget) => {
+          const state = item?.state?.trim().toLowerCase();
+          if (state === "declined") {
+            return;
+          }
+          addIdea(mapProjectToIdea(item.info));
+        });
+
+        projects.forEach((project) => {
+          addIdea(mapProjectToIdea(project));
+        });
+
+        setIdeas(Array.from(merged.values()));
+
+        if (
+          projectsResult.status === "rejected" &&
+          submissionsResult.status === "rejected"
+        ) {
+          const reason =
+            projectsResult.reason instanceof Error
+              ? projectsResult.reason.message
+              : submissionsResult.reason instanceof Error
+                ? submissionsResult.reason.message
+                : "Не удалось загрузить идеи.";
+          setLoadError(reason);
+        }
+      } catch (error) {
+        if (!signal?.aborted) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить идеи.",
+          );
+          setIdeas([]);
+        }
+      } finally {
+        if (!signal?.aborted) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [categoryLabels, user?.uid],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadIdeas(controller.signal);
+    return () => controller.abort();
+  }, [loadIdeas]);
 
   const totalVotes = useMemo(
     () => ideas.reduce((sum, idea) => sum + idea.votes, 0),
@@ -359,28 +322,65 @@ export default function VotingPage() {
     [ideas],
   );
 
-  const toggleLike = (id: number) => {
+  const updateIdea = (id: string, update: (idea: IdeaCard) => IdeaCard) => {
+    let snapshot: IdeaCard | null = null;
     setIdeas((current) =>
-      current.map((idea) =>
-        idea.id === id
-          ? {
-              ...idea,
-              isLiked: !idea.isLiked,
-              likes: idea.isLiked ? idea.likes - 1 : idea.likes + 1,
-            }
-          : idea,
-      ),
+      current.map((idea) => {
+        if (idea.id !== id) {
+          return idea;
+        }
+        snapshot = idea;
+        return update(idea);
+      }),
     );
+    return snapshot;
   };
 
-  const handleVote = (id: number) => {
-    setIdeas((current) =>
-      current.map((idea) =>
-        idea.id === id && !idea.isVoted
-          ? { ...idea, isVoted: true, votes: idea.votes + 1 }
-          : idea,
-      ),
-    );
+  const toggleLike = async (id: string) => {
+    const snapshot = updateIdea(id, (idea) => {
+      const nextLiked = !idea.isLiked;
+      const nextLikes = Math.max(0, idea.likes + (nextLiked ? 1 : -1));
+      return {
+        ...idea,
+        isLiked: nextLiked,
+        likes: nextLikes,
+      };
+    });
+
+    if (!snapshot) {
+      return;
+    }
+
+    try {
+      await toggleProjectLike(id);
+    } catch {
+      setIdeas((current) =>
+        current.map((idea) => (idea.id === id ? snapshot : idea)),
+      );
+    }
+  };
+
+  const handleVote = async (id: string) => {
+    let wasUpdated = false;
+    const snapshot = updateIdea(id, (idea) => {
+      if (idea.isVoted) {
+        return idea;
+      }
+      wasUpdated = true;
+      return { ...idea, isVoted: true, votes: idea.votes + 1 };
+    });
+
+    if (!snapshot || !wasUpdated) {
+      return;
+    }
+
+    try {
+      await voteForProject(id);
+    } catch {
+      setIdeas((current) =>
+        current.map((idea) => (idea.id === id ? snapshot : idea)),
+      );
+    }
   };
 
   const resetFilters = () => {
@@ -390,6 +390,9 @@ export default function VotingPage() {
 
   const hasFilters =
     selectedCategory !== ALL_FILTER || selectedCity !== ALL_FILTER;
+  const handleReload = () => {
+    void loadIdeas();
+  };
 
   const categories = useMemo(() => {
     const counts = new Map<string, { label: string; count: number }>();
@@ -416,10 +419,16 @@ export default function VotingPage() {
     ];
   }, [ideas]);
 
-  const cityOptions = [
-    { id: "all", label: "Все города" },
-    ...availableCities.map((city) => ({ id: city, label: city })),
-  ];
+  const cityOptions = useMemo(() => {
+    const dynamicCities = ideas
+      .map((idea) => idea.city)
+      .filter((city) => Boolean(city) && city !== UNKNOWN_CITY_LABEL);
+    const merged = Array.from(new Set([...availableCities, ...dynamicCities]));
+    return [
+      { id: "all", label: "Все города" },
+      ...merged.map((city) => ({ id: city, label: city })),
+    ];
+  }, [ideas]);
 
   const selectedCategoryLabel = useMemo(() => {
     return (
@@ -444,14 +453,15 @@ export default function VotingPage() {
 
   const sortedIdeas = useMemo(() => {
     const data = [...visibleIdeas];
+    const toTime = (value: string) => {
+      const time = Date.parse(value);
+      return Number.isNaN(time) ? 0 : time;
+    };
     switch (sortBy) {
       case "likes":
         return data.sort((a, b) => b.likes - a.likes);
       case "newest":
-        return data.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
+        return data.sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
       case "popular":
       default:
         return data.sort((a, b) => b.votes - a.votes);
@@ -677,6 +687,26 @@ export default function VotingPage() {
                     </div>
                   </motion.div>
 
+                  {loadError ? (
+                    <motion.div
+                      className="rounded-[2rem] border border-destructive/50 bg-destructive/10 px-5 py-4 text-sm text-destructive shadow-[0_18px_40px_-32px_rgba(0,0,0,0.45)]"
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span>Не удалось загрузить идеи: {loadError}</span>
+                        <button
+                          type="button"
+                          onClick={handleReload}
+                          className="rounded-full border border-destructive/60 px-4 py-2 text-xs font-semibold text-destructive transition-all duration-300 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          Повторить
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : null}
+
                   <motion.div
                     key={`${selectedCategory}-${selectedCity}-${sortBy}`}
                     variants={containerVariants}
@@ -685,7 +715,15 @@ export default function VotingPage() {
                     className="space-y-6"
                   >
                     <AnimatePresence mode="popLayout">
-                      {sortedIdeas.length ? (
+                      {isLoading ? (
+                        <motion.div
+                          key="loading"
+                          variants={cardVariants}
+                          className="rounded-[2rem] border border-dashed border-border/70 bg-card/60 p-6 text-sm text-muted-foreground"
+                        >
+                          Идеи загружаются...
+                        </motion.div>
+                      ) : sortedIdeas.length ? (
                         sortedIdeas.map((idea) => {
                           const voteShare = maxVotes
                             ? Math.round((idea.votes / maxVotes) * 100)
