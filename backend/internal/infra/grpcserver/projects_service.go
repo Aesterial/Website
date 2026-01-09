@@ -13,6 +13,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -124,6 +125,43 @@ func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*proj
 		return nil, err
 	}
 	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, status.Error(codes.Internal, "projects service not configured")
+	}
+	trace := TraceIDOrNew(ctx)
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	logger.Info("Requested list of archived projects", "projects.list.get", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
+	list, err := s.projects.GetArchivedProjects(ctx, int(req.Offset), int(req.Limit))
+	if err != nil {
+		return nil, err
+	}
+	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest) (*projpb.EmptyResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, status.Error(codes.Internal, "projects service not configured")
+	}
+	trace := TraceIDOrNew(ctx)
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	logger.Info("Toggled like for project with ID: "+id.String(), "projects.like.toggle", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
+	if err := s.projects.ToggleLike(ctx, id, requestor.UID); err != nil {
+		return nil, err
+	}
+	return &projpb.EmptyResponse{Tracing: trace}, nil
 }
 
 func normalizeProjectCategory(raw string) string {

@@ -13,6 +13,11 @@ service ProjectService {
       get: "/api/projects"
     };
   }
+  rpc GetArchived(GetRequest) returns (GetResponse) {
+    option (google.api.http) = {
+      get: "/api/projects/archived"
+    };
+  }
   rpc Create(CreateRequest) returns (EmptyResponse) {
     option (google.api.http) = {
       post: "/api/projects/create"
@@ -37,6 +42,11 @@ service ProjectService {
   rpc Categories(google.protobuf.Empty) returns (CategoriesResponse) {
     option (google.api.http) = {
       get: "/api/projects/categories"
+    };
+  }
+  rpc ToggleLike(LikeRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/api/projects/like/{id}"
     };
   }
 }

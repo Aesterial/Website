@@ -243,6 +243,50 @@ func (x *GetResponse) GetTracing() string {
 	return ""
 }
 
+type LikeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LikeRequest) Reset() {
+	*x = LikeRequest{}
+	mi := &file_projects_domain_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LikeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LikeRequest) ProtoMessage() {}
+
+func (x *LikeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_projects_domain_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LikeRequest.ProtoReflect.Descriptor instead.
+func (*LikeRequest) Descriptor() ([]byte, []int) {
+	return file_projects_domain_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *LikeRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 type ProjectLocation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
@@ -254,7 +298,7 @@ type ProjectLocation struct {
 
 func (x *ProjectLocation) Reset() {
 	*x = ProjectLocation{}
-	mi := &file_projects_domain_proto_msgTypes[2]
+	mi := &file_projects_domain_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -266,7 +310,7 @@ func (x *ProjectLocation) String() string {
 func (*ProjectLocation) ProtoMessage() {}
 
 func (x *ProjectLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[2]
+	mi := &file_projects_domain_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -279,7 +323,7 @@ func (x *ProjectLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectLocation.ProtoReflect.Descriptor instead.
 func (*ProjectLocation) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{2}
+	return file_projects_domain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ProjectLocation) GetCity() string {
@@ -316,7 +360,7 @@ type ProjectInfo struct {
 
 func (x *ProjectInfo) Reset() {
 	*x = ProjectInfo{}
-	mi := &file_projects_domain_proto_msgTypes[3]
+	mi := &file_projects_domain_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -328,7 +372,7 @@ func (x *ProjectInfo) String() string {
 func (*ProjectInfo) ProtoMessage() {}
 
 func (x *ProjectInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[3]
+	mi := &file_projects_domain_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -341,7 +385,7 @@ func (x *ProjectInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectInfo.ProtoReflect.Descriptor instead.
 func (*ProjectInfo) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{3}
+	return file_projects_domain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ProjectInfo) GetTitle() string {
@@ -383,7 +427,7 @@ type Project struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Author        *v1.UserPublic         `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`
-	Info          *ProjectInfo           `protobuf:"bytes,3,opt,name=info,proto3" json:"info,omitempty"`
+	Details       *ProjectInfo           `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`
 	Status        ProjectVoteStatus      `protobuf:"varint,4,opt,name=status,proto3,enum=projects.v1.ProjectVoteStatus" json:"status,omitempty"`
 	LikesCount    int32                  `protobuf:"varint,5,opt,name=likes_count,json=likesCount,proto3" json:"likes_count,omitempty"`
 	Liked         []*v1.UserPublic       `protobuf:"bytes,6,rep,name=liked,proto3" json:"liked,omitempty"`
@@ -394,7 +438,7 @@ type Project struct {
 
 func (x *Project) Reset() {
 	*x = Project{}
-	mi := &file_projects_domain_proto_msgTypes[4]
+	mi := &file_projects_domain_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -406,7 +450,7 @@ func (x *Project) String() string {
 func (*Project) ProtoMessage() {}
 
 func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[4]
+	mi := &file_projects_domain_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +463,7 @@ func (x *Project) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Project.ProtoReflect.Descriptor instead.
 func (*Project) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{4}
+	return file_projects_domain_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Project) GetId() string {
@@ -436,9 +480,9 @@ func (x *Project) GetAuthor() *v1.UserPublic {
 	return nil
 }
 
-func (x *Project) GetInfo() *ProjectInfo {
+func (x *Project) GetDetails() *ProjectInfo {
 	if x != nil {
-		return x.Info
+		return x.Details
 	}
 	return nil
 }
@@ -484,7 +528,7 @@ type CreateRequest struct {
 
 func (x *CreateRequest) Reset() {
 	*x = CreateRequest{}
-	mi := &file_projects_domain_proto_msgTypes[5]
+	mi := &file_projects_domain_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -496,7 +540,7 @@ func (x *CreateRequest) String() string {
 func (*CreateRequest) ProtoMessage() {}
 
 func (x *CreateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[5]
+	mi := &file_projects_domain_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -509,7 +553,7 @@ func (x *CreateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRequest.ProtoReflect.Descriptor instead.
 func (*CreateRequest) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{5}
+	return file_projects_domain_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateRequest) GetTitle() string {
@@ -556,7 +600,7 @@ type RequestWithID struct {
 
 func (x *RequestWithID) Reset() {
 	*x = RequestWithID{}
-	mi := &file_projects_domain_proto_msgTypes[6]
+	mi := &file_projects_domain_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -568,7 +612,7 @@ func (x *RequestWithID) String() string {
 func (*RequestWithID) ProtoMessage() {}
 
 func (x *RequestWithID) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[6]
+	mi := &file_projects_domain_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -581,7 +625,7 @@ func (x *RequestWithID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestWithID.ProtoReflect.Descriptor instead.
 func (*RequestWithID) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{6}
+	return file_projects_domain_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RequestWithID) GetId() string {
@@ -601,7 +645,7 @@ type ChangeRequest struct {
 
 func (x *ChangeRequest) Reset() {
 	*x = ChangeRequest{}
-	mi := &file_projects_domain_proto_msgTypes[7]
+	mi := &file_projects_domain_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -613,7 +657,7 @@ func (x *ChangeRequest) String() string {
 func (*ChangeRequest) ProtoMessage() {}
 
 func (x *ChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[7]
+	mi := &file_projects_domain_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -626,7 +670,7 @@ func (x *ChangeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeRequest.ProtoReflect.Descriptor instead.
 func (*ChangeRequest) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{7}
+	return file_projects_domain_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ChangeRequest) GetId() string {
@@ -652,7 +696,7 @@ type EmptyResponse struct {
 
 func (x *EmptyResponse) Reset() {
 	*x = EmptyResponse{}
-	mi := &file_projects_domain_proto_msgTypes[8]
+	mi := &file_projects_domain_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -664,7 +708,7 @@ func (x *EmptyResponse) String() string {
 func (*EmptyResponse) ProtoMessage() {}
 
 func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[8]
+	mi := &file_projects_domain_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -677,7 +721,7 @@ func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{8}
+	return file_projects_domain_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EmptyResponse) GetTracing() string {
@@ -697,7 +741,7 @@ type CategoriesResponse struct {
 
 func (x *CategoriesResponse) Reset() {
 	*x = CategoriesResponse{}
-	mi := &file_projects_domain_proto_msgTypes[9]
+	mi := &file_projects_domain_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -709,7 +753,7 @@ func (x *CategoriesResponse) String() string {
 func (*CategoriesResponse) ProtoMessage() {}
 
 func (x *CategoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[9]
+	mi := &file_projects_domain_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -722,7 +766,7 @@ func (x *CategoriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoriesResponse.ProtoReflect.Descriptor instead.
 func (*CategoriesResponse) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{9}
+	return file_projects_domain_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CategoriesResponse) GetCategories() []string {
@@ -750,7 +794,9 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"Y\n" +
 	"\vGetResponse\x120\n" +
 	"\bprojects\x18\x01 \x03(\v2\x14.projects.v1.ProjectR\bprojects\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracing\"S\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing\"\x1d\n" +
+	"\vLikeRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"S\n" +
 	"\x0fProjectLocation\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x16\n" +
 	"\x06street\x18\x02 \x01(\tR\x06street\x12\x14\n" +
@@ -760,11 +806,11 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12'\n" +
 	"\x06photos\x18\x03 \x03(\v2\x0f.user.v1.AvatarR\x06photos\x128\n" +
 	"\bcategory\x18\x04 \x01(\x0e2\x1c.projects.v1.ProjectCategoryR\bcategory\x128\n" +
-	"\blocation\x18\x05 \x01(\v2\x1c.projects.v1.ProjectLocationR\blocation\"\xb2\x02\n" +
+	"\blocation\x18\x05 \x01(\v2\x1c.projects.v1.ProjectLocationR\blocation\"\xb8\x02\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
-	"\x06author\x18\x02 \x01(\v2\x13.user.v1.UserPublicR\x06author\x12,\n" +
-	"\x04info\x18\x03 \x01(\v2\x18.projects.v1.ProjectInfoR\x04info\x126\n" +
+	"\x06author\x18\x02 \x01(\v2\x13.user.v1.UserPublicR\x06author\x122\n" +
+	"\adetails\x18\x03 \x01(\v2\x18.projects.v1.ProjectInfoR\adetails\x126\n" +
 	"\x06status\x18\x04 \x01(\x0e2\x1e.projects.v1.ProjectVoteStatusR\x06status\x12\x1f\n" +
 	"\vlikes_count\x18\x05 \x01(\x05R\n" +
 	"likesCount\x12)\n" +
@@ -818,36 +864,37 @@ func file_projects_domain_proto_rawDescGZIP() []byte {
 }
 
 var file_projects_domain_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_projects_domain_proto_goTypes = []any{
 	(ProjectCategory)(0),          // 0: projects.v1.ProjectCategory
 	(ProjectVoteStatus)(0),        // 1: projects.v1.ProjectVoteStatus
 	(*GetRequest)(nil),            // 2: projects.v1.GetRequest
 	(*GetResponse)(nil),           // 3: projects.v1.GetResponse
-	(*ProjectLocation)(nil),       // 4: projects.v1.ProjectLocation
-	(*ProjectInfo)(nil),           // 5: projects.v1.ProjectInfo
-	(*Project)(nil),               // 6: projects.v1.Project
-	(*CreateRequest)(nil),         // 7: projects.v1.CreateRequest
-	(*RequestWithID)(nil),         // 8: projects.v1.RequestWithID
-	(*ChangeRequest)(nil),         // 9: projects.v1.ChangeRequest
-	(*EmptyResponse)(nil),         // 10: projects.v1.EmptyResponse
-	(*CategoriesResponse)(nil),    // 11: projects.v1.CategoriesResponse
-	(*v1.Avatar)(nil),             // 12: user.v1.Avatar
-	(*v1.UserPublic)(nil),         // 13: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
+	(*LikeRequest)(nil),           // 4: projects.v1.LikeRequest
+	(*ProjectLocation)(nil),       // 5: projects.v1.ProjectLocation
+	(*ProjectInfo)(nil),           // 6: projects.v1.ProjectInfo
+	(*Project)(nil),               // 7: projects.v1.Project
+	(*CreateRequest)(nil),         // 8: projects.v1.CreateRequest
+	(*RequestWithID)(nil),         // 9: projects.v1.RequestWithID
+	(*ChangeRequest)(nil),         // 10: projects.v1.ChangeRequest
+	(*EmptyResponse)(nil),         // 11: projects.v1.EmptyResponse
+	(*CategoriesResponse)(nil),    // 12: projects.v1.CategoriesResponse
+	(*v1.Avatar)(nil),             // 13: user.v1.Avatar
+	(*v1.UserPublic)(nil),         // 14: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
 }
 var file_projects_domain_proto_depIdxs = []int32{
-	6,  // 0: projects.v1.GetResponse.projects:type_name -> projects.v1.Project
-	12, // 1: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
+	7,  // 0: projects.v1.GetResponse.projects:type_name -> projects.v1.Project
+	13, // 1: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
 	0,  // 2: projects.v1.ProjectInfo.category:type_name -> projects.v1.ProjectCategory
-	4,  // 3: projects.v1.ProjectInfo.location:type_name -> projects.v1.ProjectLocation
-	13, // 4: projects.v1.Project.author:type_name -> user.v1.UserPublic
-	5,  // 5: projects.v1.Project.info:type_name -> projects.v1.ProjectInfo
+	5,  // 3: projects.v1.ProjectInfo.location:type_name -> projects.v1.ProjectLocation
+	14, // 4: projects.v1.Project.author:type_name -> user.v1.UserPublic
+	6,  // 5: projects.v1.Project.details:type_name -> projects.v1.ProjectInfo
 	1,  // 6: projects.v1.Project.status:type_name -> projects.v1.ProjectVoteStatus
-	13, // 7: projects.v1.Project.liked:type_name -> user.v1.UserPublic
-	14, // 8: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
-	12, // 9: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
-	4,  // 10: projects.v1.CreateRequest.location:type_name -> projects.v1.ProjectLocation
+	14, // 7: projects.v1.Project.liked:type_name -> user.v1.UserPublic
+	15, // 8: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
+	13, // 9: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
+	5,  // 10: projects.v1.CreateRequest.location:type_name -> projects.v1.ProjectLocation
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -860,14 +907,14 @@ func file_projects_domain_proto_init() {
 	if File_projects_domain_proto != nil {
 		return
 	}
-	file_projects_domain_proto_msgTypes[5].OneofWrappers = []any{}
+	file_projects_domain_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_projects_domain_proto_rawDesc), len(file_projects_domain_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

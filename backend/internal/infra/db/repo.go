@@ -926,29 +926,46 @@ func (p *ProjectsRepository) GetCategories(ctx context.Context) ([]string, error
 	}
 	return result, nil
 }
-
-func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit int) (projectdomain.Projects, error) {
+func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit int, opts ...projectdomain.ProjectOption) (projectdomain.Projects, error) {
 	var projects []*projectdomain.Project
 
-	var query string
-	var args []any
-
-	if limit <= 0 {
-		query = "SELECT p.id FROM projects p ORDER BY p.created_at DESC, p.id DESC OFFSET $1"
-		args = []any{offset}
-	} else {
-		query = "SELECT p.id FROM projects p ORDER BY p.created_at DESC, p.id DESC OFFSET $1 LIMIT $2"
-		args = []any{offset, limit}
+	q := &projectdomain.ProjectQuery{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(q)
+		}
 	}
 
-	rows, err := p.DB.QueryContext(ctx, query, args...)
+	var sb strings.Builder
+	sb.WriteString("SELECT p.id FROM projects p")
+
+	args := make([]any, 0, len(q.Args)+2)
+	args = append(args, q.Args...)
+
+	if len(q.Where) > 0 {
+		sb.WriteString(" WHERE ")
+		sb.WriteString(strings.Join(q.Where, " AND "))
+	}
+
+	sb.WriteString(" ORDER BY p.created_at DESC, p.id DESC")
+
+	offPH := "$" + strconv.Itoa(len(args)+1)
+	args = append(args, offset)
+	sb.WriteString(" OFFSET ")
+	sb.WriteString(offPH)
+
+	if limit > 0 {
+		limPH := "$" + strconv.Itoa(len(args)+1)
+		args = append(args, limit)
+		sb.WriteString(" LIMIT ")
+		sb.WriteString(limPH)
+	}
+
+	rows, err := p.DB.QueryContext(ctx, sb.String(), args...)
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var id uuid.UUID
@@ -967,6 +984,18 @@ func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit 
 	}
 
 	return projects, nil
+}
+
+func (p *ProjectsRepository) ToggleLike(ctx context.Context, id uuid.UUID, userID uint) error {
+	if userID == 0 {
+		return errors.New("user is empty")
+	}
+	var set bool
+	if err := p.DB.QueryRowContext(ctx, `select toggle_project_like($1::uuid, $2::bigint)`, id, userID).Scan(&set); err != nil {
+		return err
+	}
+	_ = set
+	return nil
 }
 
 var _ statistics.Repository = (*StatisticsRepository)(nil)
@@ -1297,10 +1326,18 @@ func (s *SubmissionsRepository) Approve(ctx context.Context, id int32) error {
 	if id == 0 {
 		return errors.New("invalid id")
 	}
-	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'approved' WHERE id = $1", id); err != nil {
-		return err
-	}
-	return nil
+	_, err := s.DB.ExecContext(ctx, `
+		WITH upd AS (
+			UPDATE submissions
+			SET state = 'approved'
+			WHERE id = $1
+			RETURNING project_id
+		)
+		UPDATE projects
+		SET status = 'published'
+		WHERE id = (SELECT project_id FROM upd);
+	`, id)
+	return err
 }
 
 func (s *SubmissionsRepository) Decline(ctx context.Context, id int32, reason string) error {

@@ -16,6 +16,10 @@ message GetResponse {
   string tracing = 2;
 }
 
+message LikeRequest {
+  string id = 1;
+}
+
 enum ProjectCategory {
   UNSPECIFIED = 0;
   IMPROVEMENT = 1;
@@ -51,7 +55,7 @@ message ProjectInfo {
 message Project {
   string id = 1;
   user.v1.UserPublic author = 2;
-  ProjectInfo info = 3;
+  ProjectInfo details = 3;
   ProjectVoteStatus status = 4;
   int32 likes_count = 5;
   repeated user.v1.UserPublic liked = 6;

@@ -158,6 +158,33 @@ create index project_category_idx on projects (((info).category));
 create index projects_city_idx on projects ((((info).location).city));
 create index projects_created_at_idx on projects (created_at);
 
+CREATE OR REPLACE FUNCTION projects_autoset_status()
+    RETURNS trigger
+    LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.status IN ('in moderation', 'closed', 'archived', 'implementing') THEN
+        RETURN NEW;
+    END IF;
+
+    IF NEW.likes_count = 0 THEN
+        NEW.status := 'published';
+    ELSE
+        NEW.status := 'vote in progress';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_projects_autoset_status ON projects;
+
+CREATE TRIGGER trg_projects_autoset_status
+    BEFORE INSERT OR UPDATE OF likes_count, status
+    ON projects
+    FOR EACH ROW
+EXECUTE FUNCTION projects_autoset_status();
+
 create table project_photos (
     id uuid primary key default pg_catalog.gen_random_uuid(),
     project_id uuid not null references projects(id) on delete cascade,
@@ -185,45 +212,62 @@ create index project_likes_created_at_idx on project_likes (created_at);
 create or replace function toggle_project_like(p_project_id uuid, p_user_uid bigint)
     returns boolean
     language plpgsql
-    as $$
-    declare
-    removed boolean;
-    begin
-    -- если лайк уже есть -> снимаем
-    delete from project_likes
-    where project_id = p_project_id
-    and user_uid = p_user_uid
-    returning true into removed;
+as $$
+declare
+    v_status project_vote_status;
+    v_removed boolean;
+    v_liked  boolean;
+begin
+    select status
+    into v_status
+    from projects
+    where id = p_project_id
+        for update;
 
-    if removed then
-    update projects
-    set likes_count = likes_count - 1
-    where id = p_project_id;
-
-    return false;
+    if not found then
+        raise exception 'project % not found', p_project_id;
     end if;
 
-    -- иначе ставим лайк
+    if v_status in ('archived', 'closed', 'in moderation') then
+        select exists (
+            select 1
+            from project_likes
+            where project_id = p_project_id
+              and user_uid   = p_user_uid
+        )
+        into v_liked;
+
+        return v_liked;
+    end if;
+
+    delete from project_likes
+    where project_id = p_project_id
+      and user_uid   = p_user_uid
+    returning true into v_removed;
+
+    if v_removed then
+        update projects
+        set likes_count = likes_count - 1
+        where id = p_project_id
+          and likes_count > 0;
+
+        return false;
+    end if;
+
     insert into project_likes (project_id, user_uid)
     values (p_project_id, p_user_uid)
     on conflict do nothing;
 
     if found then
-    update projects
-    set likes_count = likes_count + 1
-    where id = p_project_id;
+        update projects
+        set likes_count = likes_count + 1
+        where id = p_project_id;
+
+        return true;
     end if;
 
     return true;
 end $$;
-
--- ranks
-create table ranks (
-    name user_rank primary key,
-    color int,
-    description text,
-    permissions permissions_t not null default ROW(true, false, true, false, false, false, true, true, true, false, false, true, true, true, false, true, true, false, false, false, false, false, false, false, false)::permissions_t
-);
 
 -- sync user.permissions when rank name changes
 create or replace function sync_user_permissions_from_rank()

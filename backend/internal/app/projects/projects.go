@@ -4,8 +4,9 @@ import (
 	"ascendant/backend/internal/domain/projects"
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -50,11 +51,18 @@ func (s *Service) GetCategories(ctx context.Context) ([]string, error) {
 	return s.repo.GetCategories(ctx)
 }
 
-func (s *Service) GetProjects(ctx context.Context, offset int, limit int) (projects.Projects, error) {
+func (s *Service) GetProjects(ctx context.Context, offset int, limit int, opts ...projects.ProjectOption) (projects.Projects, error) {
 	if s == nil || s.repo == nil {
 		return nil, errors.New("projects service not configured")
 	}
-	return s.repo.GetProjects(ctx, offset, limit)
+	return s.repo.GetProjects(ctx, offset, limit, opts...)
+}
+
+func (s *Service) GetArchivedProjects(ctx context.Context, offset int, limit int) (projects.Projects, error) {
+	if s == nil || s.repo == nil {
+		return nil, errors.New("projects service not configured")
+	}
+	return s.repo.GetProjects(ctx, offset, limit, projects.WithStatus("archived"))
 }
 
 func (s *Service) GetProjectsByUID(ctx context.Context, uid int) ([]*projects.Project, error) {
@@ -69,4 +77,14 @@ func (s *Service) GetProject(ctx context.Context, id uuid.UUID) (*projects.Proje
 		return nil, errors.New("projects service not configured")
 	}
 	return s.repo.GetProject(ctx, id)
+}
+
+func (s *Service) ToggleLike(ctx context.Context, id uuid.UUID, userID uint) error {
+	if s == nil || s.repo == nil {
+		return errors.New("projects service not configured")
+	}
+	if userID == 0 {
+		return errors.New("user is empty")
+	}
+	return s.repo.ToggleLike(ctx, id, userID)
 }

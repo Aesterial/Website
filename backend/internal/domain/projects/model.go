@@ -2,6 +2,8 @@ package projects
 
 import (
 	projpb "ascendant/backend/internal/gen/projects/v1"
+	"fmt"
+	"strings"
 	"time"
 
 	"ascendant/backend/internal/domain/user"
@@ -86,7 +88,7 @@ func (p *Project) ToProto() *projpb.Project {
 	proj.LikesCount = int32(p.Likes)
 	proj.CreatedAt = timestamppb.New(p.At)
 	proj.Status = p.Status.ToProto()
-	proj.Info = p.Info.ToProto()
+	proj.Details = p.Info.ToProto()
 	return &proj
 }
 
@@ -98,4 +100,44 @@ func (p Projects) ToProto() []*projpb.Project {
 		projects = append(projects, project.ToProto())
 	}
 	return projects
+}
+
+type ProjectOption func(*ProjectQuery)
+
+type ProjectQuery struct {
+	Where []string
+	Args  []any
+}
+
+func (q *ProjectQuery) addWhere(cond string, args ...any) {
+	placeholder := fmt.Sprintf("$%d", len(q.Args)+1)
+	q.Where = append(q.Where, fmt.Sprintf(cond, placeholder))
+	q.Args = append(q.Args, args...)
+}
+
+func WithStatus(status string) ProjectOption {
+	return func(q *ProjectQuery) {
+		q.addWhere("p.status = %s", status)
+	}
+}
+
+func WithOwnerID(ownerID uuid.UUID) ProjectOption {
+	return func(q *ProjectQuery) {
+		q.addWhere("p.owner_id = %s", ownerID)
+	}
+}
+
+func WithStatuses(statuses ...string) ProjectOption {
+	return func(q *ProjectQuery) {
+		if len(statuses) == 0 {
+			return
+		}
+		ph := make([]string, 0, len(statuses))
+		for _, s := range statuses {
+			placeholder := fmt.Sprintf("$%d", len(q.Args)+1)
+			ph = append(ph, placeholder)
+			q.Args = append(q.Args, s)
+		}
+		q.Where = append(q.Where, "p.status IN ("+strings.Join(ph, ", ")+")")
+	}
 }

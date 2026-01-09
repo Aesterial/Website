@@ -7,7 +7,6 @@ import (
 	projpb "ascendant/backend/internal/gen/projects/v1"
 	submpb "ascendant/backend/internal/gen/submissions/v1"
 	userpb "ascendant/backend/internal/gen/user/v1"
-	"ascendant/backend/internal/infra/logger"
 	"context"
 	"errors"
 	"strings"
@@ -32,6 +31,9 @@ func New(repo submissions.Repository, proj projects.Repository, usrs user.Reposi
 	return &Service{repo: repo, proj: proj, usrs: usrs}
 }
 
+// toGenProject переводит тип проекта из стандартного в тот, что запрашивает gRPC.
+//
+// Deprecated: используйте projects.Project.ToProto() вместо toGenProject(*projects.Project).
 func toGenProject(p *projects.Project) *projpb.Project {
 	convAvatars := func() []*userpb.Avatar {
 		var photos []*userpb.Avatar
@@ -63,7 +65,7 @@ func toGenProject(p *projects.Project) *projpb.Project {
 	}
 	return &projpb.Project{
 		Id: p.ID.String(),
-		Info: &projpb.ProjectInfo{
+		Details: &projpb.ProjectInfo{
 			Title:       p.Info.Title,
 			Description: p.Info.Description,
 			Photos:      convAvatars(),
@@ -88,7 +90,6 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, er
 		if err != nil {
 			return nil, err
 		}
-		logger.Debug("Project created at: "+p.At.String(), "")
 		author, err := s.usrs.GetUserByUID(ctx, p.Author.UID)
 		if err != nil {
 			return nil, err
