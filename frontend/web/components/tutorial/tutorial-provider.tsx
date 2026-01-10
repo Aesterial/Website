@@ -48,7 +48,7 @@ export function TutorialProvider({
   children,
   storageKey = DEFAULT_STORAGE_KEY,
   labels,
-  padding,
+  padding = 30,
 }: TutorialProviderProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isActive, setIsActive] = useState(false);
