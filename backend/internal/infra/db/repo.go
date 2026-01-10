@@ -1547,13 +1547,11 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 		var sub submissions.Submission
 		var reason sql.NullString
 		logger.Debug("Scanning rows", "")
-		if err := rows.Scan(&sub.ID, &sub.ProjectID, &sub.State, &sub.Reason); err != nil {
+		if err := rows.Scan(&sub.ID, &sub.ProjectID, &sub.State, &reason); err != nil {
 			return nil, err
 		}
-		if sub.State == "declined" {
-			if reason.Valid {
-				sub.Reason = &reason.String
-			}
+		if sub.State == "declined" && reason.Valid {
+			sub.Reason = &reason.String
 		}
 		logger.Debug("Appending: "+sub.ProjectID.String(), "")
 		data = append(data, &sub)

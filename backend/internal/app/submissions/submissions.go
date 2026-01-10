@@ -95,7 +95,16 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, er
 			return nil, err
 		}
 		p.Author = author
-		response = append(response, &submpb.ListResponseTarget{Id: int32(v.ID), Info: p.ToProto(), State: v.State})
+		reason := ""
+		if v.Reason != nil {
+			reason = *v.Reason
+		}
+		response = append(response, &submpb.ListResponseTarget{
+			Id:     int32(v.ID),
+			Info:   p.ToProto(),
+			State:  v.State,
+			Reason: reason,
+		})
 	}
 	return response, nil
 }

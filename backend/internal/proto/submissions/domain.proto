@@ -1,9 +1,10 @@
 syntax = "proto3";
 
 package submissions.v1;
-option go_package = "ascendant/backend/internal/gen/submissions/v1;submissions";
 
 import "projects/domain.proto";
+
+option go_package = "ascendant/backend/internal/gen/submissions/v1;submissions";
 
 message DataResponse {
   string tracing = 1;
@@ -23,6 +24,7 @@ message ListResponse {
     int32 id = 1;
     projects.v1.Project info = 2;
     string state = 3;
+    string reason = 4;
   }
   repeated target data = 1;
   string tracing = 2;
