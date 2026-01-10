@@ -22,6 +22,8 @@ export type ApiRank = {
 export type ApiAvatar = {
   contentType: string;
   data: string;
+  url?: string;
+  key?: string;
 };
 
 type ApiUserSettings = {
@@ -59,7 +61,9 @@ export type ApiProjectInfo = {
 
 export type ApiProject = {
   id?: string;
+  author?: ApiUserPublic | null;
   info?: ApiProjectInfo | null;
+  details?: ApiProjectInfo | null;
   likesCount?: number;
   likes_count?: number;
   liked?: ApiUserPublic[] | null;
@@ -69,8 +73,10 @@ export type ApiProject = {
 };
 
 export type ApiSubmissionTarget = {
+  id?: number | string;
   info?: ApiProject | null;
   state?: string;
+  reason?: string | null;
 };
 
 type ApiUser = {
@@ -100,6 +106,10 @@ type ApiProjectsResponse = {
   tracing?: string;
 };
 
+type ApiProjectCategoriesResponse = {
+  categories?: string[] | null;
+  tracing?: string;
+};
 type ApiSubmissionsResponse = {
   data?: ApiSubmissionTarget[] | null;
   tracing?: string;
@@ -466,12 +476,17 @@ export async function updateAvatar(payload: ApiAvatar): Promise<AuthUser> {
 
 export async function fetchProjects(options?: {
   limit?: number;
+  offset?: number;
   signal?: AbortSignal;
 }): Promise<ApiProject[]> {
-  const query =
-    typeof options?.limit === "number"
-      ? `?limit=${encodeURIComponent(String(options.limit))}`
-      : "";
+  const params = new URLSearchParams();
+  if (typeof options?.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+  if (typeof options?.offset === "number") {
+    params.set("offset", String(options.offset));
+  }
+  const query = params.toString() ? `?${params.toString()}` : "";
   const payload = await apiRequest<ApiProjectsResponse>(
     `/api/projects${query}`,
     {
@@ -481,6 +496,93 @@ export async function fetchProjects(options?: {
   );
   const records = payload?.projects ?? [];
   return Array.isArray(records) ? records : [];
+}
+
+export async function fetchArchivedProjects(options?: {
+  limit?: number;
+  offset?: number;
+  signal?: AbortSignal;
+}): Promise<ApiProject[]> {
+  const params = new URLSearchParams();
+  if (typeof options?.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+  if (typeof options?.offset === "number") {
+    params.set("offset", String(options.offset));
+  }
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const payload = await apiRequest<ApiProjectsResponse>(
+    `/api/projects/archived${query}`,
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  const records = payload?.projects ?? [];
+  return Array.isArray(records) ? records : [];
+}
+
+export type CreateProjectPayload = {
+  title: string;
+  description?: string;
+  photos?: ApiAvatar[];
+  category: string;
+  location: ApiProjectLocation;
+};
+
+export async function createProject(
+  payload: CreateProjectPayload,
+): Promise<void> {
+  await apiRequest("/api/projects/create", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function changeProjectTitle(
+  projectID: string,
+  title: string,
+): Promise<void> {
+  const encodedId = encodeURIComponent(projectID);
+  const encodedTitle = encodeURIComponent(title);
+  await apiRequest(`/api/projects/${encodedId}/name/${encodedTitle}`, {
+    method: "PATCH",
+  });
+}
+
+export async function changeProjectDescription(
+  projectID: string,
+  description: string,
+): Promise<void> {
+  const encodedId = encodeURIComponent(projectID);
+  const encodedDescription = encodeURIComponent(description);
+  await apiRequest(
+    `/api/project/${encodedId}/description/${encodedDescription}`,
+    {
+      method: "PATCH",
+    },
+  );
+}
+
+export async function deleteProject(projectID: string): Promise<void> {
+  const encodedId = encodeURIComponent(projectID);
+  await apiRequest(`/api/projects/${encodedId}/delete`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchProjectCategories(options?: {
+  signal?: AbortSignal;
+}): Promise<string[]> {
+  const payload = await apiRequest<ApiProjectCategoriesResponse>(
+    "/api/projects/categories",
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  const categories = payload?.categories ?? [];
+  return Array.isArray(categories) ? categories : [];
 }
 
 export async function fetchSubmissions(options?: {
@@ -497,9 +599,30 @@ export async function fetchSubmissions(options?: {
   return Array.isArray(records) ? records : [];
 }
 
+export async function approveSubmission(id: number): Promise<void> {
+  await apiRequest(`/api/submissions/${id}/approve`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function declineSubmission(
+  id: number,
+  reason: string,
+): Promise<void> {
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    throw new Error("Decline reason is required.");
+  }
+  await apiRequest(`/api/submissions/${id}/decline`, {
+    method: "POST",
+    body: JSON.stringify({ reason: trimmed }),
+  });
+}
+
 export async function toggleProjectLike(projectID: string): Promise<void> {
   const encoded = encodeURIComponent(projectID);
-  await apiRequest(`/api/projects/${encoded}/like`, {
+  await apiRequest(`/api/projects/like/${encoded}`, {
     method: "POST",
     body: JSON.stringify({}),
   });

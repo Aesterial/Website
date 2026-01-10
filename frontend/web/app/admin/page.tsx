@@ -1071,6 +1071,9 @@ export default function AdminPage() {
     }
 
     if (action === "unblock") {
+      if (user.status !== "banned") {
+        return;
+      }
       try {
         await unbanUser(user.userID);
         updateUserStatus(user.userID, "active");
@@ -1097,10 +1100,18 @@ export default function AdminPage() {
     });
   };
 
+  const selectedUser = useMemo(
+    () => users.find((item) => item.userID === selectedUserId) ?? null,
+    [users, selectedUserId],
+  );
+  const canUnblockSelected = selectedUser?.status === "banned";
+
   const handleSelectedAction = (action: "block" | "unblock" | "reset") => {
-    const selectedUser = users.find((item) => item.userID === selectedUserId);
     if (!selectedUser) {
       toast.message(t("adminToastSelectUser"));
+      return;
+    }
+    if (action === "unblock" && !canUnblockSelected) {
       return;
     }
     void handleUserAction(selectedUser, action);
@@ -2071,8 +2082,9 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
-                            className="rounded-full border border-border/70 px-4 py-2 text-xs font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                            className="rounded-full border border-border/70 px-4 py-2 text-xs font-semibold transition-all duration-300 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-60"
                             onClick={() => handleSelectedAction("unblock")}
+                            disabled={!canUnblockSelected}
                           >
                             {t("actionUnblock")}
                           </button>

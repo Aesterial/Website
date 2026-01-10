@@ -215,16 +215,19 @@ export default function VotingPage() {
       };
 
       const mapProjectToIdea = (project?: ApiProject | null) => {
-        const id = project?.id?.trim();
-        if (!id) {
-          return null;
-        }
-        const info = project.info ?? null;
+        if (!project) return null;
+
+        const id = project.id?.trim();
+        if (!id) return null;
+
+        const info = project.details ?? project.info ?? null;
         const title = info?.title?.trim() || "Без названия";
         const description =
           info?.description?.trim() || "Описание пока не добавлено.";
+
         const location = info?.location ?? null;
         const city = location?.city?.trim() || UNKNOWN_CITY_LABEL;
+
         const addressParts = [
           location?.street?.trim(),
           location?.house?.trim(),
@@ -241,12 +244,13 @@ export default function VotingPage() {
         const likesCount = Number(
           project.likesCount ?? project.likes_count ?? 0,
         );
+
         const liked = Array.isArray(project.liked) ? project.liked : [];
-        const userId = user?.uid ?? null;
+        const userId = user?.uid;
+
         const isLiked =
-          userId !== null
-            ? liked.some((item) => extractUserId(item) === userId)
-            : false;
+          userId != null &&
+          liked.some((item) => extractUserId(item) === userId);
 
         return {
           id,

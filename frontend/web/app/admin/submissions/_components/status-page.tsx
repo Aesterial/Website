@@ -1,65 +1,160 @@
-﻿"use client"
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { CalendarDays, ChevronDown, ExternalLink, Globe, LogOut, MapPin, Settings, UserCircle2 } from "lucide-react"
-import { Logo } from "@/components/logo"
-import { useAuth } from "@/components/auth-provider"
-import { useLanguage } from "@/components/language-provider"
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  CalendarDays,
+  ChevronDown,
+  ExternalLink,
+  Globe,
+  LogOut,
+  MapPin,
+  Settings,
+  UserCircle2,
+} from "lucide-react";
+import { Logo } from "@/components/logo";
+import { useAuth } from "@/components/auth-provider";
+import { useLanguage } from "@/components/language-provider";
+import { fetchSubmissions } from "@/lib/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { submissions, statusMeta, type Submission, type SubmissionStatus } from "../data"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  mapSubmissionTarget,
+  statusMeta,
+  type Submission,
+  type SubmissionStatus,
+} from "../data";
 
 const statusBadgeStyles: Record<SubmissionStatus, string> = {
   pending: "bg-amber-500/10 text-amber-700",
   approved: "bg-emerald-500/10 text-emerald-700",
   declined: "bg-rose-500/10 text-rose-700",
-}
+};
 
 type StatusPageProps = {
-  status: SubmissionStatus
-}
+  status: SubmissionStatus;
+};
 
 export default function SubmissionStatusPage({ status }: StatusPageProps) {
-  const router = useRouter()
-  const { logout, user } = useAuth()
-  const { language, setLanguage, t } = useLanguage()
+  const router = useRouter();
+  const { logout, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = async () => {
-    await logout()
-    router.push("/")
-  }
-  const displayName = user?.displayName || user?.username || ""
-  const initials = (displayName || "U").slice(0, 2).toUpperCase()
+    await logout();
+    router.push("/");
+  };
+  const displayName = user?.displayName || user?.username || "";
+  const initials = (displayName || "U").slice(0, 2).toUpperCase();
   const languageOptions = [
     { code: "RU" as const, label: "RU" },
     { code: "EN" as const, label: "EN" },
     { code: "KZ" as const, label: "KZ" },
-  ]
+  ];
 
   const statusLabel: Record<SubmissionStatus, string> = {
     pending: t("statusPending"),
     approved: t("statusApproved"),
     declined: t("statusDeclined"),
-  }
+  };
 
-  const filtered = useMemo(() => submissions.filter((item) => item.status === status), [status])
-  const [selectedId, setSelectedId] = useState<string | null>(filtered[0]?.id ?? null)
+  const locale = useMemo(
+    () => (language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US"),
+    [language],
+  );
+  const categoryLabels = useMemo(
+    () => ({
+      improvement: t("landscaping"),
+      roadsidewalks: t("roadsAndSidewalks"),
+      lighting: t("lighting"),
+      playgrounds: t("playgrounds"),
+      parks: t("parksAndSquares"),
+      other: t("other"),
+    }),
+    [t],
+  );
+  const resolveCategoryLabel = useCallback(
+    (value: unknown) => {
+      if (typeof value === "number") {
+        const key = {
+          1: "improvement",
+          2: "roadsidewalks",
+          3: "lighting",
+          4: "playgrounds",
+          5: "parks",
+          6: "other",
+        }[value];
+        return key
+          ? categoryLabels[key as keyof typeof categoryLabels]
+          : categoryLabels.other;
+      }
+      if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (
+          normalized &&
+          Object.prototype.hasOwnProperty.call(categoryLabels, normalized)
+        ) {
+          return categoryLabels[normalized as keyof typeof categoryLabels];
+        }
+        return value.trim() || categoryLabels.other;
+      }
+      return categoryLabels.other;
+    },
+    [categoryLabels],
+  );
 
   useEffect(() => {
-    setSelectedId(filtered[0]?.id ?? null)
-  }, [filtered])
+    const controller = new AbortController();
+    setIsLoading(true);
+    fetchSubmissions({ signal: controller.signal })
+      .then((data) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const mapped = data
+          .map((item) =>
+            mapSubmissionTarget(item, { locale, resolveCategoryLabel }),
+          )
+          .filter((item): item is Submission => Boolean(item));
+        setSubmissions(mapped);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setSubmissions([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [locale, resolveCategoryLabel]);
 
-  const selected = filtered.find((item) => item.id === selectedId) ?? null
-  const statusInfo = statusMeta[status]
+  const filtered = useMemo(
+    () => submissions.filter((item) => item.status === status),
+    [status, submissions],
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(
+    filtered[0]?.id ?? null,
+  );
+
+  useEffect(() => {
+    setSelectedId(filtered[0]?.id ?? null);
+  }, [filtered]);
+
+  const selected = filtered.find((item) => item.id === selectedId) ?? null;
+  const statusInfo = statusMeta[status];
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
@@ -75,7 +170,9 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
             </Link>
             <div>
               <p className="text-lg font-semibold">{t(statusInfo.labelKey)}</p>
-              <p className="text-xs text-muted-foreground">{t(statusInfo.descriptionKey)}</p>
+              <p className="text-xs text-muted-foreground">
+                {t(statusInfo.descriptionKey)}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -92,7 +189,10 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[90px]">
                 {languageOptions.map((option) => (
-                  <DropdownMenuItem key={option.code} onClick={() => setLanguage(option.code)}>
+                  <DropdownMenuItem
+                    key={option.code}
+                    onClick={() => setLanguage(option.code)}
+                  >
                     {option.label}
                   </DropdownMenuItem>
                 ))}
@@ -105,9 +205,13 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
                   className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
                 >
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-xs font-semibold">
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-semibold">{displayName || user?.username || "admin"}</span>
+                  <span className="text-sm font-semibold">
+                    {displayName || user?.username || "admin"}
+                  </span>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
@@ -121,8 +225,8 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={(event) => {
-                    event.preventDefault()
-                    void handleLogout()
+                    event.preventDefault();
+                    void handleLogout();
                   }}
                 >
                   <LogOut className="h-4 w-4" />
@@ -144,24 +248,44 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t("adminSubmissionsListTitle")}</p>
-                <h1 className="text-2xl font-bold sm:text-3xl">{t(statusInfo.labelKey)}</h1>
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  {t("adminSubmissionsListTitle")}
+                </p>
+                <h1 className="text-2xl font-bold sm:text-3xl">
+                  {t(statusInfo.labelKey)}
+                </h1>
               </div>
               <div className="text-sm text-muted-foreground">
-                {t("adminSubmissionsTotalLabel")}: <span className="text-foreground font-semibold">{filtered.length}</span>
+                {t("adminSubmissionsTotalLabel")}:{" "}
+                <span className="text-foreground font-semibold">
+                  {filtered.length}
+                </span>
               </div>
             </div>
           </motion.section>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
             <motion.section
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               className="rounded-3xl border border-border/70 bg-card/90 p-10 text-center"
             >
-              <p className="text-lg font-semibold">{t("adminSubmissionsEmptyTitle")}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{t("adminSubmissionsEmptySubtitle")}</p>
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </motion.section>
+          ) : filtered.length === 0 ? (
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-3xl border border-border/70 bg-card/90 p-10 text-center"
+            >
+              <p className="text-lg font-semibold">
+                {t("adminSubmissionsEmptyTitle")}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("adminSubmissionsEmptySubtitle")}
+              </p>
               <Link
                 href="/admin/submissions"
                 className="mt-5 inline-flex rounded-full border border-border/70 px-5 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
@@ -200,35 +324,57 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
                 {selected ? (
                   <div className="space-y-5">
                     <div className="relative h-40 overflow-hidden rounded-2xl">
-                      <img src={selected.coverImage} alt={selected.title} className="h-full w-full object-cover" />
+                      <img
+                        src={selected.coverImage}
+                        alt={selected.title}
+                        className="h-full w-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-transparent" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         <span>{selected.category}</span>
                         <span className="h-1 w-1 rounded-full bg-muted-foreground/60" />
-                        <span className={`rounded-full px-2 py-0.5 font-semibold ${statusBadgeStyles[status]}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-semibold ${statusBadgeStyles[status]}`}
+                        >
                           {statusLabel[status]}
                         </span>
                       </div>
-                      <h2 className="mt-2 text-xl font-semibold">{selected.title}</h2>
-                      <p className="mt-2 text-sm text-muted-foreground">{selected.summary}</p>
+                      <h2 className="mt-2 text-xl font-semibold">
+                        {selected.title}
+                      </h2>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {selected.summary}
+                      </p>
                     </div>
                     <div className="grid gap-3 text-sm">
                       <div className="flex items-center gap-2">
                         <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t("adminSubmissionsInfoAuthor")}:</span>
-                        <span className="font-semibold">{selected.authorName}</span>
+                        <span className="text-muted-foreground">
+                          {t("adminSubmissionsInfoAuthor")}:
+                        </span>
+                        <span className="font-semibold">
+                          {selected.authorName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t("adminSubmissionsInfoDate")}:</span>
-                        <span className="font-semibold">{selected.submittedAt}</span>
+                        <span className="text-muted-foreground">
+                          {t("adminSubmissionsInfoDate")}:
+                        </span>
+                        <span className="font-semibold">
+                          {selected.submittedAt}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t("adminSubmissionsInfoLocation")}:</span>
-                        <span className="font-semibold">{selected.location}</span>
+                        <span className="text-muted-foreground">
+                          {t("adminSubmissionsInfoLocation")}:
+                        </span>
+                        <span className="font-semibold">
+                          {selected.location}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {t("adminSubmissionsInfoSource")}: {selected.source}
@@ -243,7 +389,9 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
                     </Link>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{t("adminSubmissionsSelectHint")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("adminSubmissionsSelectHint")}
+                  </p>
                 )}
               </motion.aside>
             </div>
@@ -251,18 +399,24 @@ export default function SubmissionStatusPage({ status }: StatusPageProps) {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 type ProjectCardProps = {
-  item: Submission
-  selected: boolean
-  onSelect: () => void
-  status: SubmissionStatus
-  statusText: string
-}
+  item: Submission;
+  selected: boolean;
+  onSelect: () => void;
+  status: SubmissionStatus;
+  statusText: string;
+};
 
-function ProjectCard({ item, selected, onSelect, status, statusText }: ProjectCardProps) {
+function ProjectCard({
+  item,
+  selected,
+  onSelect,
+  status,
+  statusText,
+}: ProjectCardProps) {
   return (
     <button
       type="button"
@@ -272,12 +426,20 @@ function ProjectCard({ item, selected, onSelect, status, statusText }: ProjectCa
       }`}
     >
       <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-2xl">
-        <img src={item.coverImage} alt={item.title} className="h-full w-full object-cover" />
+        <img
+          src={item.coverImage}
+          alt={item.title}
+          className="h-full w-full object-cover"
+        />
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span>{item.category}</span>
-          <span className={`rounded-full px-2 py-0.5 font-semibold ${statusBadgeStyles[status]}`}>{statusText}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 font-semibold ${statusBadgeStyles[status]}`}
+          >
+            {statusText}
+          </span>
         </div>
         <p className="mt-2 text-base font-semibold">{item.title}</p>
         <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
@@ -287,5 +449,5 @@ function ProjectCard({ item, selected, onSelect, status, statusText }: ProjectCa
         </div>
       </div>
     </button>
-  )
+  );
 }

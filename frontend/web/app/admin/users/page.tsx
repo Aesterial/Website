@@ -337,6 +337,9 @@ export default function AdminUsersPage() {
     }
 
     if (action === "unblock") {
+      if (user.status !== "banned") {
+        return;
+      }
       try {
         await unbanUser(user.userID);
         updateUserStatus(user.userID, "active");

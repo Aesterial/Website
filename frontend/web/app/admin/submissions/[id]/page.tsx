@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,11 @@ import {
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
-import { handleBannedUser } from "@/lib/api";
+import {
+  approveSubmission,
+  declineSubmission,
+  fetchSubmissions,
+} from "@/lib/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +42,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { statusMeta, submissions, type SubmissionStatus } from "../data";
+import {
+  mapSubmissionTarget,
+  statusMeta,
+  type Submission,
+  type SubmissionStatus,
+} from "../data";
 
 const statusBadgeStyles: Record<SubmissionStatus, string> = {
   pending: "bg-amber-500/10 text-amber-700",
@@ -52,81 +61,60 @@ type SubmissionDetailPageProps = {
   }>;
 };
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL
-).replace(/\/$/, "");
-const BANNED_ERROR_MATCH = "user is banned";
-
-const isBannedResponse = (
-  status: number,
-  data: { error?: string; data?: unknown; message?: string } | null,
-  message: string,
-) => {
-  if (status !== 401 && status !== 403) {
-    return false;
-  }
-  const includesBan = (value: unknown) =>
-    typeof value === "string" &&
-    value.toLowerCase().includes(BANNED_ERROR_MATCH);
-  return (
-    includesBan(data?.error) ||
-    includesBan(data?.data) ||
-    includesBan(data?.message) ||
-    includesBan(message)
-  );
-};
-
-async function postDecision(path: string, payload?: unknown) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
-
-  if (response.ok) {
-    return;
-  }
-
-  let message = `Request failed (${response.status})`;
-  let data: { error?: string; data?: unknown; message?: string } | null = null;
-  try {
-    data = (await response.json()) as {
-      error?: string;
-      data?: unknown;
-      message?: string;
-    };
-  } catch {
-    const text = await response.text();
-    if (text) {
-      message = text;
-    }
-  }
-  if (data?.error) {
-    message = data.error;
-  } else if (data?.message) {
-    message = data.message;
-  }
-  if (isBannedResponse(response.status, data, message)) {
-    await handleBannedUser();
-  }
-  throw new Error(message);
-}
-
-export default function SubmissionDetailPage({ params }: SubmissionDetailPageProps) {
+export default function SubmissionDetailPage({
+  params,
+}: SubmissionDetailPageProps) {
   const { id } = use(params);
-
-  const submission = useMemo(
-    () => submissions.find((item) => item.id === id) ?? null,
-    [id]
-  );
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
   const { logout, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const locale = useMemo(
+    () => (language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US"),
+    [language],
+  );
+  const categoryLabels = useMemo(
+    () => ({
+      improvement: t("landscaping"),
+      roadsidewalks: t("roadsAndSidewalks"),
+      lighting: t("lighting"),
+      playgrounds: t("playgrounds"),
+      parks: t("parksAndSquares"),
+      other: t("other"),
+    }),
+    [t],
+  );
+  const resolveCategoryLabel = useCallback(
+    (value: unknown) => {
+      if (typeof value === "number") {
+        const key = {
+          1: "improvement",
+          2: "roadsidewalks",
+          3: "lighting",
+          4: "playgrounds",
+          5: "parks",
+          6: "other",
+        }[value];
+        return key
+          ? categoryLabels[key as keyof typeof categoryLabels]
+          : categoryLabels.other;
+      }
+      if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (
+          normalized &&
+          Object.prototype.hasOwnProperty.call(categoryLabels, normalized)
+        ) {
+          return categoryLabels[normalized as keyof typeof categoryLabels];
+        }
+        return value.trim() || categoryLabels.other;
+      }
+      return categoryLabels.other;
+    },
+    [categoryLabels],
+  );
 
   const handleLogout = async () => {
     await logout();
@@ -134,25 +122,63 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   };
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
-  const languageOptions = [ 
+  const languageOptions = [
     { code: "RU" as const, label: "RU" },
     { code: "EN" as const, label: "EN" },
     { code: "KZ" as const, label: "KZ" },
   ];
 
- 
   const [currentStatus, setCurrentStatus] = useState<SubmissionStatus | null>(
-    submission?.status ?? null,
+    null,
   );
   const [actionLoading, setActionLoading] = useState<
     "approve" | "decline" | null
   >(null);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
-  const [currentDeclineReason, setCurrentDeclineReason] = useState(
-    submission?.declineReason ?? "",
-  );
+  const [currentDeclineReason, setCurrentDeclineReason] = useState("");
   const [declineError, setDeclineError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    fetchSubmissions({ signal: controller.signal })
+      .then((data) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const mapped = data
+          .map((item) =>
+            mapSubmissionTarget(item, { locale, resolveCategoryLabel }),
+          )
+          .filter((item): item is Submission => Boolean(item));
+        setSubmission(mapped.find((item) => item.id === id) ?? null);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setSubmission(null);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [id, locale, resolveCategoryLabel]);
+
+  useEffect(() => {
+    setCurrentStatus(submission?.status ?? null);
+    setCurrentDeclineReason(submission?.declineReason ?? "");
+  }, [submission]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!submission) {
     return (
@@ -188,7 +214,9 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         ? t("statusDeclined")
         : t("statusPending");
   const declineReasonValue = (
-    currentDeclineReason || submission.declineReason || ""
+    currentDeclineReason ||
+    submission.declineReason ||
+    ""
   ).trim();
   const showDeclineReason =
     activeStatus === "declined" && Boolean(declineReasonValue);
@@ -201,7 +229,11 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     }
     setActionLoading("approve");
     try {
-      await postDecision(`/api/submissions/${submission.id}/approve`);
+      const submissionId = Number(submission.id);
+      if (!Number.isFinite(submissionId)) {
+        throw new Error("Invalid submission id.");
+      }
+      await approveSubmission(submissionId);
       setCurrentStatus("approved");
       toast.success(t("adminSubmissionApproveSuccessTitle"), {
         description: t("adminSubmissionApproveSuccessDesc"),
@@ -227,9 +259,11 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     setDeclineError(null);
     setActionLoading("decline");
     try {
-      await postDecision(`/api/submissions/${submission.id}/decline`, {
-        reason,
-      });
+      const submissionId = Number(submission.id);
+      if (!Number.isFinite(submissionId)) {
+        throw new Error("Invalid submission id.");
+      }
+      await declineSubmission(submissionId, reason);
       setCurrentStatus("declined");
       setCurrentDeclineReason(reason);
       setDeclineOpen(false);

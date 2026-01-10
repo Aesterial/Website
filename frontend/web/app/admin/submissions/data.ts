@@ -1,4 +1,11 @@
-﻿export type SubmissionStatus = "approved" | "declined" | "pending";
+import type {
+  ApiAvatar,
+  ApiProject,
+  ApiProjectInfo,
+  ApiSubmissionTarget,
+} from "@/lib/api";
+
+export type SubmissionStatus = "approved" | "declined" | "pending";
 
 export type Submission = {
   id: string;
@@ -15,6 +22,11 @@ export type Submission = {
   description: string;
   coverImage: string;
   images: string[];
+};
+
+export type SubmissionMapperOptions = {
+  locale: string;
+  resolveCategoryLabel: (value: unknown) => string;
 };
 
 export const statusMeta: Record<
@@ -35,121 +47,159 @@ export const statusMeta: Record<
   },
 };
 
-export const submissions: Submission[] = [
-  {
-    id: "sub-1001",
-    title: "Безопасный переход на проспекте Ленина",
-    status: "pending",
-    authorName: "Анна Петрова",
-    submittedAt: "12 декабря 2025, 11:24",
-    location: "пр. Ленина, 14",
-    city: "Кемерово",
-    source: "Мобильное приложение",
-    category: "Дороги и пешеходы",
-    summary: "Жители просят обустроить переход на оживленном участке.",
-    description:
-      "Сейчас дети переходят дорогу через поток машин без разметки и знаков. Нужны зебра, освещение и понижение бордюров.",
-    coverImage: "/busy-street-without-crosswalk.jpg",
-    images: [
-      "/busy-street-without-crosswalk.jpg",
-      "/aerial-view-street-intersection-kemerovo.jpg",
-    ],
-  },
-  {
-    id: "sub-1002",
-    title: "Освещение двора на Советской",
-    status: "pending",
-    authorName: "Мария Иванова",
-    submittedAt: "10 декабря 2025, 16:40",
-    location: "ул. Советская, 77",
-    city: "Кемерово",
-    source: "Веб-форма",
-    category: "Освещение",
-    summary: "Во дворе темно, вечером небезопасно.",
-    description:
-      "Просим установить 3–4 фонаря у подъездов и на детской площадке. Сейчас освещения нет совсем.",
-    coverImage: "/aerial-view-of-city-block-kemerovo.jpg",
-    images: [
-      "/aerial-view-of-city-block-kemerovo.jpg",
-      "/building-entrance-with-awning-kemerovo.jpg",
-    ],
-  },
-  {
-    id: "sub-1003",
-    title: "Детская площадка на Набережной",
-    status: "approved",
-    authorName: "Дмитрий Соколов",
-    submittedAt: "5 декабря 2025, 09:15",
-    location: "ул. Набережная, 3",
-    city: "Кемерово",
-    source: "Мобильное приложение",
-    category: "Детские площадки",
-    summary: "Нужна новая площадка и безопасное покрытие.",
-    description:
-      "Предлагаем заменить старые конструкции и добавить мягкое покрытие. Это снизит травмоопасность.",
-    coverImage: "/aerial-view-residential-area-kemerovo.jpg",
-    images: [
-      "/aerial-view-residential-area-kemerovo.jpg",
-      "/aerial-satellite-view-kemerovo-city-block.jpg",
-    ],
-  },
-  {
-    id: "sub-1004",
-    title: "Ремонт остановки на Шахтеров",
-    status: "approved",
-    authorName: "Ирина Смирнова",
-    submittedAt: "1 декабря 2025, 14:02",
-    location: "ул. Шахтеров, 22",
-    city: "Кемерово",
-    source: "Веб-форма",
-    category: "Транспорт",
-    summary: "Остановка требует ремонта и защиты от осадков.",
-    description:
-      "Просим заменить стекла, обновить скамейки и установить навес. Сейчас людям негде укрыться от дождя.",
-    coverImage: "/building-entrance-with-awning-kemerovo.jpg",
-    images: [
-      "/building-entrance-with-awning-kemerovo.jpg",
-      "/building-facade-with-broken-window.jpg",
-    ],
-  },
-  {
-    id: "sub-1005",
-    title: "Парковка у рынка",
-    status: "declined",
-    declineReason: "Предложение не соответствует генплану.",
-    authorName: "Сергей Морозов",
-    submittedAt: "28 ноября 2025, 18:30",
-    location: "ул. Розы Люксембург, 5",
-    city: "Кемерово",
-    source: "Мобильное приложение",
-    category: "Транспорт",
-    summary: "Предлагается расширить парковку рядом с рынком.",
-    description:
-      "Участок попадает в зеленую зону и не подходит для строительства. Предложение не соответствует генплану.",
-    coverImage: "/aerial-satellite-view-residential-kemerovo.jpg",
-    images: [
-      "/aerial-satellite-view-residential-kemerovo.jpg",
-      "/aerial-view-of-city-block-kemerovo.jpg",
-    ],
-  },
-  {
-    id: "sub-1006",
-    title: 'Киоск на остановке "Центр"',
-    status: "declined",
-    declineReason: "Локация относится к зоне без торговли.",
-    authorName: "Елена Лебедева",
-    submittedAt: "25 ноября 2025, 12:05",
-    location: "ул. Терешковой, 41",
-    city: "Кемерово",
-    source: "Веб-форма",
-    category: "Городская среда",
-    summary: "Предлагается установить киоск с прессой.",
-    description:
-      "Место относится к зоне без торговли, установка не согласована. Рекомендуем выбрать другую площадку.",
-    coverImage: "/pub-building-facade-harats-kemerovo.jpg",
-    images: [
-      "/pub-building-facade-harats-kemerovo.jpg",
-      "/aerial-view-residential-area-kemerovo.jpg",
-    ],
-  },
-];
+const UNKNOWN_LABEL = "-";
+const FALLBACK_IMAGE = "/placeholder.svg";
+
+const normalizeStatus = (value?: string): SubmissionStatus | null => {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized === "waiting" || normalized === "pending" || normalized === "active") {
+    return "pending";
+  }
+  if (normalized === "approved") {
+    return "approved";
+  }
+  if (normalized === "declined") {
+    return "declined";
+  }
+  return null;
+};
+
+const parseTimestamp = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value && typeof value === "object" && "seconds" in value) {
+    const seconds = Number((value as { seconds?: number | string }).seconds);
+    if (!Number.isNaN(seconds) && seconds > 0) {
+      return new Date(seconds * 1000).toISOString();
+    }
+  }
+  return "";
+};
+
+const formatDate = (value: string, locale: string) => {
+  if (!value) {
+    return UNKNOWN_LABEL;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return UNKNOWN_LABEL;
+  }
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const toImageSrc = (photo?: ApiAvatar | null) => {
+  if (!photo) {
+    return "";
+  }
+  if (photo.url) {
+    return photo.url;
+  }
+  if (photo.contentType && photo.data) {
+    return `data:${photo.contentType};base64,${photo.data}`;
+  }
+  return "";
+};
+
+const resolveProjectInfo = (project?: ApiProject | null): ApiProjectInfo | null =>
+  project?.info ?? project?.details ?? null;
+
+const resolveAuthorName = (project?: ApiProject | null) => {
+  const author = project?.author ?? null;
+  const settings = author?.settings ?? undefined;
+  return (
+    settings?.display_name ??
+    settings?.displayName ??
+    author?.username ??
+    UNKNOWN_LABEL
+  );
+};
+
+const toSummary = (description: string) => {
+  if (!description) {
+    return UNKNOWN_LABEL;
+  }
+  const trimmed = description.trim();
+  if (trimmed.length <= 140) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, 137).trimEnd()}...`;
+};
+
+export const mapSubmissionTarget = (
+  payload: ApiSubmissionTarget,
+  options: SubmissionMapperOptions,
+): Submission | null => {
+  const rawId = payload.id;
+  const id =
+    typeof rawId === "number"
+      ? String(rawId)
+      : typeof rawId === "string"
+        ? rawId.trim()
+        : "";
+  if (!id) {
+    return null;
+  }
+
+  const status = normalizeStatus(payload.state);
+  if (!status) {
+    return null;
+  }
+
+  const project = payload.info ?? null;
+  const info = resolveProjectInfo(project);
+  const title = info?.title?.trim() || UNKNOWN_LABEL;
+  const description = info?.description?.trim() || "";
+  const category = options.resolveCategoryLabel(info?.category);
+
+  const location = info?.location ?? null;
+  const locationParts = [location?.street?.trim(), location?.house?.trim()].filter(
+    (part): part is string => Boolean(part),
+  );
+  const locationLabel = locationParts.length
+    ? locationParts.join(" ")
+    : UNKNOWN_LABEL;
+  const city = location?.city?.trim() || UNKNOWN_LABEL;
+
+  const photos = Array.isArray(info?.photos) ? info?.photos : [];
+  const images = photos.map(toImageSrc).filter(Boolean);
+  if (images.length === 0) {
+    images.push(FALLBACK_IMAGE);
+  }
+
+  const createdAt = formatDate(
+    parseTimestamp(project?.createdAt ?? project?.created_at),
+    options.locale,
+  );
+
+  const declineReason =
+    status === "declined" && payload.reason?.trim()
+      ? payload.reason.trim()
+      : undefined;
+
+  return {
+    id,
+    title,
+    status,
+    declineReason,
+    authorName: resolveAuthorName(project),
+    submittedAt: createdAt,
+    location: locationLabel,
+    city,
+    source: UNKNOWN_LABEL,
+    category,
+    summary: toSummary(description),
+    description: description || UNKNOWN_LABEL,
+    coverImage: images[0] ?? FALLBACK_IMAGE,
+    images,
+  };
+};
