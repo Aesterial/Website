@@ -175,7 +175,7 @@ export function Header() {
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <motion.button
-                  className="group relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-lg shadow-foreground/10 backdrop-blur"
+                  className="group relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.96 }}
                   aria-label="Открыть меню"
