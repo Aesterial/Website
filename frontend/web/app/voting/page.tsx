@@ -13,11 +13,9 @@ import {
 } from "@/components/tutorial/tutorial-provider";
 import {
   fetchProjects,
-  fetchSubmissions,
   toggleProjectLike,
   voteForProject,
   type ApiProject,
-  type ApiSubmissionTarget,
 } from "@/lib/api";
 import type { Variants } from "framer-motion";
 
@@ -271,21 +269,11 @@ export default function VotingPage() {
       };
 
       try {
-        const [projectsResult, submissionsResult] = await Promise.allSettled([
-          fetchProjects({ signal }),
-          fetchSubmissions({ signal }),
-        ]);
+        const projects = await fetchProjects({ signal });
 
         if (signal?.aborted) {
           return;
         }
-
-        const projects =
-          projectsResult.status === "fulfilled" ? projectsResult.value : [];
-        const submissions =
-          submissionsResult.status === "fulfilled"
-            ? submissionsResult.value
-            : [];
 
         const merged = new Map<string, IdeaCard>();
         const addIdea = (idea: IdeaCard | null) => {
@@ -294,32 +282,11 @@ export default function VotingPage() {
           }
         };
 
-        submissions.forEach((item: ApiSubmissionTarget) => {
-          const state = item?.state?.trim().toLowerCase();
-          if (state === "declined") {
-            return;
-          }
-          addIdea(mapProjectToIdea(item.info));
-        });
-
         projects.forEach((project) => {
           addIdea(mapProjectToIdea(project));
         });
 
         setIdeas(Array.from(merged.values()));
-
-        if (
-          projectsResult.status === "rejected" &&
-          submissionsResult.status === "rejected"
-        ) {
-          const reason =
-            projectsResult.reason instanceof Error
-              ? projectsResult.reason.message
-              : submissionsResult.reason instanceof Error
-                ? submissionsResult.reason.message
-                : "Не удалось загрузить идеи.";
-          setLoadError(reason);
-        }
       } catch (error) {
         if (!signal?.aborted) {
           setLoadError(
