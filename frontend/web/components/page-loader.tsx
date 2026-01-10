@@ -108,7 +108,7 @@ export function PageLoader() {
                     />
                     <motion.div
                       aria-hidden="true"
-                      className="absolute inset-0 h-24 w-24 rounded-full border-2 border-foreground border-t-transparent"
+                      className="absolute inset-0 h-24 w-24"
                       animate={{ rotate: 360 }}
                       transition={{
                         duration: 1.1,
