@@ -9,6 +9,7 @@ import (
 	"ascendant/backend/internal/domain/sessions"
 	"ascendant/backend/internal/domain/statistics"
 	"ascendant/backend/internal/domain/submissions"
+	"ascendant/backend/internal/domain/tickets"
 	"ascendant/backend/internal/domain/verification"
 	userpb "ascendant/backend/internal/gen/user/v1"
 	"fmt"
@@ -67,6 +68,10 @@ type MaintenanceRepository struct {
 	DB *sql.DB
 }
 
+type TicketsRepository struct {
+	DB *sql.DB
+}
+
 var _ user.Repository = (*UserRepository)(nil)
 
 func NewUserRepository(db *sql.DB) *UserRepository {
@@ -98,6 +103,9 @@ func NewVerificationRepository(db *sql.DB) *VerificationRepository {
 }
 func NewMaintenanceRepository(db *sql.DB) *MaintenanceRepository {
 	return &MaintenanceRepository{DB: db}
+}
+func NewTicketsRepository(db *sql.DB) *TicketsRepository {
+	return &TicketsRepository{DB: db}
 }
 
 type compositeField struct {
@@ -1830,4 +1838,138 @@ func (m *MaintenanceRepository) GetList(ctx context.Context) (maintenance.Inform
 		return nil, err
 	}
 	return list, nil
+}
+
+/*
+ * type Repository interface {
+	Create(ctx context.Context, name, email, topic, brief string, user uint) (uuid.UUID, error)
+	CreateMessage(ctx context.Context, id uuid.UUID, content string) error
+	Accept(ctx context.Context, id uuid.UUID, who uint) error
+	Info(ctx context.Context, id uuid.UUID) (*TicketInfo, error)
+	List(ctx context.Context) ([]*TicketInfo, error)
+	Messages(ctx context.Context, id uuid.UUID) ([]*TicketMessage, error)
+	Close(ctx context.Context, id uuid.UUID, by string) error
+ }
+ */
+ 
+ var _ tickets.Repository = (*TicketsRepository)(nil)
+ 
+func (t *TicketsRepository) Create(ctx context.Context, name, email string, topic tickets.TicketTopic, brief string) (*uuid.UUID, error) {
+	if name == "" || email == "" || topic == "" || !topic.Valid() || brief == "" {
+		return nil, errors.New("params is empty")
+	}
+	var id uuid.UUID
+	if err := t.DB.QueryRowContext(ctx, "INSERT INTO tickets (name, email, topic, brief) VALUES ($1, $2, $3, $4) RETURNING id", name, email, topic, brief).Scan(&id); err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+func (t *TicketsRepository) CreateMessage(ctx context.Context, id uuid.UUID, content string, author uint) error {
+	if content == "" || author == 0 {
+		return errors.New("params is empty")
+	}
+	if _, err := t.DB.ExecContext(ctx, "INSERT INTO ticket_messages (ticket, author, content) VALUES ($1, $2, $3)", id, author, content); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) error {
+	if who == 0 {
+		return errors.New("params is empty")
+	}
+	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET acceptor = $1, accepted = $2 WHERE id = $3", who, time.Now(), id); err != nil {
+		return err
+	}
+	return nil
+}
+
+type scanner interface {
+	Scan(...any) error
+}
+
+func (tr *TicketsRepository) parseTicket(ctx context.Context, scanner scanner) (*tickets.Ticket, error) {
+	var t tickets.Ticket
+	var acceptor sql.NullInt64
+	var accepted, closed sql.NullTime
+	var closedBy, closeReason sql.NullString
+	var err error
+	if err = scanner.Scan(&t.Id, &t.Creator.Name, &t.Creator.Email, &t.Mcount, &acceptor, &t.Status, &t.Topic, &t.Brief, &t.CreatedAt, &accepted, &closed, &closedBy, &closeReason); err != nil {
+		return nil, err
+	}
+	if accepted.Valid {
+		t.AcceptedAt = &accepted.Time
+	}
+	if acceptor.Valid {
+		t.Acceptor, err = getAuthor(ctx, uint(acceptor.Int64), tr.DB)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if closed.Valid {
+		t.ClosedAt = &closed.Time
+	}
+	if closedBy.Valid {
+		t.CloseBy = tickets.TicketClosedBy(closedBy.String)
+	}
+	if closeReason.Valid {
+		t.CloseReason = closeReason.String
+	}
+	return &t, nil
+}
+
+func (t *TicketsRepository) Info(ctx context.Context, id uuid.UUID) (*tickets.Ticket, error) {
+	info, err := t.parseTicket(ctx, t.DB.QueryRowContext(ctx, "SELECT t.* FROM tickets t WHERE t.id = $1", id))
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+func (t *TicketsRepository) List(ctx context.Context) (tickets.Tickets, error) {
+	var ts tickets.Tickets
+	rows, err := t.DB.QueryContext(ctx, "SELECT t.* FROM tickets t")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		info, err := t.parseTicket(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		ts = append(ts, info)
+	}
+	return ts, nil
+}
+
+func (t *TicketsRepository) Messages(ctx context.Context, id uuid.UUID) (tickets.TicketMessages, error) {
+	var messages tickets.TicketMessages
+	rows, err := t.DB.QueryContext(ctx, "SELECT m.id, m.author, m.content, m.at FROM ticket_messages m WHERE m.ticket = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var message tickets.TicketMessage
+		if err := rows.Scan(&message.ID, &message.Author, &message.Content, &message.At); err != nil {
+			return nil, err
+		}
+		messages = append(messages, &message)
+	}
+	return messages, nil
+}
+
+func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.TicketClosedBy, reason string) error {
+	if by == "" || !by.Valid() {
+		return errors.New("params is incorrect")
+	}
+	if by != tickets.ClosedByUser && reason == "" {
+		return errors.New("reason not provided")
+	}
+	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET closed = NOW(), close_by = $1, close_reason = $2", by, reason); err != nil {
+		return err
+	}
+	return nil
 }

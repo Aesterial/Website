@@ -1,0 +1,81 @@
+syntax = "proto3";
+package tickets.v1;
+import "google/protobuf/timestamp.proto";
+
+option go_package = "ascendant/backend/internal/gen/tickets/v1;tickets";
+
+import "user/domain.proto";
+
+message CreateRequest {
+    string name = 1;
+    string email = 2;
+    string topic = 3;
+    string brief = 4;
+}
+
+message CreateResponse {
+    string id = 1;
+    string tracing = 2;
+}
+
+message CreateMessageRequest {
+    string id = 1;
+    string content = 2;
+}
+
+message TicketInfoRequest {
+    string id = 1;
+}
+
+message TicketInfo {
+    message creatorST {
+        string name = 1;
+        string email = 2;
+    }
+    string id = 1;
+    creatorST creator = 2;
+    user.v1.UserPublic acceptor = 3;
+    string status = 4;
+    string topic = 5;
+    string brief = 6;
+    google.protobuf.Timestamp createdAt = 7;
+    optional google.protobuf.Timestamp acceptedAt = 8;
+    optional google.protobuf.Timestamp closedAt = 9;
+    string closed_by = 10;
+    string close_reason = 11;
+}
+
+message TicketInfoResponse {
+    TicketInfo ticket = 1;
+    string tracing = 2;
+}
+
+message TicketsListResponse {
+    repeated TicketInfo list = 1;
+    string tracing = 2;
+}
+
+message TicketMessage {
+    user.v1.UserPublic author = 1;
+    string content = 2;
+    google.protobuf.Timestamp at = 3;
+}
+
+message TicketMessagesResponse {
+    repeated TicketMessage list = 1;
+    string tracing = 2;
+}
+
+message TicketMessageCreate {
+    string id = 1;
+    string content = 2;
+}
+
+message EmptyResponse {
+    string tracing = 1;
+}
+
+message CloseTicketRequest {
+    string id = 1;
+    optional string reason = 2;
+}
