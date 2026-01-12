@@ -228,20 +228,6 @@ export default function AuthPage() {
             ))}
           </motion.div>
 
-          <motion.div
-            className="rounded-2xl border border-border/60 bg-card/80 px-4 py-3 mb-6"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.45 }}
-          >
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              Тестовый доступ
-            </p>
-            <div className="mt-2 text-sm font-semibold">
-              <p>Логин: admin@admin.admin</p>
-              <p>Пароль: admin</p>
-            </div>
-          </motion.div>
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {errorMessage ? (

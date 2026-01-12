@@ -720,7 +720,7 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 	if err != nil {
 		return nil, err
 	}
-	//if require.Email == "admin@admin.admin" {
+	//if require.Email == "..admin" {
 	//	if _, err = l.DB.ExecContext(ctx, `
 	//		UPDATE users u
 	//		SET rank = ROW($1, NULL)::users_rank_t

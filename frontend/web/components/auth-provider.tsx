@@ -67,20 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (payload: AuthorizationPayload) => {
-      if (
-        payload.usermail === "admin@admin.admin" &&
-        payload.password === "admin"
-      ) {
-        setUser({
-          uid: 0,
-          username: "admin",
-          email: "admin@admin.admin",
-          displayName: "Admin",
-          rank: { name: "developer" },
-        });
-        setStatus("authenticated");
-        return;
-      }
       await authorizeUser(payload);
       await refreshUser({ silent: true });
     },
