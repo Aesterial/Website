@@ -16,6 +16,7 @@ import (
 	"ascendant/backend/internal/app/submissions"
 	"ascendant/backend/internal/app/tickets"
 	"ascendant/backend/internal/app/verification"
+	checkerpb "ascendant/backend/internal/gen/checker/v1"
 	loginpb "ascendant/backend/internal/gen/login/v1"
 	maintenancepb "ascendant/backend/internal/gen/maintenance/v1"
 	permspb "ascendant/backend/internal/gen/permissions/v1"
@@ -154,6 +155,7 @@ func main() {
 	submissionServer := grpcserver.NewSubmissionsService(submissionService, sessionsService, permissionsService, userInfoService)
 	maintenanceServer := grpcserver.NewMaintenanceService(maintenanceService, sessionsService, permissionsService, userInfoService)
 	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, permissionsService, userInfoService)
+	healthServer := grpcserver.NewHealthService()
 
 	gateway := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(gatewayHeaderMatcher),

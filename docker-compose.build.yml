@@ -2,7 +2,7 @@
 services:
   backend:
     build:
-      context: ./backend/starter
+      context: ./backend
       dockerfile: Dockerfile
     image: ivanskem/aesterial-jcup:backend-latest
 

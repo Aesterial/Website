@@ -34,8 +34,8 @@ jobs:
         id: backend_build
         uses: docker/build-push-action@v6
         with:
-          context: ./backend/starter
-          file: ./backend/starter/Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           platforms: linux/amd64
           tags: |
