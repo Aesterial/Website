@@ -3,7 +3,7 @@ ARG GO_VERSION=1.25
 FROM golang:${GO_VERSION}-bookworm AS build
 WORKDIR /app/backend
 
-COPY go.work go.work.sum ./
+COPY go.work ./
 COPY internal/go.mod internal/go.sum ./internal/
 COPY starter/go.mod starter/go.sum ./starter/
 

@@ -24,8 +24,8 @@ import (
 	statpb "ascendant/backend/internal/gen/statistics/v1"
 	storagepb "ascendant/backend/internal/gen/storage/v1"
 	submpb "ascendant/backend/internal/gen/submissions/v1"
-	userpb "ascendant/backend/internal/gen/user/v1"
 	tickpb "ascendant/backend/internal/gen/tickets/v1"
+	userpb "ascendant/backend/internal/gen/user/v1"
 	"ascendant/backend/internal/infra/db"
 	dbtest "ascendant/backend/internal/infra/db/test"
 	"ascendant/backend/internal/infra/grpcserver"
@@ -190,14 +190,18 @@ func main() {
 		return
 	}
 	if err := maintenancepb.RegisterMaintenanceServiceHandlerServer(ctx, gateway, maintenanceServer); err != nil {
-		logger.Error("Failed to register maintenance gateway: " +err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		logger.Error("Failed to register maintenance gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
 	if err := tickpb.RegisterTicketsServiceHandlerServer(ctx, gateway, ticketsServer); err != nil {
-		logger.Error("Failed to register tickets gateway: " +err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		logger.Error("Failed to register tickets gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
-	
+	if err := checkerpb.RegisterCheckerServiceHandlerServer(ctx, gateway, healthServer); err != nil {
+		logger.Error("Failed to register health gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
+
 	grpcPort := normalizePort(env.Startup.GRPCPort, env.Startup.Port, "8080")
 	httpPort := normalizePort(env.Startup.HTTPPort, env.Startup.Port, grpcPort)
 	samePort := grpcPort == httpPort
@@ -224,6 +228,7 @@ func main() {
 	submpb.RegisterSubmissionsServiceServer(grpcServer, submissionServer)
 	maintenancepb.RegisterMaintenanceServiceServer(grpcServer, maintenanceServer)
 	tickpb.RegisterTicketsServiceServer(grpcServer, ticketsServer)
+	checkerpb.RegisterCheckerServiceServer(grpcServer, healthServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
 	handler := buildHTTPHandler(grpcServer, gateway, cors)
