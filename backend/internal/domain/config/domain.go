@@ -1,6 +1,7 @@
 package config
 
 type Database struct {
+	URL      string
 	Host     string
 	Name     string
 	Port     string

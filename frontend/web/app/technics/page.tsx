@@ -30,16 +30,7 @@ export default function MaintenancePage() {
               зайти чуть позже — всё вернём как можно скорее.
             </p>
 
-           
-
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href="/"
-                className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:bg-muted/60"
-              >
-                На главную
-              </a>
-
               <button
                 type="button"
                 onClick={() => window.location.reload()}

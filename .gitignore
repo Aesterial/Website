@@ -42,6 +42,8 @@ generated/
 .idea/*
 /.idea/*
 /.idea
+.env
 /backend/starter/.env
 /backend/.idea
 /backend/third_party/
+*.crt

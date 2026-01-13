@@ -1,12 +1,13 @@
-:80
+aesterial.xyz, www.aesterial.xyz {
+  tls /etc/caddy/ssl/cf_or.crt /etc/caddy/ssl/cf_or.key
+  encode gzip
 
-encode gzip
+  @api path /api/*
+  handle @api {
+    reverse_proxy backend:8080
+  }
 
-@api path /api/*
-handle @api {
-  reverse_proxy backend:8080
-}
-
-handle {
-  reverse_proxy frontend:3000
+  handle {
+    reverse_proxy frontend:3000
+  }
 }

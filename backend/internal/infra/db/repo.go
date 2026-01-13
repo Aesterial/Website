@@ -728,18 +728,6 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 	if err != nil {
 		return nil, err
 	}
-	//if require.Email == "..admin" {
-	//	if _, err = l.DB.ExecContext(ctx, `
-	//		UPDATE users u
-	//		SET rank = ROW($1, NULL)::users_rank_t
-	//		WHERE u.uid = $2`,
-	//		"staff",
-	//		id,
-	//	); err != nil {
-	//		logger.Debug("error: "+err.Error(), "a")
-	//		return nil, err
-	//	}
-	//}
 	return &id, nil
 }
 

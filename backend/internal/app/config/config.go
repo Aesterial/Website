@@ -58,14 +58,20 @@ func ensure() {
 	}
 	httpPort := envValue("START_HTTP_PORT", "HTTP_PORT")
 
+	databaseURL := envValue("DATABASE_URL")
+	database := domain.Database{
+		URL: databaseURL,
+	}
+	if databaseURL == "" {
+		database.Name = envValue("POSTGRES_DB")
+		database.Host = envValue("POSTGRES_HOST")
+		database.Port = envValue("POSTGRES_PORT")
+		database.User = envValue("POSTGRES_USER")
+		database.Password = envValue("POSTGRES_PASSWORD")
+	}
+
 	env = domain.Environment{
-		Database: domain.Database{
-			Name:     envValue("DATABASE_NAME"),
-			Host:     envValue("DATABASE_HOST"),
-			Port:     envValue("DATABASE_PORT"),
-			User:     envValue("DATABASE_USER"),
-			Password: envValue("DATABASE_PASS"),
-		},
+		Database: database,
 		TLS: domain.TLS{
 			Use:      parseBool("TLS_USE", false),
 			KeyPath:  envValue("TLS_KEY_PATH", "TLS_KEYPATH"),
