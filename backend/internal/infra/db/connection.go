@@ -13,8 +13,10 @@ import (
 func NewConnection() (*sql.DB, error) {
 	db := config.Get().Database
 	if strings.TrimSpace(db.URL) != "" {
+		logger.Debug("connecting to db: " + db.URL, "")
 		return sql.Open("postgres", db.URL)
 	}
-	logger.Debug(fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name), "")
-	return sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name))
+	dburl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name)
+	logger.Debug(dburl, "")
+	return sql.Open("postgres", dburl)
 }
