@@ -100,6 +100,7 @@ const normalizeMaintenance = (payload: unknown): MaintenanceData | null => {
 
 export default function MaintenancePage() {
   const [maintenance, setMaintenance] = useState<MaintenanceData | null>(null);
+  const [hasMaintenance, setHasMaintenance] = useState<boolean | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -113,6 +114,11 @@ export default function MaintenancePage() {
           },
           signal: controller.signal,
         });
+        if (response.status === 404) {
+          setMaintenance(null);
+          setHasMaintenance(false);
+          return;
+        }
         if (!response.ok) {
           return;
         }
@@ -121,6 +127,7 @@ export default function MaintenancePage() {
         if (normalized) {
           setMaintenance(normalized);
         }
+        setHasMaintenance(true);
       } catch {
         return;
       }
@@ -129,11 +136,13 @@ export default function MaintenancePage() {
     return () => controller.abort();
   }, []);
 
+  const hasMaintenanceData = hasMaintenance !== false;
   const description = maintenance?.description?.trim() || DEFAULT_DESCRIPTION;
   const requestId = maintenance?.id?.trim() || DEFAULT_REQUEST_ID;
   const timeLeft = useMemo(
-    () => formatTimeLeft(maintenance?.will_end),
-    [maintenance?.will_end],
+    () =>
+      formatTimeLeft(hasMaintenanceData ? maintenance?.will_end : undefined),
+    [hasMaintenanceData, maintenance?.will_end],
   );
 
   return (
