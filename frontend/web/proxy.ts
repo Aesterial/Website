@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const DEV_API_BASE_URL = "http://127.0.0.1:8080";
 const CACHE_TTL_MS = 0.5 * 60 * 1000;
-const REQUEST_TIMEOUT_MS = 100;
+const REQUEST_TIMEOUT_MS = 1500;
 const REFRESH_PARAM = "maintenanceRefresh";
 
 let cachedActive: boolean | null = null;
@@ -55,15 +55,37 @@ const readActiveFlag = (payload: unknown): boolean | null => {
     if (typeof value === "boolean") {
       return value;
     }
+    if (typeof value === "number") {
+      return value > 0;
+    }
   }
   return null;
+};
+
+const isExplicitlyInactive = (payload: unknown) => {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+  const record = payload as Record<string, unknown>;
+  const message =
+    typeof record.message === "string"
+      ? record.message.toLowerCase()
+      : "";
+  const code = typeof record.code === "number" ? record.code : null;
+  if (message.includes("maintenance is not active")) {
+    return true;
+  }
+  if (code === 14 && message.includes("not active")) {
+    return true;
+  }
+  return false;
 };
 
 const fetchMaintenanceActive = async (request: NextRequest) => {
   const base = resolveApiBaseUrl(request);
   const normalizedBase =
     process.env.NODE_ENV === "production" ? ensureHttps(base) : base;
-  const url = `${stripTrailingSlash(normalizedBase)}/api/maintenance/active`;
+  const url = `${stripTrailingSlash(normalizedBase)}/api/maintenance/active`;   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -75,12 +97,18 @@ const fetchMaintenanceActive = async (request: NextRequest) => {
       cache: "no-store",
       signal: controller.signal,
     });
+    const payload = (await response.json().catch(() => null)) as unknown;
+    const flag = readActiveFlag(payload);
+    if (flag !== null) {
+      return flag;
+    }
+    if (!response.ok && isExplicitlyInactive(payload)) {
+      return false;
+    }
     if (!response.ok) {
       return true;
     }
-    const payload = (await response.json().catch(() => null)) as unknown;
-    const flag = readActiveFlag(payload);
-    return flag ?? false;
+    return false;
   } catch {
     return true;
   } finally {
