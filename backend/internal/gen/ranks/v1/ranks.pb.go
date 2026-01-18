@@ -7,9 +7,11 @@
 package ranks
 
 import (
+	v1 "Aesterial/backend/internal/gen/permissions/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -25,26 +27,49 @@ var File_ranks_ranks_proto protoreflect.FileDescriptor
 
 const file_ranks_ranks_proto_rawDesc = "" +
 	"\n" +
-	"\x11ranks/ranks.proto\x12\branks.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x12ranks/domain.proto2\xa5\x02\n" +
+	"\x11ranks/ranks.proto\x12\branks.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12ranks/domain.proto\x1a\x18permissions/domain.proto2\xf3\x05\n" +
 	"\fRanksService\x12X\n" +
-	"\x06Create\x12\x17.ranks.v1.CreateRequest\x1a\x17.ranks.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/ranks/create\x12]\n" +
-	"\x05Patch\x12\x17.ranks.v1.CreateRequest\x1a\x17.ranks.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/api/ranks/{name}/patch\x12\\\n" +
-	"\x06Delete\x12\x17.ranks.v1.DeleteRequest\x1a\x17.ranks.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/ranks/{name}/deleteB/Z-Aesterial/backend/internal/gen/ranks/v1;ranksb\x06proto3"
+	"\x06Create\x12\x17.ranks.v1.CreateRequest\x1a\x17.ranks.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/ranks/create\x12\\\n" +
+	"\x05Patch\x12\x16.ranks.v1.PatchRequest\x1a\x17.ranks.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/api/ranks/{name}/patch\x12O\n" +
+	"\x03Get\x12\x15.ranks.v1.NameRequest\x1a\x16.ranks.v1.RankResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/ranks/{name}\x12X\n" +
+	"\x05Users\x12\x15.ranks.v1.NameRequest\x1a\x17.ranks.v1.UsersResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/ranks/{name}/users\x12O\n" +
+	"\x04List\x12\x16.google.protobuf.Empty\x1a\x17.ranks.v1.RanksResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/rank/list\x12Z\n" +
+	"\x06Delete\x12\x15.ranks.v1.NameRequest\x1a\x17.ranks.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/ranks/{name}/delete\x12m\n" +
+	"\n" +
+	"PermsPatch\x12\x1b.ranks.v1.PermsPatchRequest\x1a\x17.ranks.v1.EmptyResponse\")\x82\xd3\xe4\x93\x02#:\x01*2\x1e/api/ranks/{name}/perms/{perm}\x12d\n" +
+	"\x05Perms\x12\x15.ranks.v1.NameRequest\x1a#.permissions.v1.PermissionsResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/ranks/{name}/permsB/Z-Aesterial/backend/internal/gen/ranks/v1;ranksb\x06proto3"
 
 var file_ranks_ranks_proto_goTypes = []any{
-	(*CreateRequest)(nil), // 0: ranks.v1.CreateRequest
-	(*DeleteRequest)(nil), // 1: ranks.v1.DeleteRequest
-	(*EmptyResponse)(nil), // 2: ranks.v1.EmptyResponse
+	(*CreateRequest)(nil),          // 0: ranks.v1.CreateRequest
+	(*PatchRequest)(nil),           // 1: ranks.v1.PatchRequest
+	(*NameRequest)(nil),            // 2: ranks.v1.NameRequest
+	(*emptypb.Empty)(nil),          // 3: google.protobuf.Empty
+	(*PermsPatchRequest)(nil),      // 4: ranks.v1.PermsPatchRequest
+	(*EmptyResponse)(nil),          // 5: ranks.v1.EmptyResponse
+	(*RankResponse)(nil),           // 6: ranks.v1.RankResponse
+	(*UsersResponse)(nil),          // 7: ranks.v1.UsersResponse
+	(*RanksResponse)(nil),          // 8: ranks.v1.RanksResponse
+	(*v1.PermissionsResponse)(nil), // 9: permissions.v1.PermissionsResponse
 }
 var file_ranks_ranks_proto_depIdxs = []int32{
 	0, // 0: ranks.v1.RanksService.Create:input_type -> ranks.v1.CreateRequest
-	0, // 1: ranks.v1.RanksService.Patch:input_type -> ranks.v1.CreateRequest
-	1, // 2: ranks.v1.RanksService.Delete:input_type -> ranks.v1.DeleteRequest
-	2, // 3: ranks.v1.RanksService.Create:output_type -> ranks.v1.EmptyResponse
-	2, // 4: ranks.v1.RanksService.Patch:output_type -> ranks.v1.EmptyResponse
-	2, // 5: ranks.v1.RanksService.Delete:output_type -> ranks.v1.EmptyResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	1, // 1: ranks.v1.RanksService.Patch:input_type -> ranks.v1.PatchRequest
+	2, // 2: ranks.v1.RanksService.Get:input_type -> ranks.v1.NameRequest
+	2, // 3: ranks.v1.RanksService.Users:input_type -> ranks.v1.NameRequest
+	3, // 4: ranks.v1.RanksService.List:input_type -> google.protobuf.Empty
+	2, // 5: ranks.v1.RanksService.Delete:input_type -> ranks.v1.NameRequest
+	4, // 6: ranks.v1.RanksService.PermsPatch:input_type -> ranks.v1.PermsPatchRequest
+	2, // 7: ranks.v1.RanksService.Perms:input_type -> ranks.v1.NameRequest
+	5, // 8: ranks.v1.RanksService.Create:output_type -> ranks.v1.EmptyResponse
+	5, // 9: ranks.v1.RanksService.Patch:output_type -> ranks.v1.EmptyResponse
+	6, // 10: ranks.v1.RanksService.Get:output_type -> ranks.v1.RankResponse
+	7, // 11: ranks.v1.RanksService.Users:output_type -> ranks.v1.UsersResponse
+	8, // 12: ranks.v1.RanksService.List:output_type -> ranks.v1.RanksResponse
+	5, // 13: ranks.v1.RanksService.Delete:output_type -> ranks.v1.EmptyResponse
+	5, // 14: ranks.v1.RanksService.PermsPatch:output_type -> ranks.v1.EmptyResponse
+	9, // 15: ranks.v1.RanksService.Perms:output_type -> permissions.v1.PermissionsResponse
+	8, // [8:16] is the sub-list for method output_type
+	0, // [0:8] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	permissionsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	projectsapp "Aesterial/backend/internal/app/projects"
@@ -36,10 +35,10 @@ type ProjectService struct {
 	storage  *storageapp.Service
 }
 
-func NewProjectService(projects *projectsapp.Service, sess *sessionsapp.Service, perms *permissionsapp.Service, us *userapp.Service, storage *storageapp.Service) *ProjectService {
+func NewProjectService(projects *projectsapp.Service, sess *sessionsapp.Service, us *userapp.Service, storage *storageapp.Service) *ProjectService {
 	return &ProjectService{
 		projects: projects,
-		auth:     NewAuthenticator(sess, perms, us),
+		auth:     NewAuthenticator(sess, us),
 		storage:  storage,
 	}
 }
@@ -117,6 +116,9 @@ func (s *ProjectService) Categories(ctx context.Context, _ *emptypb.Empty) (*pro
 	if err != nil || requestor == nil {
 		return nil, err
 	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsView); err != nil {
+		return nil, err
+	}
 	_ = requestor
 	var resp projpb.CategoriesResponse
 	resp.Categories, err = s.projects.GetCategories(ctx)
@@ -134,6 +136,9 @@ func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*proj
 	trace := TraceIDOrNew(ctx)
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
+		return nil, err
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsView); err != nil {
 		return nil, err
 	}
 	logger.Info("Requested list of projects", "projects.list.get", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
@@ -155,6 +160,9 @@ func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest
 	if err != nil || requestor == nil {
 		return nil, err
 	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsView); err != nil {
+		return nil, err
+	}
 	logger.Info("Requested list of archived projects", "projects.list.get", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
 	list, err := s.projects.GetArchivedProjects(ctx, int(req.Offset), int(req.Limit))
 	if err != nil {
@@ -172,6 +180,9 @@ func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest
 	trace := TraceIDOrNew(ctx)
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
+		return nil, err
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsVote); err != nil {
 		return nil, err
 	}
 	id, err := uuid.Parse(req.Id)

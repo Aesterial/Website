@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	"Aesterial/backend/internal/app/info/permissions"
 	"Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	appstatistics "Aesterial/backend/internal/app/statistics"
@@ -29,16 +28,17 @@ func oClock() time.Time {
 	return startOfDay
 }
 
-func NewStatService(stat *appstatistics.StatService, ses *sessions.Service, perms *permissions.Service, us *userapp.Service) *StatService {
-	return &StatService{stat: stat, auth: NewAuthenticator(ses, perms, us)}
+func NewStatService(stat *appstatistics.StatService, ses *sessions.Service, us *userapp.Service) *StatService {
+	return &StatService{stat: stat, auth: NewAuthenticator(ses, us)}
 }
 
-func authorize(ctx context.Context, auth *Authenticator) (*user.RequestData, error) {
+func authorize(ctx context.Context, auth *Authenticator, perms ...permsdomain.Permission) (*user.RequestData, error) {
 	requestor, err := auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		return nil, err
 	}
-	if err := auth.RequirePermissions(ctx, requestor.UID, permsdomain.StatisticsAll); err != nil {
+	perms = append(perms, permsdomain.StatisticsAll)
+	if err := auth.RequirePermissions(ctx, requestor.UID, perms...); err != nil {
 		return nil, err
 	}
 	return requestor, nil
@@ -158,7 +158,7 @@ func (s *StatService) IdeasRecap(ctx context.Context, _ *emptypb.Empty) (*statpb
 	if s == nil || s.stat == nil {
 		return nil, status.Error(codes.Internal, "service is not configured")
 	}
-	requestor, err := authorize(ctx, s.auth)
+	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsActivityAll)
 	if err != nil || requestor == nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*stat
 	if s == nil || s.stat == nil {
 		return nil, status.Error(codes.Internal, "service is not configured")
 	}
-	requestor, err := authorize(ctx, s.auth)
+	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsMediaQuality)
 	if err != nil || requestor == nil {
 		return nil, err
 	}
@@ -179,4 +179,19 @@ func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*stat
 	}
 	recap.Tracing = TraceIDOrNew(ctx)
 	return recap, nil
+}
+
+func (s *StatService) MediaCoverage(ctx context.Context, req *statpb.MediaCoverageRequest) (*statpb.MediaCoverageResponse, error) {
+	if s == nil || s.stat == nil {
+		return nil, status.Error(codes.Internal, "service is not configured")
+	}
+	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsMediaVolume)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	coverage, err := s.stat.MediaCoverage(ctx, int(req.GetLimit()))
+	if err != nil {
+		return nil, err
+	}
+	return &statpb.MediaCoverageResponse{Medias: coverage, Tracing: TraceIDOrNew(ctx)}, nil
 }

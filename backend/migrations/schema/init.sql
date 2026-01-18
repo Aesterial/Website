@@ -351,7 +351,7 @@ create table pictures (
     owner_type picture_owner_type not null default 'unspecified',
     info picture_t,
     rate picture_rate_state not null default 'neutral',
-    at timestamptz default now()
+    at timestamptz not null default now()
 );
 
 create table user_avatars (
@@ -364,9 +364,10 @@ create table user_avatars (
 
 create table ranks (
     name user_rank primary key,
-    color int,
-    description text,
-    permissions permissions_t not null default permissions_empty()
+    color int not null default 0,
+    description text not null default '',
+    permissions permissions_t not null default permissions_empty(),
+    added_at timestamptz not null default now()
 );
 
 create unique index user_avatars_object_key_uq on user_avatars (object_key);

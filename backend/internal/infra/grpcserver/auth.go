@@ -2,7 +2,6 @@ package grpcserver
 
 import (
 	"Aesterial/backend/internal/app/config"
-	permissionsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	"Aesterial/backend/internal/domain/permissions"
@@ -30,16 +29,14 @@ import (
 )
 
 type Authenticator struct {
-	Sessions    *sessionsapp.Service
-	Permissions *permissionsapp.Service
-	User        *userapp.Service
+	Sessions *sessionsapp.Service
+	User     *userapp.Service
 }
 
-func NewAuthenticator(sessions *sessionsapp.Service, perms *permissionsapp.Service, us *userapp.Service) *Authenticator {
+func NewAuthenticator(sessions *sessionsapp.Service, us *userapp.Service) *Authenticator {
 	return &Authenticator{
-		Sessions:    sessions,
-		Permissions: perms,
-		User:        us,
+		Sessions: sessions,
+		User:     us,
 	}
 }
 
@@ -88,13 +85,13 @@ func (a *Authenticator) RequireUser(ctx context.Context) (*user.RequestData, err
 }
 
 func (a *Authenticator) RequirePermissions(ctx context.Context, uid uint, need ...permissions.Permission) error {
-	if a == nil || a.Permissions == nil {
+	if a == nil || a.User == nil {
 		return status.Error(codes.Internal, "permissions not configured")
 	}
 	if len(need) == 0 {
 		return nil
 	}
-	ok, err := a.Permissions.HasAll(ctx, uid, need...)
+	ok, err := a.User.HasAllPerms(ctx, uid, need...)
 	if err != nil {
 		return status.Error(codes.PermissionDenied, "forbidden")
 	}
@@ -105,10 +102,10 @@ func (a *Authenticator) RequirePermissions(ctx context.Context, uid uint, need .
 }
 
 func (a *Authenticator) RequireViewPermissions(ctx context.Context, uid uint) error {
-	if a == nil || a.Permissions == nil {
+	if a == nil || a.User == nil {
 		return status.Error(codes.Internal, "permissions not configured")
 	}
-	ok, err := a.Permissions.Has(ctx, uid, permissions.RanksPermissionsChange)
+	ok, err := a.User.HasPerm(ctx, uid, permissions.RanksPermissionsChange)
 	if err != nil || !ok {
 		return status.Error(codes.PermissionDenied, "forbidden")
 	}

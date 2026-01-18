@@ -62,7 +62,7 @@ type User struct {
 	Username string
 	Email    *Email
 	Settings *Settings
-	Rank     *rank.Rank
+	Rank     *rank.UserRank
 	Banned   bool
 	Joined   time.Time
 }
@@ -100,6 +100,22 @@ func (u *User) ToPublic() *userpb.UserPublic {
 	}
 }
 
+func (u *User) ToSelf() *userpb.UserSelf {
+	if u == nil {
+		return nil
+	}
+	self := &userpb.UserSelf{
+		Public: u.ToPublic(),
+	}
+	if u.Email != nil {
+		self.Email = &userpb.UserEmail{
+			Address:  u.Email.Address,
+			Verified: u.Email.Verified,
+		}
+	}
+	return self
+}
+
 func (u Users) ToPublic() []*userpb.UserPublic {
 	var list []*userpb.UserPublic
 	for _, user := range u {
@@ -109,6 +125,19 @@ func (u Users) ToPublic() []*userpb.UserPublic {
 		list = append(list, user.ToPublic())
 	}
 	return list
+}
+func (s *Settings) ToPublic() *userpb.UserPublicSettings {
+	if s == nil {
+		return nil
+	}
+	out := &userpb.UserPublicSettings{}
+	if s.DisplayName != nil {
+		out.DisplayName = s.DisplayName
+	}
+	if s.Avatar != nil {
+		out.Avatar = s.Avatar.ToPublic()
+	}
+	return out
 }
 
 type RequestData struct {

@@ -586,7 +586,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreateRequest'
+                            $ref: '#/components/schemas/RanksCreateRequest'
                 required: true
             responses:
                 "200":
@@ -595,6 +595,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EmptyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/ranks/{name}:
+        get:
+            tags:
+                - RanksService
+            operationId: RanksService_Get
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RankResponse'
                 default:
                     description: Default error response
                     content:
@@ -640,7 +664,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreateRequest'
+                            $ref: '#/components/schemas/RanksPatchRequest'
                 required: true
             responses:
                 "200":
@@ -655,11 +679,53 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
-    /api/ranks/{name}/permissions:
+    /api/ranks/{name}/users:
         get:
             tags:
-                - PermissionsService
-            operationId: PermissionsService_ForRank
+                - RanksService
+            operationId: RanksService_Users
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RanksUsersResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/rank/list:
+        get:
+            tags:
+                - RanksService
+            operationId: RanksService_List
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RanksResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/ranks/{name}/perms:
+        get:
+            tags:
+                - RanksService
+            operationId: RanksService_Perms
             parameters:
                 - name: name
                   in: path
@@ -679,12 +745,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/ranks/{name}/perms/{perm}:
         patch:
             tags:
-                - PermissionsService
-            operationId: PermissionsService_ChangeForRank
+                - RanksService
+            operationId: RanksService_PermsPatch
             parameters:
                 - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: perm
                   in: path
                   required: true
                   schema:
@@ -693,7 +765,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/RequestForRankChange'
+                            $ref: '#/components/schemas/RanksPermsPatchRequest'
                 required: true
             responses:
                 "200":
@@ -1846,6 +1918,80 @@ components:
                 expires:
                     type: string
                     format: date-time
+        RanksCreateRequest:
+            type: object
+            properties:
+                permissions:
+                    $ref: '#/components/schemas/Permissions'
+                name:
+                    type: string
+                color:
+                    type: string
+                description:
+                    type: string
+        RanksPatchRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                newName:
+                    type: string
+                color:
+                    type: string
+                description:
+                    type: string
+        RanksPermsPatchRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                perm:
+                    type: string
+                state:
+                    type: boolean
+        RanksRank:
+            type: object
+            properties:
+                name:
+                    type: string
+                color:
+                    type: integer
+                    format: uint32
+                description:
+                    type: string
+                added:
+                    type: string
+                    format: date-time
+        RankResponse:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/RanksRank'
+                tracing:
+                    type: string
+        RanksResponse:
+            type: object
+            properties:
+                name:
+                    type: string
+                ranks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RanksRank'
+                tracing:
+                    type: string
+        RanksUsersResponse:
+            type: object
+            properties:
+                len:
+                    type: integer
+                    format: uint32
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserPublic'
+                tracing:
+                    type: string
         RegisterRequest:
             type: object
             properties:

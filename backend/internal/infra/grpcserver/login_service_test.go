@@ -259,6 +259,14 @@ func (u *userRepoStub) UpdateDisplayName(ctx context.Context, uid uint, displayN
 	return nil
 }
 
+func (u *userRepoStub) SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error {
+	return nil
+}
+
+func (u *userRepoStub) UpdatePasswordByEmail(ctx context.Context, email string, passwordHash string) error {
+	return nil
+}
+
 func (u *userRepoStub) IsExists(ctx context.Context, user userdomain.User) (bool, error) {
 	return false, nil
 }

@@ -5,6 +5,7 @@ package user.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "user/domain.proto";
+import "permissions/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/user/v1;user";
 
@@ -62,5 +63,11 @@ service UserService {
   }
   rpc HasPermissions(HasPermissionRequest) returns (HasPermissionResponse) {
     option (google.api.http) = {get: "/api/user/{userID}/permissions/has/{perm}"};
+  }
+  rpc Permissions(OtherUserRequest) returns (permissions.v1.PermissionsResponse) {
+    option (google.api.http) = {get: "/api/user/{userID}/permissions"};
+  }
+  rpc ChangePerms(OtherUserPermsPatchRequest) returns (EmptyResponse) {
+    option (google.api.http) = {post: "/api/user/{userID}/permissions/patch/{perm}", body: "*"};
   }
 }

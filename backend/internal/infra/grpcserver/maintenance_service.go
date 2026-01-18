@@ -1,11 +1,11 @@
 package grpcserver
 
 import (
-	"Aesterial/backend/internal/app/info/permissions"
 	"Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	"Aesterial/backend/internal/app/maintenance"
 	maintdomain "Aesterial/backend/internal/domain/maintenance"
+	permsdomain "Aesterial/backend/internal/domain/permissions"
 	maintpb "Aesterial/backend/internal/gen/maintenance/v1"
 	"Aesterial/backend/internal/infra/logger"
 	"time"
@@ -20,11 +20,11 @@ import (
 type MaintenanceService struct {
 	maintpb.UnimplementedMaintenanceServiceServer
 	serv *maintenance.Service
-	auth  *Authenticator
+	auth *Authenticator
 }
 
-func NewMaintenanceService(s *maintenance.Service, ses *sessions.Service, perms *permissions.Service, us *userapp.Service) *MaintenanceService {
-	return &MaintenanceService{serv: s, auth: NewAuthenticator(ses, perms, us)}
+func NewMaintenanceService(s *maintenance.Service, ses *sessions.Service, us *userapp.Service) *MaintenanceService {
+	return &MaintenanceService{serv: s, auth: NewAuthenticator(ses, us)}
 }
 
 func (s *MaintenanceService) IsActive(ctx context.Context, _ *emptypb.Empty) (*maintpb.IsSomethingResponse, error) {
@@ -33,7 +33,7 @@ func (s *MaintenanceService) IsActive(ctx context.Context, _ *emptypb.Empty) (*m
 	}
 	active, err := s.serv.CheckIsActive(ctx)
 	if err != nil {
-		logger.Debug("failed to check: " + err.Error(), "")
+		logger.Debug("failed to check: "+err.Error(), "")
 		return nil, status.Error(codes.Internal, "failed to check")
 	}
 	return &maintpb.IsSomethingResponse{Has: active, Tracing: TraceIDOrNew(ctx)}, nil
@@ -59,7 +59,7 @@ func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maint
 		if err.Error() == "maintenance is not active" {
 			return nil, status.Error(codes.Unavailable, err.Error())
 		}
-		logger.Debug("Failed to get maintenance data: " + err.Error(), "")
+		logger.Debug("Failed to get maintenance data: "+err.Error(), "")
 		return nil, status.Error(codes.Internal, "failed to get data")
 	}
 	resp := data.ToProto()
@@ -74,13 +74,15 @@ func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateReque
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
-			logger.Debug("Error while getting user: " + err.Error(), "")
+			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
 		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
 	}
-	// TODO: add permission check
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+		return nil, err
+	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: time.Time{}, PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
-		logger.Debug("failed to create maintenance: " + err.Error(), "")
+		logger.Debug("failed to create maintenance: "+err.Error(), "")
 		return nil, status.Error(codes.Internal, "failed to create maintenance")
 	}
 	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
@@ -93,11 +95,13 @@ func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.Crea
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
-			logger.Debug("Error while getting user: " + err.Error(), "")
+			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
 		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
 	}
-	// TODO: add permission check
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+		return nil, err
+	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: req.WillStart.AsTime(), PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
 		return nil, status.Error(codes.Internal, "failed to create maintenance")
 	}
@@ -111,11 +115,13 @@ func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest)
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
-			logger.Debug("Error while getting user: " + err.Error(), "")
+			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
 		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
 	}
-	// TODO: add permission check
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+		return nil, err
+	}
 	if err := s.serv.Edit(ctx, maintdomain.EditST{Description: req.Description, Scope: req.Scope}); err != nil {
 		return nil, status.Error(codes.Internal, "failed to edit maintenance")
 	}
@@ -129,11 +135,13 @@ func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*m
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
-			logger.Debug("Error while getting user: " + err.Error(), "")
+			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
 		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
 	}
-	// TODO: add permission check
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+		return nil, err
+	}
 	if err := s.serv.Complete(ctx); err != nil {
 		return nil, status.Error(codes.Internal, "failed to complete maintenance")
 	}

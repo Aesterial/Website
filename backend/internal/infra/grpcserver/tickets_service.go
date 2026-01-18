@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	permissionsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	"Aesterial/backend/internal/app/tickets"
@@ -25,8 +24,8 @@ type TicketsService struct {
 	serv *tickets.Service
 }
 
-func NewTicketsService(s *tickets.Service, sess *sessionsapp.Service, perms *permissionsapp.Service, us *userapp.Service) *TicketsService {
-	return &TicketsService{serv: s, auth: NewAuthenticator(sess, perms, us)}
+func NewTicketsService(s *tickets.Service, sess *sessionsapp.Service, us *userapp.Service) *TicketsService {
+	return &TicketsService{serv: s, auth: NewAuthenticator(sess, us)}
 }
 
 func (t *TicketsService) Create(ctx context.Context, req *tickpb.CreateRequest) (*tickpb.CreateResponse, error) {

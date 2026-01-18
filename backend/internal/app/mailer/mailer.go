@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	brevo "github.com/getbrevo/brevo-go/lib"
 )
@@ -18,7 +19,11 @@ type Service struct {
 func New(apiKey string, serviceName, serviceEmail string) *Service {
 	cfg := brevo.NewConfiguration()
 	cfg.AddDefaultHeader("api-key", apiKey)
-	return &Service{client: brevo.NewAPIClient(cfg)}
+	return &Service{
+		client:    brevo.NewAPIClient(cfg),
+		fromName:  strings.TrimSpace(serviceName),
+		fromEmail: strings.TrimSpace(serviceEmail),
+	}
 }
 
 func (s *Service) SendEmailVerify(ctx context.Context, email string, token string) (string, error) {
@@ -34,13 +39,13 @@ func (s *Service) SendEmailVerify(ctx context.Context, email string, token strin
 			Name:  s.fromName,
 			Email: s.fromEmail,
 		},
-		To: []brevo.SendSmtpEmailTo{{Email: email}},
-		Subject: "Подтверждение почты на "+cfg.Cookies.Domain,
+		To:      []brevo.SendSmtpEmailTo{{Email: email}},
+		Subject: "Email verification for " + cfg.Cookies.Domain,
 		HtmlContent: fmt.Sprintf(
-			`<p>Подтвердите почту по ссылке:</p><p><a href="%s">Открыть подтверждение</a></p>`,
+			`<p>Confirm your email via this link:</p><p><a href="%s">Confirm email</a></p>`,
 			verifyURL,
 		),
-		TextContent: "Подтвердите почту по ссылке: " + verifyURL,
+		TextContent: "Confirm your email via this link: " + verifyURL,
 		Headers: map[string]any{
 			"idempotencyKey": "verify:" + email + ":" + token,
 		},
@@ -57,19 +62,19 @@ func (s *Service) SendEmailVerify(ctx context.Context, email string, token strin
 func (s *Service) SendPasswordReset(ctx context.Context, email string, token string) (string, error) {
 	cfg := config.Get()
 	resetUrl := fmt.Sprintf("https://%s/login/reset-password#token=%s", cfg.Cookies.Domain, url.QueryEscape(token))
-	
+
 	em := brevo.SendSmtpEmail{
 		Sender: &brevo.SendSmtpEmailSender{
-			Name: s.fromName,
+			Name:  s.fromName,
 			Email: s.fromEmail,
 		},
-		To: []brevo.SendSmtpEmailTo{{Email: email}},
-		Subject: "Сброс пароля на " + cfg.Cookies.Domain,
+		To:      []brevo.SendSmtpEmailTo{{Email: email}},
+		Subject: "Password reset for " + cfg.Cookies.Domain,
 		HtmlContent: fmt.Sprintf(
-			`<p>Сбросьте пароль по ссылке:</p><p><a href="%s">Сбросить пароль</a></p>`,
+			`<p>Reset your password via this link:</p><p><a href="%s">Reset password</a></p>`,
 			resetUrl,
 		),
-		TextContent: "Сбросьте пароль по ссылке: " + resetUrl,
+		TextContent: "Reset your password via this link: " + resetUrl,
 		Headers: map[string]any{
 			"idempotencyKey": "reset:" + email + ":" + token,
 		},

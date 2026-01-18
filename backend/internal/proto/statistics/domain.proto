@@ -89,7 +89,7 @@ message MediaCoverageResponse {
     uint32 photos = 1;
     uint32 videos = 2;
   }
-  map<int64, media> medias = 1;
+  repeated media medias = 1;
   string tracing = 2;
 }
 

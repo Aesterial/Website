@@ -7,6 +7,7 @@
 package user
 
 import (
+	v1 "Aesterial/backend/internal/gen/permissions/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -35,6 +36,8 @@ const (
 	UserService_SendMessage_FullMethodName      = "/user.v1.UserService/SendMessage"
 	UserService_Messages_FullMethodName         = "/user.v1.UserService/Messages"
 	UserService_HasPermissions_FullMethodName   = "/user.v1.UserService/HasPermissions"
+	UserService_Permissions_FullMethodName      = "/user.v1.UserService/Permissions"
+	UserService_ChangePerms_FullMethodName      = "/user.v1.UserService/ChangePerms"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -56,6 +59,8 @@ type UserServiceClient interface {
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error)
 	HasPermissions(ctx context.Context, in *HasPermissionRequest, opts ...grpc.CallOption) (*HasPermissionResponse, error)
+	Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
+	ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type userServiceClient struct {
@@ -216,6 +221,26 @@ func (c *userServiceClient) HasPermissions(ctx context.Context, in *HasPermissio
 	return out, nil
 }
 
+func (c *userServiceClient) Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.PermissionsResponse)
+	err := c.cc.Invoke(ctx, UserService_Permissions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UserService_ChangePerms_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -235,6 +260,8 @@ type UserServiceServer interface {
 	SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error)
 	Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error)
 	HasPermissions(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error)
+	Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error)
+	ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -289,6 +316,12 @@ func (UnimplementedUserServiceServer) Messages(context.Context, *emptypb.Empty) 
 }
 func (UnimplementedUserServiceServer) HasPermissions(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HasPermissions not implemented")
+}
+func (UnimplementedUserServiceServer) Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Permissions not implemented")
+}
+func (UnimplementedUserServiceServer) ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangePerms not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -581,6 +614,42 @@ func _UserService_HasPermissions_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_Permissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OtherUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Permissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Permissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Permissions(ctx, req.(*OtherUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ChangePerms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OtherUserPermsPatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ChangePerms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ChangePerms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ChangePerms(ctx, req.(*OtherUserPermsPatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -647,6 +716,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasPermissions",
 			Handler:    _UserService_HasPermissions_Handler,
+		},
+		{
+			MethodName: "Permissions",
+			Handler:    _UserService_Permissions_Handler,
+		},
+		{
+			MethodName: "ChangePerms",
+			Handler:    _UserService_ChangePerms_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -5,58 +5,178 @@ package permissions.v1;
 option go_package = "Aesterial/backend/internal/gen/permissions/v1;permissions";
 
 message Permissions {
-  bool viewOtherProfile = 1;
-  bool patchOtherProfile = 2;
-  bool patchSelfProfile = 3;
-  bool deleteSelfProfile = 4;
-  bool banProfile = 5;
-  bool unbanProfile = 6;
+  message projects_permissions_t {
+    message update_t {
+      bool all = 1;
+      bool own = 2;
+      bool any = 3;
+    }
+    message archive_t {
+      bool own = 1;
+      bool any = 2;
+    }
+    message delete_t {
+      bool all = 1;
+      bool own = 2;
+      bool any = 3;
+    }
+    bool all = 1;
+    bool create = 2;
+    bool view = 3;
+    bool vote = 4;
+    update_t update = 5;
+    archive_t archive = 6;
+    delete_t delete = 7;
+  }
 
-  bool createIdea = 7;
-  bool patchSelfIdea = 8;
-  bool deleteSelfIdea = 9;
+  message tickets_permissions_t {
+    message view_list_t {
+      bool own = 1;
+      bool any = 2;
+    }
+    message message_create_t {
+      bool all = 1;
+      bool accepted = 2;
+      bool any = 3;
+    }
+    message message_t {
+      message_create_t create = 1;
+    }
+    message close_t {
+      bool all = 1;
+      bool accepted = 2;
+      bool any = 3;
+    }
+    bool all = 1;
+    bool create = 2;
+    view_list_t view_list = 3;
+    bool accept = 4;
+    message_t message = 5;
+    close_t close = 6;
+  }
 
-  bool createComment = 10;
-  bool patchSelfComment = 11;
-  bool deleteSelfComment = 12;
-  bool deleteOtherComment = 13;
+  message submissions_permissions_t {
+    bool all = 1;
+    bool view = 2;
+    bool accept = 3;
+    bool decline = 4;
+  }
 
-  bool uploadIdeaMediaSelf = 14;
-  bool deleteIdeaMediaSelf = 15;
-  bool deleteIdeaMediaOther = 16;
+  message ranks_permissions_t {
+    bool all = 1;
+    bool perms_change = 2;
+    bool add = 3;
+    bool delete = 4;
+    bool edit = 5;
+  }
 
-  bool moderateIdea = 17;
+  message statistics_permissions_t {
+    message activity_t {
+      message users_t {
+        bool period = 1;
+      }
+      bool all = 1;
+      users_t users = 2;
+    }
+    message submissions_t {
+      bool all = 1;
+      bool recap = 2;
+    }
+    message votes_t {
+      message categories_t {
+        bool top = 1;
+      }
+      bool all = 1;
+      categories_t categories = 2;
+    }
+    message media_t {
+      bool all = 1;
+      bool quality = 2;
+      bool volume = 3;
+    }
+    bool all = 1;
+    activity_t activity = 2;
+    submissions_t submissions = 3;
+    votes_t votes = 4;
+    media_t media = 5;
+  }
 
-  bool patchIdeaStatus = 18;
-
-  bool viewStatistics = 19;
-  bool viewPermissions = 20;
-  bool managePermissions = 21;
-}
-
-message RequestForRank {
-  string name = 1;
-}
-
-message RequestForUser {
-  uint32 userID = 1;
-}
-
-message RequestForUserChange {
-  uint32 userID = 1;
-  Permissions permissions = 2;
-}
-
-message RequestForRankChange {
-  string name = 1;
-  Permissions permissions = 2;
+  message users_permissions_t {
+    message view_t {
+      message profile_t {
+        bool public = 1;
+        bool privacy = 2;
+      }
+      bool all = 1;
+      profile_t profile = 2;
+    }
+    message settings_t {
+      message change_t {
+        message name_t {
+          bool own = 1;
+          bool any = 2;
+        }
+        message description_t {
+          bool own = 1;
+        }
+        name_t name = 1;
+        description_t description = 2;
+      }
+      message delete_t {
+        message profile_t {
+          bool own = 1;
+        }
+        message avatar_t {
+          bool own = 1;
+          bool any = 2;
+        }
+        message description_t {
+          bool own = 1;
+          bool any = 2;
+        }
+        profile_t profile = 1;
+        avatar_t avatar = 2;
+        description_t description = 3;
+      }
+      message reset_t {
+        message password_t {
+          bool own = 1;
+          bool any = 2;
+        }
+        bool all = 1;
+        password_t password = 2;
+      }
+      bool all = 1;
+      change_t change = 2;
+      delete_t delete = 3;
+      reset_t reset = 4;
+    }
+    message moderation_t {
+      message set_t {
+        bool all = 1;
+        bool rank = 2;
+      }
+      bool all = 1;
+      bool ban = 2;
+      bool ban_forever = 3;
+      bool unban = 4;
+      set_t set = 5;
+    }
+    bool all = 1;
+    view_t view = 2;
+    settings_t settings = 3;
+    moderation_t moderation = 4;
+  }
+  bool all = 1;
+  projects_permissions_t projects = 2;
+  tickets_permissions_t tickets = 3;
+  submissions_permissions_t submissions = 4;
+  statistics_permissions_t statistics = 5;
+  users_permissions_t users = 6;
+  ranks_permissions_t ranks = 7;
 }
 
 message PermissionsResponse {
   Permissions data = 1;
   string tracing = 2;
-}
-
-message EmptyResponse {
-  string tracing = 1;
 }

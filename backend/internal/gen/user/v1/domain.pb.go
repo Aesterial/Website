@@ -342,7 +342,8 @@ func (x *UserPublicSettings) GetAvatar() *Avatar {
 type Rank struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Expires       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires,proto3,oneof" json:"expires,omitempty"`
+	Color         uint32                 `protobuf:"varint,2,opt,name=color,proto3" json:"color,omitempty"`
+	Expires       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires,proto3,oneof" json:"expires,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -382,6 +383,13 @@ func (x *Rank) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *Rank) GetColor() uint32 {
+	if x != nil {
+		return x.Color
+	}
+	return 0
 }
 
 func (x *Rank) GetExpires() *timestamppb.Timestamp {
@@ -607,6 +615,66 @@ func (x *OtherUserRequest) GetUserID() uint32 {
 	return 0
 }
 
+type OtherUserPermsPatchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserID        uint32                 `protobuf:"varint,1,opt,name=userID,proto3" json:"userID,omitempty"`
+	Perm          string                 `protobuf:"bytes,2,opt,name=perm,proto3" json:"perm,omitempty"`
+	State         bool                   `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OtherUserPermsPatchRequest) Reset() {
+	*x = OtherUserPermsPatchRequest{}
+	mi := &file_user_domain_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OtherUserPermsPatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OtherUserPermsPatchRequest) ProtoMessage() {}
+
+func (x *OtherUserPermsPatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_domain_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OtherUserPermsPatchRequest.ProtoReflect.Descriptor instead.
+func (*OtherUserPermsPatchRequest) Descriptor() ([]byte, []int) {
+	return file_user_domain_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *OtherUserPermsPatchRequest) GetUserID() uint32 {
+	if x != nil {
+		return x.UserID
+	}
+	return 0
+}
+
+func (x *OtherUserPermsPatchRequest) GetPerm() string {
+	if x != nil {
+		return x.Perm
+	}
+	return ""
+}
+
+func (x *OtherUserPermsPatchRequest) GetState() bool {
+	if x != nil {
+		return x.State
+	}
+	return false
+}
+
 type BanUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserID        uint32                 `protobuf:"varint,1,opt,name=userID,proto3" json:"userID,omitempty"`
@@ -618,7 +686,7 @@ type BanUserRequest struct {
 
 func (x *BanUserRequest) Reset() {
 	*x = BanUserRequest{}
-	mi := &file_user_domain_proto_msgTypes[10]
+	mi := &file_user_domain_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -630,7 +698,7 @@ func (x *BanUserRequest) String() string {
 func (*BanUserRequest) ProtoMessage() {}
 
 func (x *BanUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[10]
+	mi := &file_user_domain_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -643,7 +711,7 @@ func (x *BanUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BanUserRequest.ProtoReflect.Descriptor instead.
 func (*BanUserRequest) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{10}
+	return file_user_domain_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *BanUserRequest) GetUserID() uint32 {
@@ -677,7 +745,7 @@ type SendMessageRequest struct {
 
 func (x *SendMessageRequest) Reset() {
 	*x = SendMessageRequest{}
-	mi := &file_user_domain_proto_msgTypes[11]
+	mi := &file_user_domain_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -689,7 +757,7 @@ func (x *SendMessageRequest) String() string {
 func (*SendMessageRequest) ProtoMessage() {}
 
 func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[11]
+	mi := &file_user_domain_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -702,7 +770,7 @@ func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessageRequest.ProtoReflect.Descriptor instead.
 func (*SendMessageRequest) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{11}
+	return file_user_domain_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SendMessageRequest) GetUserID() uint32 {
@@ -730,7 +798,7 @@ type Message struct {
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_user_domain_proto_msgTypes[12]
+	mi := &file_user_domain_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -742,7 +810,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[12]
+	mi := &file_user_domain_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -755,7 +823,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{12}
+	return file_user_domain_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Message) GetFrom() string {
@@ -788,7 +856,7 @@ type ChangeSelfNameRequest struct {
 
 func (x *ChangeSelfNameRequest) Reset() {
 	*x = ChangeSelfNameRequest{}
-	mi := &file_user_domain_proto_msgTypes[13]
+	mi := &file_user_domain_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -800,7 +868,7 @@ func (x *ChangeSelfNameRequest) String() string {
 func (*ChangeSelfNameRequest) ProtoMessage() {}
 
 func (x *ChangeSelfNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[13]
+	mi := &file_user_domain_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -813,7 +881,7 @@ func (x *ChangeSelfNameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeSelfNameRequest.ProtoReflect.Descriptor instead.
 func (*ChangeSelfNameRequest) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{13}
+	return file_user_domain_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ChangeSelfNameRequest) GetName() string {
@@ -833,7 +901,7 @@ type UserSelfResponse struct {
 
 func (x *UserSelfResponse) Reset() {
 	*x = UserSelfResponse{}
-	mi := &file_user_domain_proto_msgTypes[14]
+	mi := &file_user_domain_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -845,7 +913,7 @@ func (x *UserSelfResponse) String() string {
 func (*UserSelfResponse) ProtoMessage() {}
 
 func (x *UserSelfResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[14]
+	mi := &file_user_domain_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -858,7 +926,7 @@ func (x *UserSelfResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSelfResponse.ProtoReflect.Descriptor instead.
 func (*UserSelfResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{14}
+	return file_user_domain_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UserSelfResponse) GetData() *UserSelf {
@@ -885,7 +953,7 @@ type UserPublicResponse struct {
 
 func (x *UserPublicResponse) Reset() {
 	*x = UserPublicResponse{}
-	mi := &file_user_domain_proto_msgTypes[15]
+	mi := &file_user_domain_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -897,7 +965,7 @@ func (x *UserPublicResponse) String() string {
 func (*UserPublicResponse) ProtoMessage() {}
 
 func (x *UserPublicResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[15]
+	mi := &file_user_domain_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -910,7 +978,7 @@ func (x *UserPublicResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserPublicResponse.ProtoReflect.Descriptor instead.
 func (*UserPublicResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{15}
+	return file_user_domain_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *UserPublicResponse) GetData() *UserPublic {
@@ -937,7 +1005,7 @@ type UsersResponse struct {
 
 func (x *UsersResponse) Reset() {
 	*x = UsersResponse{}
-	mi := &file_user_domain_proto_msgTypes[16]
+	mi := &file_user_domain_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -949,7 +1017,7 @@ func (x *UsersResponse) String() string {
 func (*UsersResponse) ProtoMessage() {}
 
 func (x *UsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[16]
+	mi := &file_user_domain_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -962,7 +1030,7 @@ func (x *UsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UsersResponse.ProtoReflect.Descriptor instead.
 func (*UsersResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{16}
+	return file_user_domain_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *UsersResponse) GetData() []*UserPublic {
@@ -989,7 +1057,7 @@ type UserSessionsResponse struct {
 
 func (x *UserSessionsResponse) Reset() {
 	*x = UserSessionsResponse{}
-	mi := &file_user_domain_proto_msgTypes[17]
+	mi := &file_user_domain_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1001,7 +1069,7 @@ func (x *UserSessionsResponse) String() string {
 func (*UserSessionsResponse) ProtoMessage() {}
 
 func (x *UserSessionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[17]
+	mi := &file_user_domain_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1014,7 +1082,7 @@ func (x *UserSessionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSessionsResponse.ProtoReflect.Descriptor instead.
 func (*UserSessionsResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{17}
+	return file_user_domain_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *UserSessionsResponse) GetData() *UserSessions {
@@ -1041,7 +1109,7 @@ type MessagesResponse struct {
 
 func (x *MessagesResponse) Reset() {
 	*x = MessagesResponse{}
-	mi := &file_user_domain_proto_msgTypes[18]
+	mi := &file_user_domain_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1053,7 +1121,7 @@ func (x *MessagesResponse) String() string {
 func (*MessagesResponse) ProtoMessage() {}
 
 func (x *MessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[18]
+	mi := &file_user_domain_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1066,7 +1134,7 @@ func (x *MessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessagesResponse.ProtoReflect.Descriptor instead.
 func (*MessagesResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{18}
+	return file_user_domain_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MessagesResponse) GetMessages() []*Message {
@@ -1092,7 +1160,7 @@ type EmptyResponse struct {
 
 func (x *EmptyResponse) Reset() {
 	*x = EmptyResponse{}
-	mi := &file_user_domain_proto_msgTypes[19]
+	mi := &file_user_domain_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1104,7 +1172,7 @@ func (x *EmptyResponse) String() string {
 func (*EmptyResponse) ProtoMessage() {}
 
 func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[19]
+	mi := &file_user_domain_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1117,7 +1185,7 @@ func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{19}
+	return file_user_domain_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *EmptyResponse) GetTracing() string {
@@ -1141,7 +1209,7 @@ type BanInfoResponse struct {
 
 func (x *BanInfoResponse) Reset() {
 	*x = BanInfoResponse{}
-	mi := &file_user_domain_proto_msgTypes[20]
+	mi := &file_user_domain_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1153,7 +1221,7 @@ func (x *BanInfoResponse) String() string {
 func (*BanInfoResponse) ProtoMessage() {}
 
 func (x *BanInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[20]
+	mi := &file_user_domain_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1166,7 +1234,7 @@ func (x *BanInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BanInfoResponse.ProtoReflect.Descriptor instead.
 func (*BanInfoResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{20}
+	return file_user_domain_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *BanInfoResponse) GetId() string {
@@ -1221,7 +1289,7 @@ type HasPermissionRequest struct {
 
 func (x *HasPermissionRequest) Reset() {
 	*x = HasPermissionRequest{}
-	mi := &file_user_domain_proto_msgTypes[21]
+	mi := &file_user_domain_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1233,7 +1301,7 @@ func (x *HasPermissionRequest) String() string {
 func (*HasPermissionRequest) ProtoMessage() {}
 
 func (x *HasPermissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[21]
+	mi := &file_user_domain_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1246,7 +1314,7 @@ func (x *HasPermissionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HasPermissionRequest.ProtoReflect.Descriptor instead.
 func (*HasPermissionRequest) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{21}
+	return file_user_domain_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *HasPermissionRequest) GetUserID() uint32 {
@@ -1272,7 +1340,7 @@ type PermissionsRequest struct {
 
 func (x *PermissionsRequest) Reset() {
 	*x = PermissionsRequest{}
-	mi := &file_user_domain_proto_msgTypes[22]
+	mi := &file_user_domain_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1352,7 @@ func (x *PermissionsRequest) String() string {
 func (*PermissionsRequest) ProtoMessage() {}
 
 func (x *PermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[22]
+	mi := &file_user_domain_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1365,7 @@ func (x *PermissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PermissionsRequest.ProtoReflect.Descriptor instead.
 func (*PermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{22}
+	return file_user_domain_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *PermissionsRequest) GetUserID() uint32 {
@@ -1305,58 +1373,6 @@ func (x *PermissionsRequest) GetUserID() uint32 {
 		return x.UserID
 	}
 	return 0
-}
-
-type PermissionsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Perms         *Permissions           `protobuf:"bytes,1,opt,name=perms,proto3" json:"perms,omitempty"`
-	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsResponse) Reset() {
-	*x = PermissionsResponse{}
-	mi := &file_user_domain_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsResponse) ProtoMessage() {}
-
-func (x *PermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsResponse.ProtoReflect.Descriptor instead.
-func (*PermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *PermissionsResponse) GetPerms() *Permissions {
-	if x != nil {
-		return x.Perms
-	}
-	return nil
-}
-
-func (x *PermissionsResponse) GetTracing() string {
-	if x != nil {
-		return x.Tracing
-	}
-	return ""
 }
 
 type HasPermissionResponse struct {
@@ -1411,2014 +1427,6 @@ func (x *HasPermissionResponse) GetTracing() string {
 	return ""
 }
 
-type Permissions struct {
-	state         protoimpl.MessageState              `protogen:"open.v1"`
-	All           bool                                `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Projects      *PermissionsProjectsPermissionsT    `protobuf:"bytes,2,opt,name=projects,proto3" json:"projects,omitempty"`
-	Tickets       *PermissionsTicketsPermissionsT     `protobuf:"bytes,3,opt,name=tickets,proto3" json:"tickets,omitempty"`
-	Submissions   *PermissionsSubmissionsPermissionsT `protobuf:"bytes,4,opt,name=submissions,proto3" json:"submissions,omitempty"`
-	Statistics    *PermissionsStatisticsPermissionsT  `protobuf:"bytes,5,opt,name=statistics,proto3" json:"statistics,omitempty"`
-	Users         *PermissionsUsersPermissionsT       `protobuf:"bytes,6,opt,name=users,proto3" json:"users,omitempty"`
-	Ranks         *PermissionsRanksPermissionsT       `protobuf:"bytes,7,opt,name=ranks,proto3" json:"ranks,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Permissions) Reset() {
-	*x = Permissions{}
-	mi := &file_user_domain_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Permissions) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Permissions) ProtoMessage() {}
-
-func (x *Permissions) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Permissions.ProtoReflect.Descriptor instead.
-func (*Permissions) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *Permissions) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *Permissions) GetProjects() *PermissionsProjectsPermissionsT {
-	if x != nil {
-		return x.Projects
-	}
-	return nil
-}
-
-func (x *Permissions) GetTickets() *PermissionsTicketsPermissionsT {
-	if x != nil {
-		return x.Tickets
-	}
-	return nil
-}
-
-func (x *Permissions) GetSubmissions() *PermissionsSubmissionsPermissionsT {
-	if x != nil {
-		return x.Submissions
-	}
-	return nil
-}
-
-func (x *Permissions) GetStatistics() *PermissionsStatisticsPermissionsT {
-	if x != nil {
-		return x.Statistics
-	}
-	return nil
-}
-
-func (x *Permissions) GetUsers() *PermissionsUsersPermissionsT {
-	if x != nil {
-		return x.Users
-	}
-	return nil
-}
-
-func (x *Permissions) GetRanks() *PermissionsRanksPermissionsT {
-	if x != nil {
-		return x.Ranks
-	}
-	return nil
-}
-
-type PermissionsProjectsPermissionsT struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	All           bool                                     `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Create        bool                                     `protobuf:"varint,2,opt,name=create,proto3" json:"create,omitempty"`
-	View          bool                                     `protobuf:"varint,3,opt,name=view,proto3" json:"view,omitempty"`
-	Vote          bool                                     `protobuf:"varint,4,opt,name=vote,proto3" json:"vote,omitempty"`
-	Update        *PermissionsProjectsPermissionsTUpdateT  `protobuf:"bytes,5,opt,name=update,proto3" json:"update,omitempty"`
-	Archive       *PermissionsProjectsPermissionsTArchiveT `protobuf:"bytes,6,opt,name=archive,proto3" json:"archive,omitempty"`
-	Delete        *PermissionsProjectsPermissionsTDeleteT  `protobuf:"bytes,7,opt,name=delete,proto3" json:"delete,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsProjectsPermissionsT) Reset() {
-	*x = PermissionsProjectsPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsProjectsPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsProjectsPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsProjectsPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsProjectsPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsProjectsPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 0}
-}
-
-func (x *PermissionsProjectsPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsT) GetCreate() bool {
-	if x != nil {
-		return x.Create
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsT) GetView() bool {
-	if x != nil {
-		return x.View
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsT) GetVote() bool {
-	if x != nil {
-		return x.Vote
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsT) GetUpdate() *PermissionsProjectsPermissionsTUpdateT {
-	if x != nil {
-		return x.Update
-	}
-	return nil
-}
-
-func (x *PermissionsProjectsPermissionsT) GetArchive() *PermissionsProjectsPermissionsTArchiveT {
-	if x != nil {
-		return x.Archive
-	}
-	return nil
-}
-
-func (x *PermissionsProjectsPermissionsT) GetDelete() *PermissionsProjectsPermissionsTDeleteT {
-	if x != nil {
-		return x.Delete
-	}
-	return nil
-}
-
-type PermissionsTicketsPermissionsT struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	All           bool                                     `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Create        bool                                     `protobuf:"varint,2,opt,name=create,proto3" json:"create,omitempty"`
-	ViewList      *PermissionsTicketsPermissionsTViewListT `protobuf:"bytes,3,opt,name=view_list,json=viewList,proto3" json:"view_list,omitempty"`
-	Accept        bool                                     `protobuf:"varint,4,opt,name=accept,proto3" json:"accept,omitempty"`
-	Message       *PermissionsTicketsPermissionsTMessageT  `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
-	Close         *PermissionsTicketsPermissionsTCloseT    `protobuf:"bytes,6,opt,name=close,proto3" json:"close,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsTicketsPermissionsT) Reset() {
-	*x = PermissionsTicketsPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsTicketsPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsTicketsPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsTicketsPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsTicketsPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsTicketsPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 1}
-}
-
-func (x *PermissionsTicketsPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsT) GetCreate() bool {
-	if x != nil {
-		return x.Create
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsT) GetViewList() *PermissionsTicketsPermissionsTViewListT {
-	if x != nil {
-		return x.ViewList
-	}
-	return nil
-}
-
-func (x *PermissionsTicketsPermissionsT) GetAccept() bool {
-	if x != nil {
-		return x.Accept
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsT) GetMessage() *PermissionsTicketsPermissionsTMessageT {
-	if x != nil {
-		return x.Message
-	}
-	return nil
-}
-
-func (x *PermissionsTicketsPermissionsT) GetClose() *PermissionsTicketsPermissionsTCloseT {
-	if x != nil {
-		return x.Close
-	}
-	return nil
-}
-
-type PermissionsSubmissionsPermissionsT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	View          bool                   `protobuf:"varint,2,opt,name=view,proto3" json:"view,omitempty"`
-	Accept        bool                   `protobuf:"varint,3,opt,name=accept,proto3" json:"accept,omitempty"`
-	Decline       bool                   `protobuf:"varint,4,opt,name=decline,proto3" json:"decline,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsSubmissionsPermissionsT) Reset() {
-	*x = PermissionsSubmissionsPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[28]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsSubmissionsPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsSubmissionsPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsSubmissionsPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[28]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsSubmissionsPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsSubmissionsPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 2}
-}
-
-func (x *PermissionsSubmissionsPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsSubmissionsPermissionsT) GetView() bool {
-	if x != nil {
-		return x.View
-	}
-	return false
-}
-
-func (x *PermissionsSubmissionsPermissionsT) GetAccept() bool {
-	if x != nil {
-		return x.Accept
-	}
-	return false
-}
-
-func (x *PermissionsSubmissionsPermissionsT) GetDecline() bool {
-	if x != nil {
-		return x.Decline
-	}
-	return false
-}
-
-type PermissionsRanksPermissionsT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	PermsChange   bool                   `protobuf:"varint,2,opt,name=perms_change,json=permsChange,proto3" json:"perms_change,omitempty"`
-	Add           bool                   `protobuf:"varint,3,opt,name=add,proto3" json:"add,omitempty"`
-	Delete        bool                   `protobuf:"varint,4,opt,name=delete,proto3" json:"delete,omitempty"`
-	Edit          bool                   `protobuf:"varint,5,opt,name=edit,proto3" json:"edit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsRanksPermissionsT) Reset() {
-	*x = PermissionsRanksPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[29]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsRanksPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsRanksPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsRanksPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[29]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsRanksPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsRanksPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 3}
-}
-
-func (x *PermissionsRanksPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsRanksPermissionsT) GetPermsChange() bool {
-	if x != nil {
-		return x.PermsChange
-	}
-	return false
-}
-
-func (x *PermissionsRanksPermissionsT) GetAdd() bool {
-	if x != nil {
-		return x.Add
-	}
-	return false
-}
-
-func (x *PermissionsRanksPermissionsT) GetDelete() bool {
-	if x != nil {
-		return x.Delete
-	}
-	return false
-}
-
-func (x *PermissionsRanksPermissionsT) GetEdit() bool {
-	if x != nil {
-		return x.Edit
-	}
-	return false
-}
-
-type PermissionsStatisticsPermissionsT struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	All           bool                                           `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Activity      *PermissionsStatisticsPermissionsTActivityT    `protobuf:"bytes,2,opt,name=activity,proto3" json:"activity,omitempty"`
-	Submissions   *PermissionsStatisticsPermissionsTSubmissionsT `protobuf:"bytes,3,opt,name=submissions,proto3" json:"submissions,omitempty"`
-	Votes         *PermissionsStatisticsPermissionsTVotesT       `protobuf:"bytes,4,opt,name=votes,proto3" json:"votes,omitempty"`
-	Media         *PermissionsStatisticsPermissionsTMediaT       `protobuf:"bytes,5,opt,name=media,proto3" json:"media,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsT) Reset() {
-	*x = PermissionsStatisticsPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[30]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[30]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4}
-}
-
-func (x *PermissionsStatisticsPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsT) GetActivity() *PermissionsStatisticsPermissionsTActivityT {
-	if x != nil {
-		return x.Activity
-	}
-	return nil
-}
-
-func (x *PermissionsStatisticsPermissionsT) GetSubmissions() *PermissionsStatisticsPermissionsTSubmissionsT {
-	if x != nil {
-		return x.Submissions
-	}
-	return nil
-}
-
-func (x *PermissionsStatisticsPermissionsT) GetVotes() *PermissionsStatisticsPermissionsTVotesT {
-	if x != nil {
-		return x.Votes
-	}
-	return nil
-}
-
-func (x *PermissionsStatisticsPermissionsT) GetMedia() *PermissionsStatisticsPermissionsTMediaT {
-	if x != nil {
-		return x.Media
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsT struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	All           bool                                     `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	View          *PermissionsUsersPermissionsTViewT       `protobuf:"bytes,2,opt,name=view,proto3" json:"view,omitempty"`
-	Settings      *PermissionsUsersPermissionsTSettingsT   `protobuf:"bytes,3,opt,name=settings,proto3" json:"settings,omitempty"`
-	Moderation    *PermissionsUsersPermissionsTModerationT `protobuf:"bytes,4,opt,name=moderation,proto3" json:"moderation,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsT) Reset() {
-	*x = PermissionsUsersPermissionsT{}
-	mi := &file_user_domain_proto_msgTypes[31]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[31]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5}
-}
-
-func (x *PermissionsUsersPermissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsT) GetView() *PermissionsUsersPermissionsTViewT {
-	if x != nil {
-		return x.View
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsT) GetSettings() *PermissionsUsersPermissionsTSettingsT {
-	if x != nil {
-		return x.Settings
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsT) GetModeration() *PermissionsUsersPermissionsTModerationT {
-	if x != nil {
-		return x.Moderation
-	}
-	return nil
-}
-
-type PermissionsProjectsPermissionsTUpdateT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Own           bool                   `protobuf:"varint,2,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,3,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) Reset() {
-	*x = PermissionsProjectsPermissionsTUpdateT{}
-	mi := &file_user_domain_proto_msgTypes[32]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsProjectsPermissionsTUpdateT) ProtoMessage() {}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[32]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsProjectsPermissionsTUpdateT.ProtoReflect.Descriptor instead.
-func (*PermissionsProjectsPermissionsTUpdateT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 0, 0}
-}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsTUpdateT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsProjectsPermissionsTArchiveT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsProjectsPermissionsTArchiveT) Reset() {
-	*x = PermissionsProjectsPermissionsTArchiveT{}
-	mi := &file_user_domain_proto_msgTypes[33]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsProjectsPermissionsTArchiveT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsProjectsPermissionsTArchiveT) ProtoMessage() {}
-
-func (x *PermissionsProjectsPermissionsTArchiveT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[33]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsProjectsPermissionsTArchiveT.ProtoReflect.Descriptor instead.
-func (*PermissionsProjectsPermissionsTArchiveT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 0, 1}
-}
-
-func (x *PermissionsProjectsPermissionsTArchiveT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsTArchiveT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsProjectsPermissionsTDeleteT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Own           bool                   `protobuf:"varint,2,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,3,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) Reset() {
-	*x = PermissionsProjectsPermissionsTDeleteT{}
-	mi := &file_user_domain_proto_msgTypes[34]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsProjectsPermissionsTDeleteT) ProtoMessage() {}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[34]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsProjectsPermissionsTDeleteT.ProtoReflect.Descriptor instead.
-func (*PermissionsProjectsPermissionsTDeleteT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 0, 2}
-}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsProjectsPermissionsTDeleteT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsTicketsPermissionsTViewListT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsTicketsPermissionsTViewListT) Reset() {
-	*x = PermissionsTicketsPermissionsTViewListT{}
-	mi := &file_user_domain_proto_msgTypes[35]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsTicketsPermissionsTViewListT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsTicketsPermissionsTViewListT) ProtoMessage() {}
-
-func (x *PermissionsTicketsPermissionsTViewListT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[35]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsTicketsPermissionsTViewListT.ProtoReflect.Descriptor instead.
-func (*PermissionsTicketsPermissionsTViewListT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 1, 0}
-}
-
-func (x *PermissionsTicketsPermissionsTViewListT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsTViewListT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsTicketsPermissionsTMessageCreateT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Accepted      bool                   `protobuf:"varint,2,opt,name=accepted,proto3" json:"accepted,omitempty"`
-	Any           bool                   `protobuf:"varint,3,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) Reset() {
-	*x = PermissionsTicketsPermissionsTMessageCreateT{}
-	mi := &file_user_domain_proto_msgTypes[36]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsTicketsPermissionsTMessageCreateT) ProtoMessage() {}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[36]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsTicketsPermissionsTMessageCreateT.ProtoReflect.Descriptor instead.
-func (*PermissionsTicketsPermissionsTMessageCreateT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 1, 1}
-}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) GetAccepted() bool {
-	if x != nil {
-		return x.Accepted
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsTMessageCreateT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsTicketsPermissionsTMessageT struct {
-	state         protoimpl.MessageState                        `protogen:"open.v1"`
-	Create        *PermissionsTicketsPermissionsTMessageCreateT `protobuf:"bytes,1,opt,name=create,proto3" json:"create,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsTicketsPermissionsTMessageT) Reset() {
-	*x = PermissionsTicketsPermissionsTMessageT{}
-	mi := &file_user_domain_proto_msgTypes[37]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsTicketsPermissionsTMessageT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsTicketsPermissionsTMessageT) ProtoMessage() {}
-
-func (x *PermissionsTicketsPermissionsTMessageT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[37]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsTicketsPermissionsTMessageT.ProtoReflect.Descriptor instead.
-func (*PermissionsTicketsPermissionsTMessageT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 1, 2}
-}
-
-func (x *PermissionsTicketsPermissionsTMessageT) GetCreate() *PermissionsTicketsPermissionsTMessageCreateT {
-	if x != nil {
-		return x.Create
-	}
-	return nil
-}
-
-type PermissionsTicketsPermissionsTCloseT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Accepted      bool                   `protobuf:"varint,2,opt,name=accepted,proto3" json:"accepted,omitempty"`
-	Any           bool                   `protobuf:"varint,3,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsTicketsPermissionsTCloseT) Reset() {
-	*x = PermissionsTicketsPermissionsTCloseT{}
-	mi := &file_user_domain_proto_msgTypes[38]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsTicketsPermissionsTCloseT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsTicketsPermissionsTCloseT) ProtoMessage() {}
-
-func (x *PermissionsTicketsPermissionsTCloseT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[38]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsTicketsPermissionsTCloseT.ProtoReflect.Descriptor instead.
-func (*PermissionsTicketsPermissionsTCloseT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 1, 3}
-}
-
-func (x *PermissionsTicketsPermissionsTCloseT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsTCloseT) GetAccepted() bool {
-	if x != nil {
-		return x.Accepted
-	}
-	return false
-}
-
-func (x *PermissionsTicketsPermissionsTCloseT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsStatisticsPermissionsTActivityT struct {
-	state         protoimpl.MessageState                            `protogen:"open.v1"`
-	All           bool                                              `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Users         *PermissionsStatisticsPermissionsTActivityTUsersT `protobuf:"bytes,2,opt,name=users,proto3" json:"users,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityT) Reset() {
-	*x = PermissionsStatisticsPermissionsTActivityT{}
-	mi := &file_user_domain_proto_msgTypes[39]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTActivityT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTActivityT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[39]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTActivityT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTActivityT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 0}
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityT) GetUsers() *PermissionsStatisticsPermissionsTActivityTUsersT {
-	if x != nil {
-		return x.Users
-	}
-	return nil
-}
-
-type PermissionsStatisticsPermissionsTSubmissionsT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Recap         bool                   `protobuf:"varint,2,opt,name=recap,proto3" json:"recap,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTSubmissionsT) Reset() {
-	*x = PermissionsStatisticsPermissionsTSubmissionsT{}
-	mi := &file_user_domain_proto_msgTypes[40]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTSubmissionsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTSubmissionsT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTSubmissionsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[40]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTSubmissionsT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTSubmissionsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 1}
-}
-
-func (x *PermissionsStatisticsPermissionsTSubmissionsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsTSubmissionsT) GetRecap() bool {
-	if x != nil {
-		return x.Recap
-	}
-	return false
-}
-
-type PermissionsStatisticsPermissionsTVotesT struct {
-	state         protoimpl.MessageState                              `protogen:"open.v1"`
-	All           bool                                                `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Categories    *PermissionsStatisticsPermissionsTVotesTCategoriesT `protobuf:"bytes,2,opt,name=categories,proto3" json:"categories,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesT) Reset() {
-	*x = PermissionsStatisticsPermissionsTVotesT{}
-	mi := &file_user_domain_proto_msgTypes[41]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTVotesT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTVotesT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[41]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTVotesT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTVotesT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 2}
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesT) GetCategories() *PermissionsStatisticsPermissionsTVotesTCategoriesT {
-	if x != nil {
-		return x.Categories
-	}
-	return nil
-}
-
-type PermissionsStatisticsPermissionsTMediaT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Quality       bool                   `protobuf:"varint,2,opt,name=quality,proto3" json:"quality,omitempty"`
-	Volume        bool                   `protobuf:"varint,3,opt,name=volume,proto3" json:"volume,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) Reset() {
-	*x = PermissionsStatisticsPermissionsTMediaT{}
-	mi := &file_user_domain_proto_msgTypes[42]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTMediaT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[42]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTMediaT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTMediaT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 3}
-}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) GetQuality() bool {
-	if x != nil {
-		return x.Quality
-	}
-	return false
-}
-
-func (x *PermissionsStatisticsPermissionsTMediaT) GetVolume() bool {
-	if x != nil {
-		return x.Volume
-	}
-	return false
-}
-
-type PermissionsStatisticsPermissionsTActivityTUsersT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Period        bool                   `protobuf:"varint,1,opt,name=period,proto3" json:"period,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityTUsersT) Reset() {
-	*x = PermissionsStatisticsPermissionsTActivityTUsersT{}
-	mi := &file_user_domain_proto_msgTypes[43]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityTUsersT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTActivityTUsersT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTActivityTUsersT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[43]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTActivityTUsersT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTActivityTUsersT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 0, 0}
-}
-
-func (x *PermissionsStatisticsPermissionsTActivityTUsersT) GetPeriod() bool {
-	if x != nil {
-		return x.Period
-	}
-	return false
-}
-
-type PermissionsStatisticsPermissionsTVotesTCategoriesT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Top           bool                   `protobuf:"varint,1,opt,name=top,proto3" json:"top,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesTCategoriesT) Reset() {
-	*x = PermissionsStatisticsPermissionsTVotesTCategoriesT{}
-	mi := &file_user_domain_proto_msgTypes[44]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesTCategoriesT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsStatisticsPermissionsTVotesTCategoriesT) ProtoMessage() {}
-
-func (x *PermissionsStatisticsPermissionsTVotesTCategoriesT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[44]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsStatisticsPermissionsTVotesTCategoriesT.ProtoReflect.Descriptor instead.
-func (*PermissionsStatisticsPermissionsTVotesTCategoriesT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 4, 2, 0}
-}
-
-func (x *PermissionsStatisticsPermissionsTVotesTCategoriesT) GetTop() bool {
-	if x != nil {
-		return x.Top
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTViewT struct {
-	state         protoimpl.MessageState                     `protogen:"open.v1"`
-	All           bool                                       `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Profile       *PermissionsUsersPermissionsTViewTProfileT `protobuf:"bytes,2,opt,name=profile,proto3" json:"profile,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTViewT) Reset() {
-	*x = PermissionsUsersPermissionsTViewT{}
-	mi := &file_user_domain_proto_msgTypes[45]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTViewT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTViewT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTViewT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[45]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTViewT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTViewT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 0}
-}
-
-func (x *PermissionsUsersPermissionsTViewT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTViewT) GetProfile() *PermissionsUsersPermissionsTViewTProfileT {
-	if x != nil {
-		return x.Profile
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTSettingsT struct {
-	state         protoimpl.MessageState                        `protogen:"open.v1"`
-	All           bool                                          `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Change        *PermissionsUsersPermissionsTSettingsTChangeT `protobuf:"bytes,2,opt,name=change,proto3" json:"change,omitempty"`
-	Delete        *PermissionsUsersPermissionsTSettingsTDeleteT `protobuf:"bytes,3,opt,name=delete,proto3" json:"delete,omitempty"`
-	Reset_        *PermissionsUsersPermissionsTSettingsTResetT  `protobuf:"bytes,4,opt,name=reset,proto3" json:"reset,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsT{}
-	mi := &file_user_domain_proto_msgTypes[46]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[46]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) GetChange() *PermissionsUsersPermissionsTSettingsTChangeT {
-	if x != nil {
-		return x.Change
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) GetDelete() *PermissionsUsersPermissionsTSettingsTDeleteT {
-	if x != nil {
-		return x.Delete
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsTSettingsT) GetReset_() *PermissionsUsersPermissionsTSettingsTResetT {
-	if x != nil {
-		return x.Reset_
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTModerationT struct {
-	state         protoimpl.MessageState                       `protogen:"open.v1"`
-	All           bool                                         `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Ban           bool                                         `protobuf:"varint,2,opt,name=ban,proto3" json:"ban,omitempty"`
-	BanForever    bool                                         `protobuf:"varint,3,opt,name=ban_forever,json=banForever,proto3" json:"ban_forever,omitempty"`
-	Unban         bool                                         `protobuf:"varint,4,opt,name=unban,proto3" json:"unban,omitempty"`
-	Set           *PermissionsUsersPermissionsTModerationTSetT `protobuf:"bytes,5,opt,name=set,proto3" json:"set,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) Reset() {
-	*x = PermissionsUsersPermissionsTModerationT{}
-	mi := &file_user_domain_proto_msgTypes[47]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTModerationT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTModerationT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[47]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTModerationT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTModerationT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 2}
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) GetBan() bool {
-	if x != nil {
-		return x.Ban
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) GetBanForever() bool {
-	if x != nil {
-		return x.BanForever
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) GetUnban() bool {
-	if x != nil {
-		return x.Unban
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTModerationT) GetSet() *PermissionsUsersPermissionsTModerationTSetT {
-	if x != nil {
-		return x.Set
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTViewTProfileT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Public        bool                   `protobuf:"varint,1,opt,name=public,proto3" json:"public,omitempty"`
-	Privacy       bool                   `protobuf:"varint,2,opt,name=privacy,proto3" json:"privacy,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTViewTProfileT) Reset() {
-	*x = PermissionsUsersPermissionsTViewTProfileT{}
-	mi := &file_user_domain_proto_msgTypes[48]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTViewTProfileT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTViewTProfileT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTViewTProfileT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[48]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTViewTProfileT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTViewTProfileT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 0, 0}
-}
-
-func (x *PermissionsUsersPermissionsTViewTProfileT) GetPublic() bool {
-	if x != nil {
-		return x.Public
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTViewTProfileT) GetPrivacy() bool {
-	if x != nil {
-		return x.Privacy
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTChangeT struct {
-	state         protoimpl.MessageState                                    `protogen:"open.v1"`
-	Name          *PermissionsUsersPermissionsTSettingsTChangeTNameT        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description   *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTChangeT{}
-	mi := &file_user_domain_proto_msgTypes[49]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTChangeT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[49]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTChangeT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTChangeT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 0}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeT) GetName() *PermissionsUsersPermissionsTSettingsTChangeTNameT {
-	if x != nil {
-		return x.Name
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeT) GetDescription() *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT {
-	if x != nil {
-		return x.Description
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTSettingsTDeleteT struct {
-	state         protoimpl.MessageState                                    `protogen:"open.v1"`
-	Profile       *PermissionsUsersPermissionsTSettingsTDeleteTProfileT     `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
-	Avatar        *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT      `protobuf:"bytes,2,opt,name=avatar,proto3" json:"avatar,omitempty"`
-	Description   *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTDeleteT{}
-	mi := &file_user_domain_proto_msgTypes[50]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTDeleteT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[50]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTDeleteT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTDeleteT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 1}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) GetProfile() *PermissionsUsersPermissionsTSettingsTDeleteTProfileT {
-	if x != nil {
-		return x.Profile
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) GetAvatar() *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT {
-	if x != nil {
-		return x.Avatar
-	}
-	return nil
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteT) GetDescription() *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT {
-	if x != nil {
-		return x.Description
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTSettingsTResetT struct {
-	state         protoimpl.MessageState                                `protogen:"open.v1"`
-	All           bool                                                  `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Password      *PermissionsUsersPermissionsTSettingsTResetTPasswordT `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTResetT{}
-	mi := &file_user_domain_proto_msgTypes[51]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTResetT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[51]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTResetT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTResetT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 2}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetT) GetPassword() *PermissionsUsersPermissionsTSettingsTResetTPasswordT {
-	if x != nil {
-		return x.Password
-	}
-	return nil
-}
-
-type PermissionsUsersPermissionsTSettingsTChangeTNameT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTNameT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTChangeTNameT{}
-	mi := &file_user_domain_proto_msgTypes[52]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTNameT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTChangeTNameT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTNameT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[52]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTChangeTNameT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTChangeTNameT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 0, 0}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTNameT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTNameT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTChangeTDescriptionT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTChangeTDescriptionT{}
-	mi := &file_user_domain_proto_msgTypes[53]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[53]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTChangeTDescriptionT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 0, 1}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTChangeTDescriptionT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTDeleteTProfileT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTProfileT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTDeleteTProfileT{}
-	mi := &file_user_domain_proto_msgTypes[54]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTProfileT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTDeleteTProfileT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTProfileT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[54]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTDeleteTProfileT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTDeleteTProfileT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 1, 0}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTProfileT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTDeleteTAvatarT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTDeleteTAvatarT{}
-	mi := &file_user_domain_proto_msgTypes[55]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[55]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTDeleteTAvatarT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 1, 1}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTAvatarT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT{}
-	mi := &file_user_domain_proto_msgTypes[56]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[56]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 1, 2}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTSettingsTResetTPasswordT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Own           bool                   `protobuf:"varint,1,opt,name=own,proto3" json:"own,omitempty"`
-	Any           bool                   `protobuf:"varint,2,opt,name=any,proto3" json:"any,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetTPasswordT) Reset() {
-	*x = PermissionsUsersPermissionsTSettingsTResetTPasswordT{}
-	mi := &file_user_domain_proto_msgTypes[57]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetTPasswordT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTSettingsTResetTPasswordT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetTPasswordT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[57]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTSettingsTResetTPasswordT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTSettingsTResetTPasswordT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 1, 2, 0}
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetTPasswordT) GetOwn() bool {
-	if x != nil {
-		return x.Own
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTSettingsTResetTPasswordT) GetAny() bool {
-	if x != nil {
-		return x.Any
-	}
-	return false
-}
-
-type PermissionsUsersPermissionsTModerationTSetT struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
-	Rank          bool                   `protobuf:"varint,2,opt,name=rank,proto3" json:"rank,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PermissionsUsersPermissionsTModerationTSetT) Reset() {
-	*x = PermissionsUsersPermissionsTModerationTSetT{}
-	mi := &file_user_domain_proto_msgTypes[58]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PermissionsUsersPermissionsTModerationTSetT) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PermissionsUsersPermissionsTModerationTSetT) ProtoMessage() {}
-
-func (x *PermissionsUsersPermissionsTModerationTSetT) ProtoReflect() protoreflect.Message {
-	mi := &file_user_domain_proto_msgTypes[58]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PermissionsUsersPermissionsTModerationTSetT.ProtoReflect.Descriptor instead.
-func (*PermissionsUsersPermissionsTModerationTSetT) Descriptor() ([]byte, []int) {
-	return file_user_domain_proto_rawDescGZIP(), []int{25, 5, 2, 0}
-}
-
-func (x *PermissionsUsersPermissionsTModerationTSetT) GetAll() bool {
-	if x != nil {
-		return x.All
-	}
-	return false
-}
-
-func (x *PermissionsUsersPermissionsTModerationTSetT) GetRank() bool {
-	if x != nil {
-		return x.Rank
-	}
-	return false
-}
-
 var File_user_domain_proto protoreflect.FileDescriptor
 
 const file_user_domain_proto_rawDesc = "" +
@@ -3451,10 +1459,11 @@ const file_user_domain_proto_rawDesc = "" +
 	"\vdisplayName\x18\x01 \x01(\tH\x00R\vdisplayName\x88\x01\x01\x12,\n" +
 	"\x06avatar\x18\x02 \x01(\v2\x0f.user.v1.AvatarH\x01R\x06avatar\x88\x01\x01B\x0e\n" +
 	"\f_displayNameB\t\n" +
-	"\a_avatar\"a\n" +
+	"\a_avatar\"w\n" +
 	"\x04Rank\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x129\n" +
-	"\aexpires\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\aexpires\x88\x01\x01B\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05color\x18\x02 \x01(\rR\x05color\x129\n" +
+	"\aexpires\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\aexpires\x88\x01\x01B\n" +
 	"\n" +
 	"\b_expires\"A\n" +
 	"\tUserEmail\x12\x18\n" +
@@ -3469,7 +1478,11 @@ const file_user_domain_proto_rawDesc = "" +
 	"\blastSeen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\x124\n" +
 	"\aexpires\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aexpires\"*\n" +
 	"\x10OtherUserRequest\x12\x16\n" +
-	"\x06userID\x18\x01 \x01(\rR\x06userID\"\x89\x01\n" +
+	"\x06userID\x18\x01 \x01(\rR\x06userID\"^\n" +
+	"\x1aOtherUserPermsPatchRequest\x12\x16\n" +
+	"\x06userID\x18\x01 \x01(\rR\x06userID\x12\x12\n" +
+	"\x04perm\x18\x02 \x01(\tR\x04perm\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\bR\x05state\"\x89\x01\n" +
 	"\x0eBanUserRequest\x12\x16\n" +
 	"\x06userID\x18\x01 \x01(\rR\x06userID\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12:\n" +
@@ -3514,155 +1527,10 @@ const file_user_domain_proto_rawDesc = "" +
 	"\x06userID\x18\x01 \x01(\rR\x06userID\x12\x12\n" +
 	"\x04perm\x18\x02 \x01(\tR\x04perm\",\n" +
 	"\x12PermissionsRequest\x12\x16\n" +
-	"\x06userID\x18\x01 \x01(\rR\x06userID\"[\n" +
-	"\x13PermissionsResponse\x12*\n" +
-	"\x05perms\x18\x01 \x01(\v2\x14.user.v1.PermissionsR\x05perms\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracing\"C\n" +
+	"\x06userID\x18\x01 \x01(\rR\x06userID\"C\n" +
 	"\x15HasPermissionResponse\x12\x10\n" +
 	"\x03has\x18\x01 \x01(\bR\x03has\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracing\"\x8e$\n" +
-	"\vPermissions\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12G\n" +
-	"\bprojects\x18\x02 \x01(\v2+.user.v1.Permissions.projects_permissions_tR\bprojects\x12D\n" +
-	"\atickets\x18\x03 \x01(\v2*.user.v1.Permissions.tickets_permissions_tR\atickets\x12P\n" +
-	"\vsubmissions\x18\x04 \x01(\v2..user.v1.Permissions.submissions_permissions_tR\vsubmissions\x12M\n" +
-	"\n" +
-	"statistics\x18\x05 \x01(\v2-.user.v1.Permissions.statistics_permissions_tR\n" +
-	"statistics\x12>\n" +
-	"\x05users\x18\x06 \x01(\v2(.user.v1.Permissions.users_permissions_tR\x05users\x12>\n" +
-	"\x05ranks\x18\a \x01(\v2(.user.v1.Permissions.ranks_permissions_tR\x05ranks\x1a\x8c\x04\n" +
-	"\x16projects_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x16\n" +
-	"\x06create\x18\x02 \x01(\bR\x06create\x12\x12\n" +
-	"\x04view\x18\x03 \x01(\bR\x04view\x12\x12\n" +
-	"\x04vote\x18\x04 \x01(\bR\x04vote\x12L\n" +
-	"\x06update\x18\x05 \x01(\v24.user.v1.Permissions.projects_permissions_t.update_tR\x06update\x12O\n" +
-	"\aarchive\x18\x06 \x01(\v25.user.v1.Permissions.projects_permissions_t.archive_tR\aarchive\x12L\n" +
-	"\x06delete\x18\a \x01(\v24.user.v1.Permissions.projects_permissions_t.delete_tR\x06delete\x1a@\n" +
-	"\bupdate_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x10\n" +
-	"\x03own\x18\x02 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x03 \x01(\bR\x03any\x1a/\n" +
-	"\tarchive_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1a@\n" +
-	"\bdelete_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x10\n" +
-	"\x03own\x18\x02 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x03 \x01(\bR\x03any\x1a\xfc\x04\n" +
-	"\x15tickets_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x16\n" +
-	"\x06create\x18\x02 \x01(\bR\x06create\x12S\n" +
-	"\tview_list\x18\x03 \x01(\v26.user.v1.Permissions.tickets_permissions_t.view_list_tR\bviewList\x12\x16\n" +
-	"\x06accept\x18\x04 \x01(\bR\x06accept\x12N\n" +
-	"\amessage\x18\x05 \x01(\v24.user.v1.Permissions.tickets_permissions_t.message_tR\amessage\x12H\n" +
-	"\x05close\x18\x06 \x01(\v22.user.v1.Permissions.tickets_permissions_t.close_tR\x05close\x1a1\n" +
-	"\vview_list_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1aR\n" +
-	"\x10message_create_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x1a\n" +
-	"\baccepted\x18\x02 \x01(\bR\baccepted\x12\x10\n" +
-	"\x03any\x18\x03 \x01(\bR\x03any\x1a`\n" +
-	"\tmessage_t\x12S\n" +
-	"\x06create\x18\x01 \x01(\v2;.user.v1.Permissions.tickets_permissions_t.message_create_tR\x06create\x1aI\n" +
-	"\aclose_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x1a\n" +
-	"\baccepted\x18\x02 \x01(\bR\baccepted\x12\x10\n" +
-	"\x03any\x18\x03 \x01(\bR\x03any\x1as\n" +
-	"\x19submissions_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x12\n" +
-	"\x04view\x18\x02 \x01(\bR\x04view\x12\x16\n" +
-	"\x06accept\x18\x03 \x01(\bR\x06accept\x12\x18\n" +
-	"\adecline\x18\x04 \x01(\bR\adecline\x1a\x88\x01\n" +
-	"\x13ranks_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12!\n" +
-	"\fperms_change\x18\x02 \x01(\bR\vpermsChange\x12\x10\n" +
-	"\x03add\x18\x03 \x01(\bR\x03add\x12\x16\n" +
-	"\x06delete\x18\x04 \x01(\bR\x06delete\x12\x12\n" +
-	"\x04edit\x18\x05 \x01(\bR\x04edit\x1a\xc3\x06\n" +
-	"\x18statistics_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12T\n" +
-	"\bactivity\x18\x02 \x01(\v28.user.v1.Permissions.statistics_permissions_t.activity_tR\bactivity\x12]\n" +
-	"\vsubmissions\x18\x03 \x01(\v2;.user.v1.Permissions.statistics_permissions_t.submissions_tR\vsubmissions\x12K\n" +
-	"\x05votes\x18\x04 \x01(\v25.user.v1.Permissions.statistics_permissions_t.votes_tR\x05votes\x12K\n" +
-	"\x05media\x18\x05 \x01(\v25.user.v1.Permissions.statistics_permissions_t.media_tR\x05media\x1a\x99\x01\n" +
-	"\n" +
-	"activity_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12V\n" +
-	"\x05users\x18\x02 \x01(\v2@.user.v1.Permissions.statistics_permissions_t.activity_t.users_tR\x05users\x1a!\n" +
-	"\ausers_t\x12\x16\n" +
-	"\x06period\x18\x01 \x01(\bR\x06period\x1a7\n" +
-	"\rsubmissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x14\n" +
-	"\x05recap\x18\x02 \x01(\bR\x05recap\x1a\xa1\x01\n" +
-	"\avotes_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12b\n" +
-	"\n" +
-	"categories\x18\x02 \x01(\v2B.user.v1.Permissions.statistics_permissions_t.votes_t.categories_tR\n" +
-	"categories\x1a \n" +
-	"\fcategories_t\x12\x10\n" +
-	"\x03top\x18\x01 \x01(\bR\x03top\x1aM\n" +
-	"\amedia_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x18\n" +
-	"\aquality\x18\x02 \x01(\bR\aquality\x12\x16\n" +
-	"\x06volume\x18\x03 \x01(\bR\x06volume\x1a\xe8\x0e\n" +
-	"\x13users_permissions_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12C\n" +
-	"\x04view\x18\x02 \x01(\v2/.user.v1.Permissions.users_permissions_t.view_tR\x04view\x12O\n" +
-	"\bsettings\x18\x03 \x01(\v23.user.v1.Permissions.users_permissions_t.settings_tR\bsettings\x12U\n" +
-	"\n" +
-	"moderation\x18\x04 \x01(\v25.user.v1.Permissions.users_permissions_t.moderation_tR\n" +
-	"moderation\x1a\xae\x01\n" +
-	"\x06view_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12S\n" +
-	"\aprofile\x18\x02 \x01(\v29.user.v1.Permissions.users_permissions_t.view_t.profile_tR\aprofile\x1a=\n" +
-	"\tprofile_t\x12\x16\n" +
-	"\x06public\x18\x01 \x01(\bR\x06public\x12\x18\n" +
-	"\aprivacy\x18\x02 \x01(\bR\aprivacy\x1a\xb6\t\n" +
-	"\n" +
-	"settings_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12T\n" +
-	"\x06change\x18\x02 \x01(\v2<.user.v1.Permissions.users_permissions_t.settings_t.change_tR\x06change\x12T\n" +
-	"\x06delete\x18\x03 \x01(\v2<.user.v1.Permissions.users_permissions_t.settings_t.delete_tR\x06delete\x12Q\n" +
-	"\x05reset\x18\x04 \x01(\v2;.user.v1.Permissions.users_permissions_t.settings_t.reset_tR\x05reset\x1a\xa2\x02\n" +
-	"\bchange_t\x12W\n" +
-	"\x04name\x18\x01 \x01(\v2C.user.v1.Permissions.users_permissions_t.settings_t.change_t.name_tR\x04name\x12l\n" +
-	"\vdescription\x18\x02 \x01(\v2J.user.v1.Permissions.users_permissions_t.settings_t.change_t.description_tR\vdescription\x1a,\n" +
-	"\x06name_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1a!\n" +
-	"\rdescription_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x1a\xbd\x03\n" +
-	"\bdelete_t\x12`\n" +
-	"\aprofile\x18\x01 \x01(\v2F.user.v1.Permissions.users_permissions_t.settings_t.delete_t.profile_tR\aprofile\x12]\n" +
-	"\x06avatar\x18\x02 \x01(\v2E.user.v1.Permissions.users_permissions_t.settings_t.delete_t.avatar_tR\x06avatar\x12l\n" +
-	"\vdescription\x18\x03 \x01(\v2J.user.v1.Permissions.users_permissions_t.settings_t.delete_t.description_tR\vdescription\x1a\x1d\n" +
-	"\tprofile_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x1a.\n" +
-	"\bavatar_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1a3\n" +
-	"\rdescription_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1a\xb1\x01\n" +
-	"\areset_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12b\n" +
-	"\bpassword\x18\x02 \x01(\v2F.user.v1.Permissions.users_permissions_t.settings_t.reset_t.password_tR\bpassword\x1a0\n" +
-	"\n" +
-	"password_t\x12\x10\n" +
-	"\x03own\x18\x01 \x01(\bR\x03own\x12\x10\n" +
-	"\x03any\x18\x02 \x01(\bR\x03any\x1a\xe7\x01\n" +
-	"\fmoderation_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x10\n" +
-	"\x03ban\x18\x02 \x01(\bR\x03ban\x12\x1f\n" +
-	"\vban_forever\x18\x03 \x01(\bR\n" +
-	"banForever\x12\x14\n" +
-	"\x05unban\x18\x04 \x01(\bR\x05unban\x12M\n" +
-	"\x03set\x18\x05 \x01(\v2;.user.v1.Permissions.users_permissions_t.moderation_t.set_tR\x03set\x1a-\n" +
-	"\x05set_t\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\x12\x12\n" +
-	"\x04rank\x18\x02 \x01(\bR\x04rankB-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
+	"\atracing\x18\x02 \x01(\tR\atracingB-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
 
 var (
 	file_user_domain_proto_rawDescOnce sync.Once
@@ -3676,132 +1544,64 @@ func file_user_domain_proto_rawDescGZIP() []byte {
 	return file_user_domain_proto_rawDescData
 }
 
-var file_user_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
+var file_user_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_user_domain_proto_goTypes = []any{
-	(*UserPublic)(nil),                                               // 0: user.v1.UserPublic
-	(*UserSelf)(nil),                                                 // 1: user.v1.UserSelf
-	(*Avatar)(nil),                                                   // 2: user.v1.Avatar
-	(*UserSettings)(nil),                                             // 3: user.v1.UserSettings
-	(*UserPublicSettings)(nil),                                       // 4: user.v1.UserPublicSettings
-	(*Rank)(nil),                                                     // 5: user.v1.Rank
-	(*UserEmail)(nil),                                                // 6: user.v1.UserEmail
-	(*UserSessions)(nil),                                             // 7: user.v1.UserSessions
-	(*Session)(nil),                                                  // 8: user.v1.Session
-	(*OtherUserRequest)(nil),                                         // 9: user.v1.OtherUserRequest
-	(*BanUserRequest)(nil),                                           // 10: user.v1.BanUserRequest
-	(*SendMessageRequest)(nil),                                       // 11: user.v1.SendMessageRequest
-	(*Message)(nil),                                                  // 12: user.v1.Message
-	(*ChangeSelfNameRequest)(nil),                                    // 13: user.v1.ChangeSelfNameRequest
-	(*UserSelfResponse)(nil),                                         // 14: user.v1.UserSelfResponse
-	(*UserPublicResponse)(nil),                                       // 15: user.v1.UserPublicResponse
-	(*UsersResponse)(nil),                                            // 16: user.v1.UsersResponse
-	(*UserSessionsResponse)(nil),                                     // 17: user.v1.UserSessionsResponse
-	(*MessagesResponse)(nil),                                         // 18: user.v1.MessagesResponse
-	(*EmptyResponse)(nil),                                            // 19: user.v1.EmptyResponse
-	(*BanInfoResponse)(nil),                                          // 20: user.v1.BanInfoResponse
-	(*HasPermissionRequest)(nil),                                     // 21: user.v1.HasPermissionRequest
-	(*PermissionsRequest)(nil),                                       // 22: user.v1.PermissionsRequest
-	(*PermissionsResponse)(nil),                                      // 23: user.v1.PermissionsResponse
-	(*HasPermissionResponse)(nil),                                    // 24: user.v1.HasPermissionResponse
-	(*Permissions)(nil),                                              // 25: user.v1.Permissions
-	(*PermissionsProjectsPermissionsT)(nil),                          // 26: user.v1.Permissions.projects_permissions_t
-	(*PermissionsTicketsPermissionsT)(nil),                           // 27: user.v1.Permissions.tickets_permissions_t
-	(*PermissionsSubmissionsPermissionsT)(nil),                       // 28: user.v1.Permissions.submissions_permissions_t
-	(*PermissionsRanksPermissionsT)(nil),                             // 29: user.v1.Permissions.ranks_permissions_t
-	(*PermissionsStatisticsPermissionsT)(nil),                        // 30: user.v1.Permissions.statistics_permissions_t
-	(*PermissionsUsersPermissionsT)(nil),                             // 31: user.v1.Permissions.users_permissions_t
-	(*PermissionsProjectsPermissionsTUpdateT)(nil),                   // 32: user.v1.Permissions.projects_permissions_t.update_t
-	(*PermissionsProjectsPermissionsTArchiveT)(nil),                  // 33: user.v1.Permissions.projects_permissions_t.archive_t
-	(*PermissionsProjectsPermissionsTDeleteT)(nil),                   // 34: user.v1.Permissions.projects_permissions_t.delete_t
-	(*PermissionsTicketsPermissionsTViewListT)(nil),                  // 35: user.v1.Permissions.tickets_permissions_t.view_list_t
-	(*PermissionsTicketsPermissionsTMessageCreateT)(nil),             // 36: user.v1.Permissions.tickets_permissions_t.message_create_t
-	(*PermissionsTicketsPermissionsTMessageT)(nil),                   // 37: user.v1.Permissions.tickets_permissions_t.message_t
-	(*PermissionsTicketsPermissionsTCloseT)(nil),                     // 38: user.v1.Permissions.tickets_permissions_t.close_t
-	(*PermissionsStatisticsPermissionsTActivityT)(nil),               // 39: user.v1.Permissions.statistics_permissions_t.activity_t
-	(*PermissionsStatisticsPermissionsTSubmissionsT)(nil),            // 40: user.v1.Permissions.statistics_permissions_t.submissions_t
-	(*PermissionsStatisticsPermissionsTVotesT)(nil),                  // 41: user.v1.Permissions.statistics_permissions_t.votes_t
-	(*PermissionsStatisticsPermissionsTMediaT)(nil),                  // 42: user.v1.Permissions.statistics_permissions_t.media_t
-	(*PermissionsStatisticsPermissionsTActivityTUsersT)(nil),         // 43: user.v1.Permissions.statistics_permissions_t.activity_t.users_t
-	(*PermissionsStatisticsPermissionsTVotesTCategoriesT)(nil),       // 44: user.v1.Permissions.statistics_permissions_t.votes_t.categories_t
-	(*PermissionsUsersPermissionsTViewT)(nil),                        // 45: user.v1.Permissions.users_permissions_t.view_t
-	(*PermissionsUsersPermissionsTSettingsT)(nil),                    // 46: user.v1.Permissions.users_permissions_t.settings_t
-	(*PermissionsUsersPermissionsTModerationT)(nil),                  // 47: user.v1.Permissions.users_permissions_t.moderation_t
-	(*PermissionsUsersPermissionsTViewTProfileT)(nil),                // 48: user.v1.Permissions.users_permissions_t.view_t.profile_t
-	(*PermissionsUsersPermissionsTSettingsTChangeT)(nil),             // 49: user.v1.Permissions.users_permissions_t.settings_t.change_t
-	(*PermissionsUsersPermissionsTSettingsTDeleteT)(nil),             // 50: user.v1.Permissions.users_permissions_t.settings_t.delete_t
-	(*PermissionsUsersPermissionsTSettingsTResetT)(nil),              // 51: user.v1.Permissions.users_permissions_t.settings_t.reset_t
-	(*PermissionsUsersPermissionsTSettingsTChangeTNameT)(nil),        // 52: user.v1.Permissions.users_permissions_t.settings_t.change_t.name_t
-	(*PermissionsUsersPermissionsTSettingsTChangeTDescriptionT)(nil), // 53: user.v1.Permissions.users_permissions_t.settings_t.change_t.description_t
-	(*PermissionsUsersPermissionsTSettingsTDeleteTProfileT)(nil),     // 54: user.v1.Permissions.users_permissions_t.settings_t.delete_t.profile_t
-	(*PermissionsUsersPermissionsTSettingsTDeleteTAvatarT)(nil),      // 55: user.v1.Permissions.users_permissions_t.settings_t.delete_t.avatar_t
-	(*PermissionsUsersPermissionsTSettingsTDeleteTDescriptionT)(nil), // 56: user.v1.Permissions.users_permissions_t.settings_t.delete_t.description_t
-	(*PermissionsUsersPermissionsTSettingsTResetTPasswordT)(nil),     // 57: user.v1.Permissions.users_permissions_t.settings_t.reset_t.password_t
-	(*PermissionsUsersPermissionsTModerationTSetT)(nil),              // 58: user.v1.Permissions.users_permissions_t.moderation_t.set_t
-	(*timestamppb.Timestamp)(nil),                                    // 59: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),                                      // 60: google.protobuf.Duration
+	(*UserPublic)(nil),                 // 0: user.v1.UserPublic
+	(*UserSelf)(nil),                   // 1: user.v1.UserSelf
+	(*Avatar)(nil),                     // 2: user.v1.Avatar
+	(*UserSettings)(nil),               // 3: user.v1.UserSettings
+	(*UserPublicSettings)(nil),         // 4: user.v1.UserPublicSettings
+	(*Rank)(nil),                       // 5: user.v1.Rank
+	(*UserEmail)(nil),                  // 6: user.v1.UserEmail
+	(*UserSessions)(nil),               // 7: user.v1.UserSessions
+	(*Session)(nil),                    // 8: user.v1.Session
+	(*OtherUserRequest)(nil),           // 9: user.v1.OtherUserRequest
+	(*OtherUserPermsPatchRequest)(nil), // 10: user.v1.OtherUserPermsPatchRequest
+	(*BanUserRequest)(nil),             // 11: user.v1.BanUserRequest
+	(*SendMessageRequest)(nil),         // 12: user.v1.SendMessageRequest
+	(*Message)(nil),                    // 13: user.v1.Message
+	(*ChangeSelfNameRequest)(nil),      // 14: user.v1.ChangeSelfNameRequest
+	(*UserSelfResponse)(nil),           // 15: user.v1.UserSelfResponse
+	(*UserPublicResponse)(nil),         // 16: user.v1.UserPublicResponse
+	(*UsersResponse)(nil),              // 17: user.v1.UsersResponse
+	(*UserSessionsResponse)(nil),       // 18: user.v1.UserSessionsResponse
+	(*MessagesResponse)(nil),           // 19: user.v1.MessagesResponse
+	(*EmptyResponse)(nil),              // 20: user.v1.EmptyResponse
+	(*BanInfoResponse)(nil),            // 21: user.v1.BanInfoResponse
+	(*HasPermissionRequest)(nil),       // 22: user.v1.HasPermissionRequest
+	(*PermissionsRequest)(nil),         // 23: user.v1.PermissionsRequest
+	(*HasPermissionResponse)(nil),      // 24: user.v1.HasPermissionResponse
+	(*timestamppb.Timestamp)(nil),      // 25: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),        // 26: google.protobuf.Duration
 }
 var file_user_domain_proto_depIdxs = []int32{
 	5,  // 0: user.v1.UserPublic.rank:type_name -> user.v1.Rank
 	4,  // 1: user.v1.UserPublic.settings:type_name -> user.v1.UserPublicSettings
-	59, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
+	25, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
 	0,  // 3: user.v1.UserSelf.public:type_name -> user.v1.UserPublic
 	6,  // 4: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
 	2,  // 5: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
 	2,  // 6: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
-	59, // 7: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
+	25, // 7: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
 	8,  // 8: user.v1.UserSessions.sessions:type_name -> user.v1.Session
-	59, // 9: user.v1.Session.created:type_name -> google.protobuf.Timestamp
-	59, // 10: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
-	59, // 11: user.v1.Session.expires:type_name -> google.protobuf.Timestamp
-	60, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
-	59, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
+	25, // 9: user.v1.Session.created:type_name -> google.protobuf.Timestamp
+	25, // 10: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
+	25, // 11: user.v1.Session.expires:type_name -> google.protobuf.Timestamp
+	26, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
+	25, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
 	1,  // 14: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
 	0,  // 15: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
 	0,  // 16: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
 	7,  // 17: user.v1.UserSessionsResponse.data:type_name -> user.v1.UserSessions
-	12, // 18: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
+	13, // 18: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
 	0,  // 19: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
-	59, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
-	59, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
-	25, // 22: user.v1.PermissionsResponse.perms:type_name -> user.v1.Permissions
-	26, // 23: user.v1.Permissions.projects:type_name -> user.v1.Permissions.projects_permissions_t
-	27, // 24: user.v1.Permissions.tickets:type_name -> user.v1.Permissions.tickets_permissions_t
-	28, // 25: user.v1.Permissions.submissions:type_name -> user.v1.Permissions.submissions_permissions_t
-	30, // 26: user.v1.Permissions.statistics:type_name -> user.v1.Permissions.statistics_permissions_t
-	31, // 27: user.v1.Permissions.users:type_name -> user.v1.Permissions.users_permissions_t
-	29, // 28: user.v1.Permissions.ranks:type_name -> user.v1.Permissions.ranks_permissions_t
-	32, // 29: user.v1.Permissions.projects_permissions_t.update:type_name -> user.v1.Permissions.projects_permissions_t.update_t
-	33, // 30: user.v1.Permissions.projects_permissions_t.archive:type_name -> user.v1.Permissions.projects_permissions_t.archive_t
-	34, // 31: user.v1.Permissions.projects_permissions_t.delete:type_name -> user.v1.Permissions.projects_permissions_t.delete_t
-	35, // 32: user.v1.Permissions.tickets_permissions_t.view_list:type_name -> user.v1.Permissions.tickets_permissions_t.view_list_t
-	37, // 33: user.v1.Permissions.tickets_permissions_t.message:type_name -> user.v1.Permissions.tickets_permissions_t.message_t
-	38, // 34: user.v1.Permissions.tickets_permissions_t.close:type_name -> user.v1.Permissions.tickets_permissions_t.close_t
-	39, // 35: user.v1.Permissions.statistics_permissions_t.activity:type_name -> user.v1.Permissions.statistics_permissions_t.activity_t
-	40, // 36: user.v1.Permissions.statistics_permissions_t.submissions:type_name -> user.v1.Permissions.statistics_permissions_t.submissions_t
-	41, // 37: user.v1.Permissions.statistics_permissions_t.votes:type_name -> user.v1.Permissions.statistics_permissions_t.votes_t
-	42, // 38: user.v1.Permissions.statistics_permissions_t.media:type_name -> user.v1.Permissions.statistics_permissions_t.media_t
-	45, // 39: user.v1.Permissions.users_permissions_t.view:type_name -> user.v1.Permissions.users_permissions_t.view_t
-	46, // 40: user.v1.Permissions.users_permissions_t.settings:type_name -> user.v1.Permissions.users_permissions_t.settings_t
-	47, // 41: user.v1.Permissions.users_permissions_t.moderation:type_name -> user.v1.Permissions.users_permissions_t.moderation_t
-	36, // 42: user.v1.Permissions.tickets_permissions_t.message_t.create:type_name -> user.v1.Permissions.tickets_permissions_t.message_create_t
-	43, // 43: user.v1.Permissions.statistics_permissions_t.activity_t.users:type_name -> user.v1.Permissions.statistics_permissions_t.activity_t.users_t
-	44, // 44: user.v1.Permissions.statistics_permissions_t.votes_t.categories:type_name -> user.v1.Permissions.statistics_permissions_t.votes_t.categories_t
-	48, // 45: user.v1.Permissions.users_permissions_t.view_t.profile:type_name -> user.v1.Permissions.users_permissions_t.view_t.profile_t
-	49, // 46: user.v1.Permissions.users_permissions_t.settings_t.change:type_name -> user.v1.Permissions.users_permissions_t.settings_t.change_t
-	50, // 47: user.v1.Permissions.users_permissions_t.settings_t.delete:type_name -> user.v1.Permissions.users_permissions_t.settings_t.delete_t
-	51, // 48: user.v1.Permissions.users_permissions_t.settings_t.reset:type_name -> user.v1.Permissions.users_permissions_t.settings_t.reset_t
-	58, // 49: user.v1.Permissions.users_permissions_t.moderation_t.set:type_name -> user.v1.Permissions.users_permissions_t.moderation_t.set_t
-	52, // 50: user.v1.Permissions.users_permissions_t.settings_t.change_t.name:type_name -> user.v1.Permissions.users_permissions_t.settings_t.change_t.name_t
-	53, // 51: user.v1.Permissions.users_permissions_t.settings_t.change_t.description:type_name -> user.v1.Permissions.users_permissions_t.settings_t.change_t.description_t
-	54, // 52: user.v1.Permissions.users_permissions_t.settings_t.delete_t.profile:type_name -> user.v1.Permissions.users_permissions_t.settings_t.delete_t.profile_t
-	55, // 53: user.v1.Permissions.users_permissions_t.settings_t.delete_t.avatar:type_name -> user.v1.Permissions.users_permissions_t.settings_t.delete_t.avatar_t
-	56, // 54: user.v1.Permissions.users_permissions_t.settings_t.delete_t.description:type_name -> user.v1.Permissions.users_permissions_t.settings_t.delete_t.description_t
-	57, // 55: user.v1.Permissions.users_permissions_t.settings_t.reset_t.password:type_name -> user.v1.Permissions.users_permissions_t.settings_t.reset_t.password_t
-	56, // [56:56] is the sub-list for method output_type
-	56, // [56:56] is the sub-list for method input_type
-	56, // [56:56] is the sub-list for extension type_name
-	56, // [56:56] is the sub-list for extension extendee
-	0,  // [0:56] is the sub-list for field type_name
+	25, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
+	25, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_user_domain_proto_init() }
@@ -3813,15 +1613,15 @@ func file_user_domain_proto_init() {
 	file_user_domain_proto_msgTypes[3].OneofWrappers = []any{}
 	file_user_domain_proto_msgTypes[4].OneofWrappers = []any{}
 	file_user_domain_proto_msgTypes[5].OneofWrappers = []any{}
-	file_user_domain_proto_msgTypes[10].OneofWrappers = []any{}
-	file_user_domain_proto_msgTypes[20].OneofWrappers = []any{}
+	file_user_domain_proto_msgTypes[11].OneofWrappers = []any{}
+	file_user_domain_proto_msgTypes[21].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_domain_proto_rawDesc), len(file_user_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   59,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

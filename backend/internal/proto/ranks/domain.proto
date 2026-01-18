@@ -2,21 +2,60 @@ syntax = "proto3";
 
 package ranks.v1;
 
+import "google/protobuf/timestamp.proto";
 import "permissions/domain.proto";
+import "user/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/ranks/v1;ranks";
 
 message CreateRequest {
-  permissions.v1.Permissions permissions = 1;
+  optional permissions.v1.Permissions permissions = 1;
   string name = 2;
   string color = 3;
   optional string description = 4;
 }
 
-message DeleteRequest {
+message PatchRequest {
+  string name = 1;
+  optional string new_name = 2;
+  optional string color = 3;
+  optional string description = 4;
+}
+
+message NameRequest {
   string name = 1;
 }
 
 message EmptyResponse {
   string tracing = 1;
+}
+
+message PermsPatchRequest {
+    string name = 1;
+    string perm = 2;
+    bool state = 3;
+}
+
+message UsersResponse {
+  uint32 len = 1;
+  repeated user.v1.UserPublic users = 2;
+  string tracing = 3;
+}
+
+message Rank {
+  string name = 1;
+  uint32 color = 2;
+  string description = 3;
+  google.protobuf.Timestamp added = 4;
+}
+
+message RankResponse {
+  Rank data = 1;
+  string tracing = 2;
+}
+
+message RanksResponse {
+  string name = 1;
+  repeated Rank ranks = 2;
+  string tracing = 3;
 }

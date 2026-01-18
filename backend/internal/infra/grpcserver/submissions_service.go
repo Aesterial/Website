@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	permissionsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	storageapp "Aesterial/backend/internal/app/storage"
@@ -23,10 +22,10 @@ type SubmissionsService struct {
 	storage     *storageapp.Service
 }
 
-func NewSubmissionsService(submissions *submissions.Service, sess *sessionsapp.Service, perms *permissionsapp.Service, us *userapp.Service, storage *storageapp.Service) *SubmissionsService {
+func NewSubmissionsService(submissions *submissions.Service, sess *sessionsapp.Service, us *userapp.Service, storage *storageapp.Service) *SubmissionsService {
 	return &SubmissionsService{
 		submissions: submissions,
-		auth:        NewAuthenticator(sess, perms, us),
+		auth:        NewAuthenticator(sess, us),
 		storage:     storage,
 	}
 }

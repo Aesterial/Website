@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	permissionsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userinfo "Aesterial/backend/internal/app/info/user"
 	usermodifier "Aesterial/backend/internal/app/modifier/user"
@@ -32,12 +31,12 @@ type UserService struct {
 	storage  *storageapp.Service
 }
 
-func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sessions *sessionsapp.Service, perms *permissionsapp.Service, storage *storageapp.Service) *UserService {
+func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sessions *sessionsapp.Service, storage *storageapp.Service) *UserService {
 	return &UserService{
 		info:     info,
 		modifier: modifier,
 		sessions: sessions,
-		auth:     NewAuthenticator(sessions, perms, info),
+		auth:     NewAuthenticator(sessions, info),
 		storage:  storage,
 	}
 }
@@ -56,7 +55,7 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Got information about self", "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	self := toProtoUserSelf(u)
+	self := u.ToSelf()
 	s.applyAvatarURL(ctx, self.GetPublic())
 	return &userpb.UserSelfResponse{Data: self, Tracing: traceID}, nil
 }
@@ -81,7 +80,7 @@ func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info(fmt.Sprintf("Got information about user with id: %d", req.UserID), "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	public := toProtoUserPublic(u)
+	public := u.ToPublic()
 	s.applyAvatarURL(ctx, public)
 	return &userpb.UserPublicResponse{Data: public, Tracing: traceID}, nil
 }
@@ -220,7 +219,7 @@ func (s *UserService) formateBanInfoResponse(ctx context.Context, info *user.Ban
 	if info.Expires.Valid {
 		expr = timestamppb.New(info.Expires.Time)
 	}
-	executorProto := toProtoUserPublic(executor)
+	executorProto := executor.ToPublic()
 	s.applyAvatarURL(ctx, executorProto)
 	return &userpb.BanInfoResponse{
 		Id:       info.ID.String(),

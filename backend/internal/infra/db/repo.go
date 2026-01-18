@@ -35,6 +35,9 @@ import (
 type UserRepository struct {
 	DB *sql.DB
 }
+type RanksRepository struct {
+	DB *sql.DB
+}
 type LoggerRepository struct {
 	DB *sql.DB
 }
@@ -43,10 +46,6 @@ type LoginRepository struct {
 }
 
 type SessionsRepository struct {
-	DB *sql.DB
-}
-
-type PermissionsRepository struct {
 	DB *sql.DB
 }
 
@@ -79,6 +78,7 @@ var _ user.Repository = (*UserRepository)(nil)
 func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
+func NewRanksRepository(db *sql.DB) *RanksRepository { return &RanksRepository{DB: db} }
 func NewLoggerRepository(db *sql.DB) *LoggerRepository {
 	return &LoggerRepository{DB: db}
 }
@@ -87,9 +87,6 @@ func NewLoginRepository(db *sql.DB) *LoginRepository {
 }
 func NewSessionsRepository(db *sql.DB) *SessionsRepository {
 	return &SessionsRepository{DB: db}
-}
-func NewPermissionsRepository(db *sql.DB) *PermissionsRepository {
-	return &PermissionsRepository{DB: db}
 }
 func NewStatisticsRepository(db *sql.DB) *StatisticsRepository {
 	return &StatisticsRepository{DB: db}
@@ -233,7 +230,7 @@ func parseRowsToUsers(ctx context.Context, rows *sql.Rows, getAvatar func(contex
 		_ = rows.Close()
 	}()
 	for rows.Next() {
-		var usr = user.User{Settings: &user.Settings{Avatar: &user.Avatar{}}, Rank: &rank.Rank{}, Email: &user.Email{}}
+		var usr = user.User{Settings: &user.Settings{Avatar: &user.Avatar{}}, Rank: &rank.UserRank{}, Email: &user.Email{}}
 		switch len(cols) {
 		case 7:
 			var emailAddress sql.NullString
@@ -409,12 +406,12 @@ func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, e
 	return &email, nil
 }
 
-func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
+func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.UserRank, error) {
 	row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
 	if err := row.Err(); err != nil {
 		return nil, err
 	}
-	var r rank.Rank
+	var r rank.UserRank
 	var expires sql.NullTime
 	if err := row.Scan(&r.Name, &expires); err != nil {
 		return nil, err
@@ -594,6 +591,50 @@ func (u *UserRepository) UpdateDisplayName(ctx context.Context, uid uint, displa
 	return nil
 }
 
+func (u *UserRepository) SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error {
+	if strings.TrimSpace(email) == "" {
+		return errors.New("email is empty")
+	}
+	res, err := u.DB.ExecContext(ctx, `
+		UPDATE users u
+		SET email = ROW((u.email).address, $2)::users_email_t
+		WHERE lower((u.email).address) = lower($1)
+	`, email, verified)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func (u *UserRepository) UpdatePasswordByEmail(ctx context.Context, email string, passwordHash string) error {
+	if strings.TrimSpace(email) == "" || passwordHash == "" {
+		return errors.New("email or password is empty")
+	}
+	res, err := u.DB.ExecContext(ctx, `
+		UPDATE users u
+		SET password = $2
+		WHERE lower((u.email).address) = lower($1)
+	`, email, passwordHash)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
 func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {
 	if uid == 0 {
 		return false, nil, errors.New("uid is zero")
@@ -664,6 +705,63 @@ func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Av
 			updated_at = now()
 	`, uid, avatar.Key, avatar.ContentType, avatar.SizeBytes)
 	return err
+}
+
+func (u *UserRepository) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
+	if uid == 0 {
+		return false, errors.New("uid is zero")
+	}
+	if perm.String() == "" {
+		return false, errors.New("permission is empty")
+	}
+	var has bool
+	if err := u.DB.QueryRowContext(ctx, "SELECT perm_allowed(u.permissions, $1) FROM users u WHERE u.uid = $2", perm.String(), uid).Scan(&has); err != nil {
+		return false, err
+	}
+	return has, nil
+}
+
+func (u *UserRepository) HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error) {
+	var has bool = true
+	for _, perm := range perms {
+		good, err := u.HasPerm(ctx, uid, perm)
+		if err != nil {
+			return false, err
+		}
+		if !good {
+			has = false
+		}
+		if !has {
+			break
+		}
+	}
+	return has, nil
+}
+
+func (u *UserRepository) Perms(ctx context.Context, uid uint) (*permissions.Permissions, error) {
+	var raw []byte
+	if err := u.DB.QueryRowContext(ctx, "SELECT u.permissions FROM users u WHERE u.uid = $1", uid).Scan(&raw); err != nil {
+		return nil, err
+	}
+	var perms permissions.Permissions
+	if err := json.Unmarshal(raw, &perms); err != nil {
+		return nil, err
+	}
+	return &perms, nil
+}
+
+func (u *UserRepository) ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error {
+	if uid == 0 {
+		return errors.New("uid is null")
+	}
+	res, err := u.DB.ExecContext(ctx, "UPDATE users u SET permissions = perm_set(u.permissions, $1, $2) WHERE u.uid = $3", perm.String(), state, uid)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
@@ -918,64 +1016,6 @@ func updateUserPermissions(DB *sql.DB, ctx context.Context, usr uint, perms *per
 		return sql.ErrNoRows
 	}
 	return nil
-}
-
-func (p *PermissionsRepository) GetForRank(ctx context.Context, rank string) (*permissions.Permissions, error) {
-	row := p.DB.QueryRowContext(ctx, "SELECT to_jsonb(r.permissions) FROM ranks r WHERE r.name = $1", rank)
-	return fetchPermissions(row)
-}
-
-func (p *PermissionsRepository) GetForUser(ctx context.Context, uid uint) (*permissions.Permissions, error) {
-	row := p.DB.QueryRowContext(ctx, "SELECT to_jsonb(u.permissions) FROM users u WHERE u.uid = $1", uid)
-	return fetchPermissions(row)
-}
-
-func (p *PermissionsRepository) Has(ctx context.Context, uid uint, need permissions.Permission) (bool, error) {
-	row := p.DB.QueryRowContext(ctx, `
-		SELECT perm_allowed(u.permissions, $1)
-		FROM users u
-		WHERE u.uid = $2
-	`, string(need), uid)
-	var allowed bool
-	if err := row.Scan(&allowed); err != nil {
-		return false, err
-	}
-	return allowed, nil
-}
-
-func (p *PermissionsRepository) HasAll(ctx context.Context, uid uint, need ...permissions.Permission) (bool, error) {
-	if len(need) == 0 {
-		return false, errors.New("permissions list is empty")
-	}
-	for _, perm := range need {
-		ok, err := p.Has(ctx, uid, perm)
-		if err != nil || !ok {
-			return false, err
-		}
-	}
-	return true, nil
-}
-
-func (p *PermissionsRepository) ChangeForUser(ctx context.Context, uid uint, need permissions.Permission, state bool) error {
-	return updateUserPermission(p.DB, ctx, uid, string(need), state)
-}
-
-func (p *PermissionsRepository) ChangeForRank(ctx context.Context, rank string, need permissions.Permission, state bool) error {
-	return updateRankPermission(p.DB, ctx, rank, need, state)
-}
-
-func (p *PermissionsRepository) SetForUser(ctx context.Context, uid uint, perms *permissions.Permissions) error {
-	if perms == nil {
-		return errors.New("permissions is nil")
-	}
-	return updateUserPermissions(p.DB, ctx, uid, perms)
-}
-
-func (p *PermissionsRepository) SetForRank(ctx context.Context, rank string, perms *permissions.Permissions) error {
-	if perms == nil {
-		return errors.New("permissions is nil")
-	}
-	return updateRankPermissions(p.DB, ctx, rank, perms)
 }
 
 func getAuthor(ctx context.Context, uid uint, db *sql.DB) (*user.User, error) {
@@ -1519,8 +1559,60 @@ func (s *StatisticsRepository) IdeasRecap(ctx context.Context) (*statpb.IdeasApp
 	return &resp, nil
 }
 
-func (s *StatisticsRepository) MediaCoverage(context.Context) (map[int64]*statpb.MediaCoverageResponseMedia, error) {
-	return make(map[int64]*statpb.MediaCoverageResponseMedia), nil
+func (s *StatisticsRepository) MediaCoverage(ctx context.Context, limit int) ([]*statpb.MediaCoverageResponseMedia, error) {
+	if limit <= 0 {
+		return []*statpb.MediaCoverageResponseMedia{}, nil
+	}
+
+	now := time.Now().UTC()
+
+	const q = `
+		WITH src AS (
+		  SELECT
+		    floor(extract(epoch FROM ($2::timestamptz - p.at)) / 604800)::int AS bucket,
+		    (p.info).content_type AS content_type
+		  FROM pictures p
+		  WHERE p.at <  $2::timestamptz
+		    AND p.at >= ($2::timestamptz - ($1::int * interval '7 days'))
+		)
+		SELECT
+		  bucket,
+		  sum(CASE WHEN content_type LIKE 'image%' THEN 1 ELSE 0 END) AS photos,
+		  sum(CASE WHEN content_type LIKE 'video%' THEN 1 ELSE 0 END) AS videos
+		FROM src
+		WHERE bucket >= 0 AND bucket < $1::int
+		GROUP BY bucket
+		ORDER BY bucket;
+	`
+
+	rows, err := s.DB.QueryContext(ctx, q, limit, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	list := make([]*statpb.MediaCoverageResponseMedia, limit)
+	for i := 0; i < limit; i++ {
+		list[i] = &statpb.MediaCoverageResponseMedia{}
+	}
+
+	for rows.Next() {
+		var bucket int
+		var photos, videos int64
+
+		if err := rows.Scan(&bucket, &photos, &videos); err != nil {
+			return nil, err
+		}
+		if bucket >= 0 && bucket < limit {
+			list[bucket].Photos = uint32(photos)
+			list[bucket].Videos = uint32(videos)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return list, nil
 }
 
 func (s *StatisticsRepository) QualityRecap(ctx context.Context) (*statpb.EditorsGradeResponse, error) {
@@ -1628,7 +1720,20 @@ func (v *VerificationRepository) Create(ctx context.Context, email string, purpo
 	if err != nil {
 		return "", err
 	}
-	if _, err = v.DB.ExecContext(ctx, "INSERT INTO auth_action_tokens ( email, purpose, token_hash, expires_at, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6)", email, purpose.String(), []byte(token), time.Now().Add(ttl), ip, userAgent); err != nil {
+	now := time.Now()
+	expiresAt := now.Add(ttl)
+	if _, err = v.DB.ExecContext(ctx, `
+		INSERT INTO auth_action_tokens (email, purpose, token_hash, expires_at, ip, user_agent, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (email, purpose) WHERE used_at IS NULL
+		DO UPDATE SET
+			token_hash = EXCLUDED.token_hash,
+			expires_at = EXCLUDED.expires_at,
+			ip = EXCLUDED.ip,
+			user_agent = EXCLUDED.user_agent,
+			created_at = EXCLUDED.created_at,
+			used_at = NULL
+	`, email, purpose.String(), []byte(token), expiresAt, ip, userAgent, now); err != nil {
 		return "", err
 	}
 	return token, nil
@@ -1639,13 +1744,16 @@ func (v *VerificationRepository) GetRecord(ctx context.Context, purpose verifica
 		return nil, errors.New("params in empty")
 	}
 	var record verification.TokenRecord
-	if err := v.DB.QueryRowContext(ctx, "SELECT id, email, purpose, expires_at, used_at FROM auth_action_tokens WHERE token_hash = $1 AND purpose = $2", token, purpose.String()).Scan(
+	if err := v.DB.QueryRowContext(ctx, "SELECT id, email, purpose, expires_at, used_at FROM auth_action_tokens WHERE token_hash = $1 AND purpose = $2", []byte(token), purpose.String()).Scan(
 		&record.ID,
 		&record.Email,
 		&record.Purpose,
 		&record.ExpiresAt,
 		&record.UsedAt,
 	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("not found")
+		}
 		return nil, err
 	}
 	return &record, nil
@@ -1655,15 +1763,16 @@ func (v *VerificationRepository) Consume(ctx context.Context, purpose verificati
 	if !purpose.IsValid() || token == "" {
 		return nil, errors.New("invalid params")
 	}
-	var exists bool
-	if err := v.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM auth_action_tokens WHERE token_hash = $1 AND purpose = $2)", token, purpose.String()).Scan(&exists); err != nil {
+	res, err := v.DB.ExecContext(ctx, "UPDATE auth_action_tokens SET used_at = $1 WHERE token_hash = $2 AND purpose = $3 AND used_at IS NULL", time.Now(), []byte(token), purpose.String())
+	if err != nil {
 		return nil, err
 	}
-	if !exists {
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if affected == 0 {
 		return nil, errors.New("not found")
-	}
-	if _, err := v.DB.ExecContext(ctx, "UPDATE auth_action_tokens SET used_at = $1 WHERE token_hash = $2 AND purpose = $3", time.Now(), token, purpose.String()); err != nil {
-		return nil, err
 	}
 	data, err := v.GetRecord(ctx, purpose, token)
 	if err != nil {
@@ -2152,4 +2261,181 @@ func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.
 		data.UID = req.UID
 	}
 	return &data, nil
+}
+
+var _ rank.Repository = (*RanksRepository)(nil)
+
+func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
+	var list []*rank.Rank
+	rows, err := r.DB.QueryContext(ctx, "SELECT * FROM ranks r ORDER BY r.added_at DESC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ra rank.Rank
+		var perms any
+		if err = rows.Scan(&ra.Name, &ra.Color, &ra.Description, &perms, &ra.AddedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, &ra)
+	}
+	return list, nil
+}
+
+func (r *RanksRepository) UsersWithRank(ctx context.Context, name string) ([]*uint, error) {
+	var list []*uint
+	rows, err := r.DB.QueryContext(ctx, "SELECT u.uid FROM users u WHERE (u.rank).name = $1", name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id uint
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		list = append(list, &id)
+	}
+	return list, nil
+}
+
+func (r *RanksRepository) Perms(ctx context.Context, rank string) (*permissions.Permissions, error) {
+	var raw []byte
+	if err := r.DB.QueryRowContext(ctx,
+		`SELECT r.permissions FROM ranks r WHERE r.name = $1`, rank,
+	).Scan(&raw); err != nil {
+		return nil, err
+	}
+
+	var perms permissions.Permissions
+	if err := json.Unmarshal(raw, &perms); err != nil {
+		return nil, err
+	}
+	return &perms, nil
+}
+
+func (r *RanksRepository) ChangePerms(ctx context.Context, rank string, perm permissions.Permission, state bool) error {
+	res, err := r.DB.ExecContext(ctx,
+		`UPDATE ranks r
+		 SET permissions = perm_set(r.permissions, $1, $2)
+		 WHERE r.name = $3`,
+		perm.String(), state, rank,
+	)
+	if err != nil {
+		return err
+	}
+
+	if n, _ := res.RowsAffected(); n == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+/*
+	Edit(ctx context.Context, rank string, what string, data any) error
+	Delete(ctx context.Context, rank string) error
+	Get(ctx context.Context, rank string) (*Rank, error)
+*/
+
+func (r *RanksRepository) Create(ctx context.Context, name string, color int, description string, perms ...permissions.Permissions) error {
+	if name == "" || color == 0 || description == "" {
+		return errors.New("params is incorrect")
+	}
+	if len(perms) > 0 {
+		bytes, err := json.Marshal(perms[0])
+		if err != nil {
+			return err
+		}
+		_, err = r.DB.ExecContext(ctx, "INSERT INTO ranks (name, color, description, permissions) VALUES ($1, $2, $3, $4)", name, color, description, bytes)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	_, err := r.DB.ExecContext(ctx, "INSERT INTO ranks (name, color, description) VALUES ($1, $2, $3)", name, color, description)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, data any) error {
+	if rank == "" || target == "" || data == nil {
+		return errors.New("params is incorrect")
+	}
+
+	type colInfo struct {
+		col  string
+		kind string
+	}
+	cols := map[string]colInfo{
+		"description": {col: "description", kind: "string"},
+		"name":        {col: "name", kind: "string"},
+		"color":       {col: "color", kind: "int"},
+		"priority":    {col: "priority", kind: "int"},
+	}
+
+	info, ok := cols[target]
+	if !ok {
+		return errors.New("unknown target")
+	}
+
+	var (
+		query string
+		val   any
+	)
+
+	switch info.kind {
+	case "string":
+		s, ok := data.(string)
+		if !ok {
+			return errors.New("invalid data type for target")
+		}
+		val = s
+	case "int":
+		switch v := data.(type) {
+		case int:
+			val = int64(v)
+		case int32:
+			val = int64(v)
+		case int64:
+			val = v
+		case uint:
+			if uint64(v) > uint64(^uint64(0)>>1) {
+				return errors.New("uint overflow")
+			}
+			val = int64(v)
+		default:
+			return errors.New("invalid data type for target")
+		}
+	default:
+		return errors.New("invalid target config")
+	}
+
+	query = "UPDATE ranks SET " + info.col + " = $1 WHERE name = $2"
+	_, err := r.DB.ExecContext(ctx, query, val, rank)
+	return err
+}
+
+func (r *RanksRepository) Get(ctx context.Context, name string) (*rank.Rank, error) {
+	if name == "" {
+		return nil, errors.New("params is incorrect")
+	}
+	var ra rank.Rank
+	if err := r.DB.QueryRowContext(ctx, "SELECT color, description, added_at FROM ranks WHERE name = $1", name).Scan(&ra.Color, &ra.Description, &ra.AddedAt); err != nil {
+		return nil, err
+	}
+	ra.Name = name
+	return &ra, nil
+}
+
+func (r *RanksRepository) Delete(ctx context.Context, rank string) error {
+	if rank == "" {
+		return errors.New("params is incorrect")
+	}
+	if _, err := r.DB.ExecContext(ctx, "DELETE FROM ranks WHERE name = $1", rank); err != nil {
+		return err
+	}
+	return nil
 }

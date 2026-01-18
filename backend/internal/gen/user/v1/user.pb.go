@@ -7,6 +7,7 @@
 package user
 
 import (
+	v1 "Aesterial/backend/internal/gen/permissions/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -26,7 +27,7 @@ var File_user_user_proto protoreflect.FileDescriptor
 
 const file_user_user_proto_rawDesc = "" +
 	"\n" +
-	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x11user/domain.proto2\xd5\v\n" +
+	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x11user/domain.proto\x1a\x18permissions/domain.proto2\xd1\r\n" +
 	"\vUserService\x12L\n" +
 	"\x04Self\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.UserSelfResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/api/user\x12[\n" +
 	"\x05Other\x12\x19.user.v1.OtherUserRequest\x1a\x1b.user.v1.UserPublicResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/{userID}\x12O\n" +
@@ -42,24 +43,28 @@ const file_user_user_proto_rawDesc = "" +
 	"\x10DeleteUserAvatar\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\"* /api/user/{userID}/delete/avatar\x12o\n" +
 	"\vSendMessage\x12\x1b.user.v1.SendMessageRequest\x1a\x16.user.v1.EmptyResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/user/{userID}/messages/send\x12Y\n" +
 	"\bMessages\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.MessagesResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/messages\x12\x82\x01\n" +
-	"\x0eHasPermissions\x12\x1d.user.v1.HasPermissionRequest\x1a\x1e.user.v1.HasPermissionResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/user/{userID}/permissions/has/{perm}B-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
+	"\x0eHasPermissions\x12\x1d.user.v1.HasPermissionRequest\x1a\x1e.user.v1.HasPermissionResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/user/{userID}/permissions/has/{perm}\x12u\n" +
+	"\vPermissions\x12\x19.user.v1.OtherUserRequest\x1a#.permissions.v1.PermissionsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/user/{userID}/permissions\x12\x82\x01\n" +
+	"\vChangePerms\x12#.user.v1.OtherUserPermsPatchRequest\x1a\x16.user.v1.EmptyResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/user/{userID}/permissions/patch/{perm}B-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
 
 var file_user_user_proto_goTypes = []any{
-	(*emptypb.Empty)(nil),         // 0: google.protobuf.Empty
-	(*OtherUserRequest)(nil),      // 1: user.v1.OtherUserRequest
-	(*BanUserRequest)(nil),        // 2: user.v1.BanUserRequest
-	(*ChangeSelfNameRequest)(nil), // 3: user.v1.ChangeSelfNameRequest
-	(*Avatar)(nil),                // 4: user.v1.Avatar
-	(*SendMessageRequest)(nil),    // 5: user.v1.SendMessageRequest
-	(*HasPermissionRequest)(nil),  // 6: user.v1.HasPermissionRequest
-	(*UserSelfResponse)(nil),      // 7: user.v1.UserSelfResponse
-	(*UserPublicResponse)(nil),    // 8: user.v1.UserPublicResponse
-	(*UsersResponse)(nil),         // 9: user.v1.UsersResponse
-	(*UserSessionsResponse)(nil),  // 10: user.v1.UserSessionsResponse
-	(*EmptyResponse)(nil),         // 11: user.v1.EmptyResponse
-	(*BanInfoResponse)(nil),       // 12: user.v1.BanInfoResponse
-	(*MessagesResponse)(nil),      // 13: user.v1.MessagesResponse
-	(*HasPermissionResponse)(nil), // 14: user.v1.HasPermissionResponse
+	(*emptypb.Empty)(nil),              // 0: google.protobuf.Empty
+	(*OtherUserRequest)(nil),           // 1: user.v1.OtherUserRequest
+	(*BanUserRequest)(nil),             // 2: user.v1.BanUserRequest
+	(*ChangeSelfNameRequest)(nil),      // 3: user.v1.ChangeSelfNameRequest
+	(*Avatar)(nil),                     // 4: user.v1.Avatar
+	(*SendMessageRequest)(nil),         // 5: user.v1.SendMessageRequest
+	(*HasPermissionRequest)(nil),       // 6: user.v1.HasPermissionRequest
+	(*OtherUserPermsPatchRequest)(nil), // 7: user.v1.OtherUserPermsPatchRequest
+	(*UserSelfResponse)(nil),           // 8: user.v1.UserSelfResponse
+	(*UserPublicResponse)(nil),         // 9: user.v1.UserPublicResponse
+	(*UsersResponse)(nil),              // 10: user.v1.UsersResponse
+	(*UserSessionsResponse)(nil),       // 11: user.v1.UserSessionsResponse
+	(*EmptyResponse)(nil),              // 12: user.v1.EmptyResponse
+	(*BanInfoResponse)(nil),            // 13: user.v1.BanInfoResponse
+	(*MessagesResponse)(nil),           // 14: user.v1.MessagesResponse
+	(*HasPermissionResponse)(nil),      // 15: user.v1.HasPermissionResponse
+	(*v1.PermissionsResponse)(nil),     // 16: permissions.v1.PermissionsResponse
 }
 var file_user_user_proto_depIdxs = []int32{
 	0,  // 0: user.v1.UserService.Self:input_type -> google.protobuf.Empty
@@ -77,23 +82,27 @@ var file_user_user_proto_depIdxs = []int32{
 	5,  // 12: user.v1.UserService.SendMessage:input_type -> user.v1.SendMessageRequest
 	0,  // 13: user.v1.UserService.Messages:input_type -> google.protobuf.Empty
 	6,  // 14: user.v1.UserService.HasPermissions:input_type -> user.v1.HasPermissionRequest
-	7,  // 15: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
-	8,  // 16: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
-	9,  // 17: user.v1.UserService.Users:output_type -> user.v1.UsersResponse
-	10, // 18: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
-	11, // 19: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
-	11, // 20: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
-	12, // 21: user.v1.UserService.BanInfo:output_type -> user.v1.BanInfoResponse
-	12, // 22: user.v1.UserService.BanInfoOther:output_type -> user.v1.BanInfoResponse
-	11, // 23: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
-	11, // 24: user.v1.UserService.UpdateSelfAvatar:output_type -> user.v1.EmptyResponse
-	11, // 25: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
-	11, // 26: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
-	11, // 27: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
-	13, // 28: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
-	14, // 29: user.v1.UserService.HasPermissions:output_type -> user.v1.HasPermissionResponse
-	15, // [15:30] is the sub-list for method output_type
-	0,  // [0:15] is the sub-list for method input_type
+	1,  // 15: user.v1.UserService.Permissions:input_type -> user.v1.OtherUserRequest
+	7,  // 16: user.v1.UserService.ChangePerms:input_type -> user.v1.OtherUserPermsPatchRequest
+	8,  // 17: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
+	9,  // 18: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
+	10, // 19: user.v1.UserService.Users:output_type -> user.v1.UsersResponse
+	11, // 20: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
+	12, // 21: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
+	12, // 22: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
+	13, // 23: user.v1.UserService.BanInfo:output_type -> user.v1.BanInfoResponse
+	13, // 24: user.v1.UserService.BanInfoOther:output_type -> user.v1.BanInfoResponse
+	12, // 25: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
+	12, // 26: user.v1.UserService.UpdateSelfAvatar:output_type -> user.v1.EmptyResponse
+	12, // 27: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
+	12, // 28: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
+	12, // 29: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
+	14, // 30: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
+	15, // 31: user.v1.UserService.HasPermissions:output_type -> user.v1.HasPermissionResponse
+	16, // 32: user.v1.UserService.Permissions:output_type -> permissions.v1.PermissionsResponse
+	12, // 33: user.v1.UserService.ChangePerms:output_type -> user.v1.EmptyResponse
+	17, // [17:34] is the sub-list for method output_type
+	0,  // [0:17] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -3,7 +3,6 @@ package main
 import (
 	loginapp "Aesterial/backend/internal/app/auth"
 	"Aesterial/backend/internal/app/config"
-	permissionsinfo "Aesterial/backend/internal/app/info/permissions"
 	sessionsinfo "Aesterial/backend/internal/app/info/sessions"
 	userinfo "Aesterial/backend/internal/app/info/user"
 	loggerservice "Aesterial/backend/internal/app/logger"
@@ -11,6 +10,7 @@ import (
 	maintenanceapp "Aesterial/backend/internal/app/maintenance"
 	usermodifier "Aesterial/backend/internal/app/modifier/user"
 	projectsapp "Aesterial/backend/internal/app/projects"
+	rankapp "Aesterial/backend/internal/app/rank"
 	appstatistics "Aesterial/backend/internal/app/statistics"
 	storageapp "Aesterial/backend/internal/app/storage"
 	"Aesterial/backend/internal/app/submissions"
@@ -19,8 +19,8 @@ import (
 	checkerpb "Aesterial/backend/internal/gen/checker/v1"
 	loginpb "Aesterial/backend/internal/gen/login/v1"
 	maintenancepb "Aesterial/backend/internal/gen/maintenance/v1"
-	permspb "Aesterial/backend/internal/gen/permissions/v1"
 	projpb "Aesterial/backend/internal/gen/projects/v1"
+	rankpb "Aesterial/backend/internal/gen/ranks/v1"
 	statpb "Aesterial/backend/internal/gen/statistics/v1"
 	storagepb "Aesterial/backend/internal/gen/storage/v1"
 	submpb "Aesterial/backend/internal/gen/submissions/v1"
@@ -113,13 +113,13 @@ func main() {
 	loggerRepo := db.NewLoggerRepository(dbConn)
 	loginRepo := db.NewLoginRepository(dbConn)
 	sessionsRepo := db.NewSessionsRepository(dbConn)
-	permissionsRepo := db.NewPermissionsRepository(dbConn)
 	statisticsRepo := db.NewStatisticsRepository(dbConn)
 	projectsRepo := db.NewProjectsRepository(dbConn)
 	submissionsRepo := db.NewSubmissionRepository(dbConn)
 	verificationRepo := db.NewVerificationRepository(dbConn)
 	maintenanceRepo := db.NewMaintenanceRepository(dbConn)
 	ticketsRepo := db.NewTicketsRepository(dbConn)
+	ranksRepo := db.NewRanksRepository(dbConn)
 
 	loggerServ := loggerservice.New(loggerRepo)
 
@@ -131,13 +131,13 @@ func main() {
 	sessionsService := sessionsinfo.New(sessionsRepo)
 	userInfoService := userinfo.New(userRepo, sessionsRepo)
 	userModifierService := usermodifier.New(userRepo)
-	permissionsService := permissionsinfo.New(permissionsRepo)
 	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
 	statService := appstatistics.New(statisticsRepo)
 	projectsService := projectsapp.New(projectsRepo)
 	maintenanceService := maintenanceapp.New(maintenanceRepo)
 	submissionService := submissions.New(submissionsRepo, projectsService, userInfoService)
 	ticketsService := tickets.New(ticketsRepo)
+	ranksService := rankapp.New(ranksRepo)
 	mailerService := mailer.New(env.Mailer.ApiKey, env.Mailer.Name, env.Mailer.Email)
 	verificationService := verification.New(verificationRepo, mailerService)
 	storageService, err := storageapp.New()
@@ -146,15 +146,15 @@ func main() {
 		return
 	}
 
-	loginServer := grpcserver.NewLoginService(loginService, sessionsService, permissionsService, userInfoService, verificationService)
-	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, permissionsService, storageService)
-	permissionsServer := grpcserver.NewPermissionsService(permissionsService, sessionsService, userInfoService)
-	statServer := grpcserver.NewStatService(statService, sessionsService, permissionsService, userInfoService)
-	projectServer := grpcserver.NewProjectService(projectsService, sessionsService, permissionsService, userInfoService, storageService)
+	loginServer := grpcserver.NewLoginService(loginService, sessionsService, userInfoService, verificationService)
+	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, storageService)
+	statServer := grpcserver.NewStatService(statService, sessionsService, userInfoService)
+	projectServer := grpcserver.NewProjectService(projectsService, sessionsService, userInfoService, storageService)
 	storageServer := grpcserver.NewStorageService(storageService)
-	submissionServer := grpcserver.NewSubmissionsService(submissionService, sessionsService, permissionsService, userInfoService, storageService)
-	maintenanceServer := grpcserver.NewMaintenanceService(maintenanceService, sessionsService, permissionsService, userInfoService)
-	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, permissionsService, userInfoService)
+	submissionServer := grpcserver.NewSubmissionsService(submissionService, sessionsService, userInfoService, storageService)
+	maintenanceServer := grpcserver.NewMaintenanceService(maintenanceService, sessionsService, userInfoService)
+	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, userInfoService)
+	ranksServer := grpcserver.NewRanksService(ranksService, sessionsService, userInfoService, storageService)
 	healthServer := grpcserver.NewHealthService()
 
 	gateway := runtime.NewServeMux(
@@ -169,10 +169,6 @@ func main() {
 		logger.Error("Failed to register user gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
-	if err := permspb.RegisterPermissionsServiceHandlerServer(ctx, gateway, permissionsServer); err != nil {
-		logger.Error("Failed to register permissions gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
-		return
-	}
 	if err := statpb.RegisterStatisticsServiceHandlerServer(ctx, gateway, statServer); err != nil {
 		logger.Error("Failed to register statistics gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
@@ -183,6 +179,10 @@ func main() {
 	}
 	if err := storagepb.RegisterStorageServiceHandlerServer(ctx, gateway, storageServer); err != nil {
 		logger.Error("Failed to register storage gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
+	if err := rankpb.RegisterRanksServiceHandlerServer(ctx, gateway, ranksServer); err != nil {
+		logger.Error("Failed to register ranks gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
 	if err := submpb.RegisterSubmissionsServiceHandlerServer(ctx, gateway, submissionServer); err != nil {
@@ -221,10 +221,10 @@ func main() {
 	reflection.Register(grpcServer)
 	loginpb.RegisterLoginServiceServer(grpcServer, loginServer)
 	userpb.RegisterUserServiceServer(grpcServer, userServer)
-	permspb.RegisterPermissionsServiceServer(grpcServer, permissionsServer)
 	statpb.RegisterStatisticsServiceServer(grpcServer, statServer)
 	projpb.RegisterProjectServiceServer(grpcServer, projectServer)
 	storagepb.RegisterStorageServiceServer(grpcServer, storageServer)
+	rankpb.RegisterRanksServiceServer(grpcServer, ranksServer)
 	submpb.RegisterSubmissionsServiceServer(grpcServer, submissionServer)
 	maintenancepb.RegisterMaintenanceServiceServer(grpcServer, maintenanceServer)
 	tickpb.RegisterTicketsServiceServer(grpcServer, ticketsServer)

@@ -61,3 +61,7 @@ func (s *StatService) IdeasRecap(ctx context.Context) (*statpb.IdeasApprovalResp
 func (s *StatService) QualityRecap(ctx context.Context) (*statpb.EditorsGradeResponse, error) {
 	return s.repo.QualityRecap(ctx)
 }
+
+func (s *StatService) MediaCoverage(ctx context.Context, limit int) ([]*statpb.MediaCoverageResponseMedia, error) {
+	return s.repo.MediaCoverage(ctx, limit)
+}

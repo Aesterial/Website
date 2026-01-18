@@ -1,6 +1,7 @@
 package user
 
 import (
+	"Aesterial/backend/internal/domain/permissions"
 	"Aesterial/backend/internal/domain/rank"
 	"Aesterial/backend/internal/domain/sessions"
 	"Aesterial/backend/internal/domain/user"
@@ -111,6 +112,20 @@ func (s *Service) UpdateDisplayName(ctx context.Context, uid uint, displayName s
 	return s.repo.UpdateDisplayName(ctx, uid, displayName)
 }
 
+func (s *Service) SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error {
+	if strings.TrimSpace(email) == "" {
+		return errors.New("email is empty")
+	}
+	return s.repo.SetEmailVerifiedByAddress(ctx, email, verified)
+}
+
+func (s *Service) UpdatePasswordByEmail(ctx context.Context, email string, passwordHash string) error {
+	if strings.TrimSpace(email) == "" || passwordHash == "" {
+		return errors.New("email or password is empty")
+	}
+	return s.repo.UpdatePasswordByEmail(ctx, email, passwordHash)
+}
+
 func (s *Service) IsExists(ctx context.Context, user user.User) (bool, error) {
 	if user.UID == 0 {
 		return false, errors.New("user uid is empty")
@@ -132,7 +147,7 @@ func (s *Service) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error)
 	return s.repo.GetJoinedAT(ctx, uid)
 }
 
-func (s *Service) GetRank(ctx context.Context, uid uint) (*rank.Rank, error) {
+func (s *Service) GetRank(ctx context.Context, uid uint) (*rank.UserRank, error) {
 	if uid == 0 {
 		return nil, errors.New("uid is empty")
 	}
@@ -184,6 +199,40 @@ func (s *Service) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.S
 		return nil, errors.New("uid is null")
 	}
 	return s.repo.GetUserSessionLiveTime(ctx, uid)
+}
+
+func (s *Service) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
+	if uid == 0 {
+		return false, errors.New("uid is empty")
+	}
+	if strings.TrimSpace(perm.String()) == "" {
+		return false, errors.New("permission is empty")
+	}
+	return s.repo.HasPerm(ctx, uid, perm)
+}
+
+func (s *Service) HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error) {
+	if uid == 0 {
+		return false, errors.New("uid is empty")
+	}
+	return s.repo.HasAllPerms(ctx, uid, perms...)
+}
+
+func (s *Service) Perms(ctx context.Context, uid uint) (*permissions.Permissions, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is empty")
+	}
+	return s.repo.Perms(ctx, uid)
+}
+
+func (s *Service) ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error {
+	if uid == 0 {
+		return errors.New("uid is empty")
+	}
+	if strings.TrimSpace(perm.String()) == "" {
+		return errors.New("permission is empty")
+	}
+	return s.repo.ChangePerms(ctx, uid, perm, state)
 }
 
 func isNotFound(err error) bool {

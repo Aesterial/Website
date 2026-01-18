@@ -767,9 +767,9 @@ func (x *MediaCoverageRequest) GetLimit() uint32 {
 }
 
 type MediaCoverageResponse struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	Medias        map[int64]*MediaCoverageResponseMedia `protobuf:"bytes,1,rep,name=medias,proto3" json:"medias,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Tracing       string                                `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Medias        []*MediaCoverageResponseMedia `protobuf:"bytes,1,rep,name=medias,proto3" json:"medias,omitempty"`
+	Tracing       string                        `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -804,7 +804,7 @@ func (*MediaCoverageResponse) Descriptor() ([]byte, []int) {
 	return file_statistics_domain_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *MediaCoverageResponse) GetMedias() map[int64]*MediaCoverageResponseMedia {
+func (x *MediaCoverageResponse) GetMedias() []*MediaCoverageResponseMedia {
 	if x != nil {
 		return x.Medias
 	}
@@ -1021,16 +1021,13 @@ const file_statistics_domain_proto_rawDesc = "" +
 	"\x04good\x18\x01 \x01(\rR\x04good\x12\x10\n" +
 	"\x03bad\x18\x02 \x01(\rR\x03bad\",\n" +
 	"\x14MediaCoverageRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\rR\x05limit\"\x9b\x02\n" +
-	"\x15MediaCoverageResponse\x12H\n" +
-	"\x06medias\x18\x01 \x03(\v20.statistics.v1.MediaCoverageResponse.MediasEntryR\x06medias\x12\x18\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\"\xae\x01\n" +
+	"\x15MediaCoverageResponse\x12B\n" +
+	"\x06medias\x18\x01 \x03(\v2*.statistics.v1.MediaCoverageResponse.mediaR\x06medias\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\x1a7\n" +
 	"\x05media\x12\x16\n" +
 	"\x06photos\x18\x01 \x01(\rR\x06photos\x12\x16\n" +
-	"\x06videos\x18\x02 \x01(\rR\x06videos\x1ae\n" +
-	"\vMediasEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\x03R\x03key\x12@\n" +
-	"\x05value\x18\x02 \x01(\v2*.statistics.v1.MediaCoverageResponse.mediaR\x05value:\x028\x01\"F\n" +
+	"\x06videos\x18\x02 \x01(\rR\x06videos\"F\n" +
 	"\x12WithFromTagRequest\x120\n" +
 	"\x05since\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05sinceB9Z7Aesterial/backend/internal/gen/statistics/v1;statisticsb\x06proto3"
 
@@ -1046,7 +1043,7 @@ func file_statistics_domain_proto_rawDescGZIP() []byte {
 	return file_statistics_domain_proto_rawDescData
 }
 
-var file_statistics_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_statistics_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_statistics_domain_proto_goTypes = []any{
 	(*VoteCountResponse)(nil),          // 0: statistics.v1.VoteCountResponse
 	(*IdeasCountResponse)(nil),         // 1: statistics.v1.IdeasCountResponse
@@ -1067,25 +1064,23 @@ var file_statistics_domain_proto_goTypes = []any{
 	nil,                                // 16: statistics.v1.UsersActivityResponse.DataEntry
 	(*EditorsGradeResponse_Grade)(nil), // 17: statistics.v1.EditorsGradeResponse.Grade
 	(*MediaCoverageResponseMedia)(nil), // 18: statistics.v1.MediaCoverageResponse.media
-	nil,                                // 19: statistics.v1.MediaCoverageResponse.MediasEntry
-	(*timestamppb.Timestamp)(nil),      // 20: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),      // 19: google.protobuf.Timestamp
 }
 var file_statistics_domain_proto_depIdxs = []int32{
 	2,  // 0: statistics.v1.TopByCategoriesResponse.record:type_name -> statistics.v1.CategoryRecord
-	20, // 1: statistics.v1.StatisticsRecap.at:type_name -> google.protobuf.Timestamp
+	19, // 1: statistics.v1.StatisticsRecap.at:type_name -> google.protobuf.Timestamp
 	6,  // 2: statistics.v1.StatisticsRecap.users_activity:type_name -> statistics.v1.UsersActivity
 	16, // 3: statistics.v1.UsersActivityResponse.data:type_name -> statistics.v1.UsersActivityResponse.DataEntry
 	17, // 4: statistics.v1.EditorsGradeResponse.photos:type_name -> statistics.v1.EditorsGradeResponse.Grade
 	17, // 5: statistics.v1.EditorsGradeResponse.videos:type_name -> statistics.v1.EditorsGradeResponse.Grade
-	19, // 6: statistics.v1.MediaCoverageResponse.medias:type_name -> statistics.v1.MediaCoverageResponse.MediasEntry
-	20, // 7: statistics.v1.WithFromTagRequest.since:type_name -> google.protobuf.Timestamp
+	18, // 6: statistics.v1.MediaCoverageResponse.medias:type_name -> statistics.v1.MediaCoverageResponse.media
+	19, // 7: statistics.v1.WithFromTagRequest.since:type_name -> google.protobuf.Timestamp
 	6,  // 8: statistics.v1.UsersActivityResponse.DataEntry.value:type_name -> statistics.v1.UsersActivity
-	18, // 9: statistics.v1.MediaCoverageResponse.MediasEntry.value:type_name -> statistics.v1.MediaCoverageResponse.media
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_statistics_domain_proto_init() }
@@ -1099,7 +1094,7 @@ func file_statistics_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_statistics_domain_proto_rawDesc), len(file_statistics_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

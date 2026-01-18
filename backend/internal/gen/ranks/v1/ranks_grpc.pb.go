@@ -7,10 +7,12 @@
 package ranks
 
 import (
+	v1 "Aesterial/backend/internal/gen/permissions/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,9 +21,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RanksService_Create_FullMethodName = "/ranks.v1.RanksService/Create"
-	RanksService_Patch_FullMethodName  = "/ranks.v1.RanksService/Patch"
-	RanksService_Delete_FullMethodName = "/ranks.v1.RanksService/Delete"
+	RanksService_Create_FullMethodName     = "/ranks.v1.RanksService/Create"
+	RanksService_Patch_FullMethodName      = "/ranks.v1.RanksService/Patch"
+	RanksService_Get_FullMethodName        = "/ranks.v1.RanksService/Get"
+	RanksService_Users_FullMethodName      = "/ranks.v1.RanksService/Users"
+	RanksService_List_FullMethodName       = "/ranks.v1.RanksService/List"
+	RanksService_Delete_FullMethodName     = "/ranks.v1.RanksService/Delete"
+	RanksService_PermsPatch_FullMethodName = "/ranks.v1.RanksService/PermsPatch"
+	RanksService_Perms_FullMethodName      = "/ranks.v1.RanksService/Perms"
 )
 
 // RanksServiceClient is the client API for RanksService service.
@@ -29,8 +36,13 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RanksServiceClient interface {
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Patch(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Get(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*RankResponse, error)
+	Users(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*UsersResponse, error)
+	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RanksResponse, error)
+	Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
 }
 
 type ranksServiceClient struct {
@@ -51,7 +63,7 @@ func (c *ranksServiceClient) Create(ctx context.Context, in *CreateRequest, opts
 	return out, nil
 }
 
-func (c *ranksServiceClient) Patch(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, RanksService_Patch_FullMethodName, in, out, cOpts...)
@@ -61,10 +73,60 @@ func (c *ranksServiceClient) Patch(ctx context.Context, in *CreateRequest, opts 
 	return out, nil
 }
 
-func (c *ranksServiceClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) Get(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*RankResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RankResponse)
+	err := c.cc.Invoke(ctx, RanksService_Get_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ranksServiceClient) Users(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*UsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UsersResponse)
+	err := c.cc.Invoke(ctx, RanksService_Users_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ranksServiceClient) List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RanksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RanksResponse)
+	err := c.cc.Invoke(ctx, RanksService_List_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ranksServiceClient) Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, RanksService_Delete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ranksServiceClient) PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, RanksService_PermsPatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ranksServiceClient) Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.PermissionsResponse)
+	err := c.cc.Invoke(ctx, RanksService_Perms_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +138,13 @@ func (c *ranksServiceClient) Delete(ctx context.Context, in *DeleteRequest, opts
 // for forward compatibility.
 type RanksServiceServer interface {
 	Create(context.Context, *CreateRequest) (*EmptyResponse, error)
-	Patch(context.Context, *CreateRequest) (*EmptyResponse, error)
-	Delete(context.Context, *DeleteRequest) (*EmptyResponse, error)
+	Patch(context.Context, *PatchRequest) (*EmptyResponse, error)
+	Get(context.Context, *NameRequest) (*RankResponse, error)
+	Users(context.Context, *NameRequest) (*UsersResponse, error)
+	List(context.Context, *emptypb.Empty) (*RanksResponse, error)
+	Delete(context.Context, *NameRequest) (*EmptyResponse, error)
+	PermsPatch(context.Context, *PermsPatchRequest) (*EmptyResponse, error)
+	Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error)
 	mustEmbedUnimplementedRanksServiceServer()
 }
 
@@ -91,11 +158,26 @@ type UnimplementedRanksServiceServer struct{}
 func (UnimplementedRanksServiceServer) Create(context.Context, *CreateRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedRanksServiceServer) Patch(context.Context, *CreateRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) Patch(context.Context, *PatchRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Patch not implemented")
 }
-func (UnimplementedRanksServiceServer) Delete(context.Context, *DeleteRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) Get(context.Context, *NameRequest) (*RankResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedRanksServiceServer) Users(context.Context, *NameRequest) (*UsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Users not implemented")
+}
+func (UnimplementedRanksServiceServer) List(context.Context, *emptypb.Empty) (*RanksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedRanksServiceServer) Delete(context.Context, *NameRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedRanksServiceServer) PermsPatch(context.Context, *PermsPatchRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PermsPatch not implemented")
+}
+func (UnimplementedRanksServiceServer) Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Perms not implemented")
 }
 func (UnimplementedRanksServiceServer) mustEmbedUnimplementedRanksServiceServer() {}
 func (UnimplementedRanksServiceServer) testEmbeddedByValue()                      {}
@@ -137,7 +219,7 @@ func _RanksService_Create_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _RanksService_Patch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRequest)
+	in := new(PatchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -149,13 +231,67 @@ func _RanksService_Patch_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: RanksService_Patch_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RanksServiceServer).Patch(ctx, req.(*CreateRequest))
+		return srv.(RanksServiceServer).Patch(ctx, req.(*PatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RanksService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_Get_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).Get(ctx, req.(*NameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RanksService_Users_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).Users(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_Users_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).Users(ctx, req.(*NameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RanksService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).List(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _RanksService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRequest)
+	in := new(NameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -167,7 +303,43 @@ func _RanksService_Delete_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: RanksService_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RanksServiceServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(RanksServiceServer).Delete(ctx, req.(*NameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RanksService_PermsPatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PermsPatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).PermsPatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_PermsPatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).PermsPatch(ctx, req.(*PermsPatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RanksService_Perms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).Perms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_Perms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).Perms(ctx, req.(*NameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -188,8 +360,28 @@ var RanksService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RanksService_Patch_Handler,
 		},
 		{
+			MethodName: "Get",
+			Handler:    _RanksService_Get_Handler,
+		},
+		{
+			MethodName: "Users",
+			Handler:    _RanksService_Users_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _RanksService_List_Handler,
+		},
+		{
 			MethodName: "Delete",
 			Handler:    _RanksService_Delete_Handler,
+		},
+		{
+			MethodName: "PermsPatch",
+			Handler:    _RanksService_PermsPatch_Handler,
+		},
+		{
+			MethodName: "Perms",
+			Handler:    _RanksService_Perms_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
