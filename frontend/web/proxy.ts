@@ -97,7 +97,21 @@ const fetchMaintenanceActive = async (request: NextRequest) => {
       cache: "no-store",
       signal: controller.signal,
     });
-    const payload = (await response.json().catch(() => null)) as unknown;
+    if (response.status === 503) {
+      return false;
+    }
+    const contentType = response.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+    let payload: unknown = null;
+    let parsed = false;
+    if (isJson) {
+      try {
+        payload = (await response.json()) as unknown;
+        parsed = true;
+      } catch {
+        parsed = false;
+      }
+    }
     const flag = readActiveFlag(payload);
     if (flag !== null) {
       return flag;
@@ -106,7 +120,7 @@ const fetchMaintenanceActive = async (request: NextRequest) => {
       return false;
     }
     if (!response.ok) {
-      return true;
+      return parsed;
     }
     return false;
   } catch {

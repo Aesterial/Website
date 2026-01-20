@@ -14,6 +14,8 @@ import (
 	"context"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -21,6 +23,22 @@ type MaintenanceService struct {
 	maintpb.UnimplementedMaintenanceServiceServer
 	serv *maintenance.Service
 	auth *Authenticator
+}
+
+const maintenanceNotActiveMessage = "maintenance is not active"
+
+type maintenanceNotActiveError struct{}
+
+func (maintenanceNotActiveError) Error() string {
+	return maintenanceNotActiveMessage
+}
+
+func (maintenanceNotActiveError) GRPCStatus() *status.Status {
+	return status.New(codes.Unavailable, maintenanceNotActiveMessage)
+}
+
+func (maintenanceNotActiveError) Unwrap() error {
+	return apperrors.Unavailable.AddErrDetails(maintenanceNotActiveMessage)
 }
 
 func NewMaintenanceService(s *maintenance.Service, ses *sessions.Service, us *userapp.Service) *MaintenanceService {
@@ -56,8 +74,8 @@ func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maint
 	}
 	data, err := s.serv.GetData(ctx)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "maintenance is not active") {
-			return nil, apperrors.Unavailable.AddErrDetails("maintenance is not active")
+		if strings.Contains(strings.ToLower(err.Error()), maintenanceNotActiveMessage) {
+			return nil, maintenanceNotActiveError{}
 		}
 		logger.Debug("Failed to get maintenance data: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to get data")

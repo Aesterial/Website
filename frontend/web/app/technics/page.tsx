@@ -136,7 +136,20 @@ export default function MaintenancePage() {
         if (!response.ok) {
           return;
         }
-        const payload = (await response.json()) as unknown;
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          setMaintenance(null);
+          setHasMaintenance(false);
+          return;
+        }
+        let payload: unknown;
+        try {
+          payload = (await response.json()) as unknown;
+        } catch {
+          setMaintenance(null);
+          setHasMaintenance(false);
+          return;
+        }
         const normalized = normalizeMaintenance(payload);
         if (normalized) {
           setMaintenance(normalized);
