@@ -9,14 +9,13 @@ import (
 	verdomain "Aesterial/backend/internal/domain/verification"
 	loginpb "Aesterial/backend/internal/gen/login/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"errors"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -33,10 +32,10 @@ func NewLoginService(login *loginapp.Service, ses *sessions.Service, us *userapp
 
 func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthRequest) (*loginpb.AuthResponse, error) {
 	if s == nil || s.login == nil {
-		return nil, status.Error(codes.Internal, "login service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("login service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 
 	usermail := strings.TrimSpace(req.Usermail)
@@ -51,14 +50,14 @@ func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthReque
 
 	uid, err := s.login.Authorization(ctx, require)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if uid == nil {
-		return nil, status.Error(codes.Internal, "missing user id")
+		return nil, apperrors.ServerError.AddErrDetails("uid is empty")
 	}
 
 	if err := s.issueAndStoreSession(ctx, *uid); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.ServerError.AddErrDetails("failed to register session: " + err.Error())
 	}
 
 	traceID := TraceIDOrNew(ctx)
@@ -68,10 +67,10 @@ func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthReque
 
 func (s *LoginService) Register(ctx context.Context, req *loginpb.RegisterRequest) (*loginpb.RegisterResponse, error) {
 	if s == nil || s.login == nil {
-		return nil, status.Error(codes.Internal, "login service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("login service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 
 	require := logindomain.RegisterRequire{
@@ -83,16 +82,16 @@ func (s *LoginService) Register(ctx context.Context, req *loginpb.RegisterReques
 	uid, err := s.login.Register(ctx, require)
 	if err != nil {
 		if errorContains(err, "duplicate key value violates unique") {
-			return nil, status.Error(codes.AlreadyExists, "username already taken")
+			return nil, apperrors.AlreadyExists
 		}
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if uid == nil {
-		return nil, status.Error(codes.Internal, "missing user id")
+		return nil, apperrors.ServerError.AddErrDetails("uid is empty")
 	}
 
 	if err := s.issueAndStoreSession(ctx, *uid); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.ServerError.AddErrDetails("failed to register session: " + err.Error())
 	}
 
 	traceID := TraceIDOrNew(ctx)
@@ -102,7 +101,7 @@ func (s *LoginService) Register(ctx context.Context, req *loginpb.RegisterReques
 
 func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.login == nil {
-		return nil, status.Error(codes.Internal, "login service not configured")
+		return nil, apperrors.NotConfigured
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
@@ -110,33 +109,33 @@ func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*loginpb.E
 	}
 	traceID := TraceIDOrNew(ctx)
 	if err = s.login.Logout(ctx, requestor.SessionID); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.WithEmailRequest) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.verification == nil {
-		return nil, status.Error(codes.Internal, "verification service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("verification service is not configured")
 	}
 	if s.verification.Mailer == nil {
-		return nil, status.Error(codes.Internal, "mailer service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("mailer service is not configured")
 	}
 	email := strings.TrimSpace(req.GetEmail())
 	if email == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
 		logger.Debug("error while getting banned state: "+err.Error(), "")
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, apperrors.ServerError.AddErrDetails("internal error")
 	}
 	if banned {
-		return nil, status.Error(codes.PermissionDenied, "email is banned")
+		return nil, apperrors.AccessDenied.AddErrDetails("email is banned")
 	}
 	ip, exists := clientIP(ctx)
 	if !exists {
-		return nil, status.Error(codes.InvalidArgument, "ip not found")
+		return nil, apperrors.InvalidArguments.AddErrDetails("ip not found")
 	}
 	token, err := s.verification.Create(ctx, email, verdomain.PasswordReset, ip, userAgentHash(ctx), 5*time.Minute)
 	if err != nil {
@@ -144,107 +143,107 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 	}
 	_, err = s.verification.Mailer.SendPasswordReset(ctx, email, token)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) VerifyEmailStart(ctx context.Context, req *loginpb.WithEmailRequest) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.verification == nil {
-		return nil, status.Error(codes.Internal, "verification service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("verification service is not configured")
 	}
 	if s.verification.Mailer == nil {
-		return nil, status.Error(codes.Internal, "mailer service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("mailer service is not configured")
 	}
 	email := strings.TrimSpace(req.GetEmail())
 	if email == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, apperrors.ServerError.AddErrDetails("internal error")
 	}
 	if banned {
-		return nil, status.Error(codes.PermissionDenied, "email is banned")
+		return nil, apperrors.AccessDenied.AddErrDetails("email is banned")
 	}
 	ip, exists := clientIP(ctx)
 	if !exists {
-		return nil, status.Error(codes.InvalidArgument, "ip not found")
+		return nil, apperrors.InvalidArguments.AddErrDetails("ip not found")
 	}
 	token, err := s.verification.Create(ctx, email, verdomain.EmailVerification, ip, userAgentHash(ctx), 5*time.Minute)
 	if err != nil {
 		logger.Debug("Error while creating verification record: "+err.Error(), "")
-		return nil, status.Error(codes.Internal, "failed to create verification record")
+		return nil, apperrors.ServerError.AddErrDetails("failed to create verification record")
 	}
 	_, err = s.verification.Mailer.SendEmailVerify(ctx, email, token)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to send verification message")
+		return nil, apperrors.ServerError.AddErrDetails("failed to send verification message")
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmailRequest) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.verification == nil || s.login == nil || s.login.User == nil {
-		return nil, status.Error(codes.Internal, "verification service is not configured")
+		return nil, apperrors.NotConfigured
 	}
 	email := strings.TrimSpace(req.GetEmail())
 	token := strings.TrimSpace(req.GetToken())
 	if email == "" || token == "" {
-		return nil, status.Error(codes.InvalidArgument, "email or token is empty")
+		return nil, apperrors.InvalidArguments
 	}
 	record, err := s.verification.GetRecord(ctx, verdomain.EmailVerification, token)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if !strings.EqualFold(record.Email, email) {
-		return nil, status.Error(codes.InvalidArgument, "email does not match token")
+		return nil, apperrors.InvalidArguments
 	}
 	if record.UsedAt != nil {
-		return nil, status.Error(codes.InvalidArgument, "token already used")
+		return nil, apperrors.InvalidArguments
 	}
 	if time.Now().After(record.ExpiresAt) {
-		return nil, status.Error(codes.InvalidArgument, "token expired")
+		return nil, apperrors.InvalidArguments.AddErrDetails("Token Expired")
 	}
 	if err := s.login.User.SetEmailVerifiedByAddress(ctx, email, true); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if _, err := s.verification.Consume(ctx, verdomain.EmailVerification, token); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) ResetPassword(ctx context.Context, req *loginpb.ResetPasswordRequest) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.verification == nil || s.login == nil || s.login.User == nil {
-		return nil, status.Error(codes.Internal, "verification service is not configured")
+		return nil, apperrors.NotConfigured
 	}
 	email := strings.TrimSpace(req.GetEmail())
 	token := strings.TrimSpace(req.GetToken())
 	if email == "" || token == "" || req.GetPassword() == "" {
-		return nil, status.Error(codes.InvalidArgument, "email, token, or password is empty")
+		return nil, apperrors.InvalidArguments
 	}
 	record, err := s.verification.GetRecord(ctx, verdomain.PasswordReset, token)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if !strings.EqualFold(record.Email, email) {
-		return nil, status.Error(codes.InvalidArgument, "email does not match token")
+		return nil, apperrors.ParamsNotMatch
 	}
 	if record.UsedAt != nil {
-		return nil, status.Error(codes.InvalidArgument, "token already used")
+		return nil, apperrors.AlreadyUsed
 	}
 	if time.Now().After(record.ExpiresAt) {
-		return nil, status.Error(codes.InvalidArgument, "token expired")
+		return nil, apperrors.DataExpired
 	}
 	hash, err := loginapp.GeneratePassword(req.GetPassword())
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if err := s.login.User.UpdatePasswordByEmail(ctx, email, hash); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if _, err := s.verification.Consume(ctx, verdomain.PasswordReset, token); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }

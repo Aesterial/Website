@@ -2,6 +2,8 @@ package storage
 
 import (
 	"Aesterial/backend/internal/app/config"
+	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"errors"
 	"path"
@@ -37,7 +39,7 @@ func New() (*Service, error) {
 
 	bucket := strings.TrimSpace(cfg.Bucket)
 	if bucket == "" {
-		return nil, errors.New("storage bucket is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("storage bucket is empty")
 	}
 
 	region := strings.TrimSpace(cfg.Region)
@@ -73,7 +75,8 @@ func New() (*Service, error) {
 
 	awsCfg, err := awscfg.LoadDefaultConfig(context.Background(), opts...)
 	if err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "storage.new")
+		return nil, apperrors.Wrap(err)
 	}
 
 	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
@@ -95,29 +98,30 @@ func New() (*Service, error) {
 
 func (s *Service) PresignGet(ctx context.Context, key string) (string, error) {
 	if s == nil || s.presigner == nil {
-		return "", errors.New("storage service is not configured")
+		return "", apperrors.NotConfigured
 	}
 	key = strings.TrimSpace(key)
 	if key == "" {
-		return "", errors.New("key is empty")
+		return "", apperrors.RequiredDataMissing.AddErrDetails("key is empty")
 	}
 	out, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	}, s3.WithPresignExpires(s.presignTTL))
 	if err != nil {
-		return "", err
+		logger.Debug("error appeared: "+err.Error(), "storage.presign_get")
+		return "", apperrors.Wrap(err)
 	}
 	return out.URL, nil
 }
 
 func (s *Service) PresignPut(ctx context.Context, key, contentType string) (string, error) {
 	if s == nil || s.presigner == nil {
-		return "", errors.New("storage service is not configured")
+		return "", apperrors.NotConfigured
 	}
 	key = strings.TrimSpace(key)
 	if key == "" {
-		return "", errors.New("key is empty")
+		return "", apperrors.RequiredDataMissing.AddErrDetails("key is empty")
 	}
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -129,18 +133,19 @@ func (s *Service) PresignPut(ctx context.Context, key, contentType string) (stri
 	}
 	out, err := s.presigner.PresignPutObject(ctx, input, s3.WithPresignExpires(s.presignTTL))
 	if err != nil {
-		return "", err
+		logger.Debug("error appeared: "+err.Error(), "storage.presign_put")
+		return "", apperrors.Wrap(err)
 	}
 	return out.URL, nil
 }
 
 func (s *Service) Exists(ctx context.Context, key string) (bool, error) {
 	if s == nil || s.client == nil {
-		return false, errors.New("storage service is not configured")
+		return false, apperrors.NotConfigured
 	}
 	key = strings.TrimSpace(key)
 	if key == "" {
-		return false, errors.New("key is empty")
+		return false, apperrors.RequiredDataMissing.AddErrDetails("key is empty")
 	}
 	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -150,7 +155,8 @@ func (s *Service) Exists(ctx context.Context, key string) (bool, error) {
 		if isNotFound(err) {
 			return false, nil
 		}
-		return false, err
+		logger.Debug("error appeared: "+err.Error(), "storage.exists")
+		return false, apperrors.Wrap(err)
 	}
 	return true, nil
 }
@@ -158,7 +164,7 @@ func (s *Service) Exists(ctx context.Context, key string) (bool, error) {
 func (s *Service) UserAvatarKey(userID, picID string) (string, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
-		return "", errors.New("user id is empty")
+		return "", apperrors.RequiredDataMissing.AddErrDetails("user id is empty")
 	}
 	picID = strings.TrimSpace(picID)
 	if picID == "" {
@@ -169,11 +175,11 @@ func (s *Service) UserAvatarKey(userID, picID string) (string, error) {
 
 func (s *Service) ListProjectAvatarIDs(ctx context.Context, projectID string) ([]string, error) {
 	if s == nil || s.client == nil {
-		return nil, errors.New("storage service is not configured")
+		return nil, apperrors.NotConfigured
 	}
 	projectID = strings.TrimSpace(projectID)
 	if projectID == "" {
-		return nil, errors.New("project id is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("project id is empty")
 	}
 	prefix := photosPrefix + "/" + projectID + "/"
 	return s.listIDs(ctx, prefix)
@@ -189,7 +195,8 @@ func (s *Service) listIDs(ctx context.Context, prefix string) ([]string, error) 
 	for p.HasMorePages() {
 		page, err := p.NextPage(ctx)
 		if err != nil {
-			return nil, err
+			logger.Debug("error appeared: "+err.Error(), "storage.list_ids.page")
+			return nil, apperrors.Wrap(err)
 		}
 		for _, obj := range page.Contents {
 			if obj.Key == nil {

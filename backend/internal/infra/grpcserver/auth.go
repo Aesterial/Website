@@ -4,6 +4,7 @@ import (
 	"Aesterial/backend/internal/app/config"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/domain/permissions"
 	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"
@@ -22,10 +23,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 type Authenticator struct {
@@ -42,72 +41,75 @@ func NewAuthenticator(sessions *sessionsapp.Service, us *userapp.Service) *Authe
 
 func (a *Authenticator) RequireUser(ctx context.Context) (*user.RequestData, error) {
 	if a == nil || a.Sessions == nil {
-		return nil, status.Error(codes.Internal, "auth not configured")
+		return nil, apperrors.NotConfigured
 	}
 
 	token, err := tokenFromContext(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "missing session token")
+		return nil, apperrors.InvalidArguments
 	}
 
 	claims, err := parseClaims(token)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid session token")
+		return nil, apperrors.InvalidArguments
 	}
 
 	sessionID, err := uuid.Parse(claims.ID)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid session token")
+		return nil, apperrors.InvalidArguments
 	}
 
 	valid, err := a.Sessions.IsValid(ctx, sessionID)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid session")
+		return nil, apperrors.InvalidArguments
 	}
 	if !valid {
-		return nil, status.Error(codes.Unauthenticated, "expired session")
+		return nil, apperrors.InvalidArguments
 	}
 
 	uid, err := a.Sessions.GetUID(ctx, sessionID)
 	if err != nil || uid == nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid session")
+		return nil, apperrors.InvalidArguments
 	}
 	banned, _, err := a.User.IsBanned(ctx, *uid)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		logger.Debug("error: "+err.Error(), "")
-		return nil, status.Error(codes.Unauthenticated, "failed to check ban state")
+		return nil, apperrors.InvalidArguments
 	}
 	us := &user.RequestData{UID: *uid, SessionID: sessionID}
 	if banned {
-		return us, status.Error(codes.PermissionDenied, "user is banned")
+		return us, apperrors.InvalidArguments
 	}
 	return us, nil
 }
 
 func (a *Authenticator) RequirePermissions(ctx context.Context, uid uint, need ...permissions.Permission) error {
 	if a == nil || a.User == nil {
-		return status.Error(codes.Internal, "permissions not configured")
+		return apperrors.NotConfigured
 	}
 	if len(need) == 0 {
 		return nil
 	}
 	ok, err := a.User.HasAllPerms(ctx, uid, need...)
 	if err != nil {
-		return status.Error(codes.PermissionDenied, "forbidden")
+		return apperrors.AccessDenied
 	}
 	if !ok {
-		return status.Error(codes.PermissionDenied, "forbidden")
+		return apperrors.AccessDenied
 	}
 	return nil
 }
 
 func (a *Authenticator) RequireViewPermissions(ctx context.Context, uid uint) error {
 	if a == nil || a.User == nil {
-		return status.Error(codes.Internal, "permissions not configured")
+		return apperrors.NotConfigured
 	}
 	ok, err := a.User.HasPerm(ctx, uid, permissions.RanksPermissionsChange)
-	if err != nil || !ok {
-		return status.Error(codes.PermissionDenied, "forbidden")
+	if err != nil{
+		return apperrors.ServerError.AddErrDetails("Error: "+err.Error())
+	}
+	if !ok {
+		return apperrors.AccessDenied
 	}
 	return nil
 }

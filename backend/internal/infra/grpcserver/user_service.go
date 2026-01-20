@@ -9,6 +9,7 @@ import (
 	"Aesterial/backend/internal/domain/user"
 	userpb "Aesterial/backend/internal/gen/user/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"database/sql"
 	"errors"
@@ -16,8 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -47,11 +46,11 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	u, err := s.info.GetSelf(ctx, requestor.SessionID)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Got information about self", "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
@@ -66,17 +65,17 @@ func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersViewProfilePublic); err != nil {
 		return nil, err
 	}
 	u, err := s.info.GetByID(ctx, uint(req.UserID))
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info(fmt.Sprintf("Got information about user with id: %d", req.UserID), "login.authorization.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
@@ -91,7 +90,7 @@ func (s *UserService) Sessions(ctx context.Context, _ *emptypb.Empty) (*userpb.U
 		return nil, err
 	}
 	if s.sessions == nil {
-		return nil, status.Error(codes.Internal, "sessions service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("sessions service not configured")
 	}
 	traceID := TraceIDOrNew(ctx)
 	if requestor != nil {
@@ -99,7 +98,7 @@ func (s *UserService) Sessions(ctx context.Context, _ *emptypb.Empty) (*userpb.U
 	}
 	list, err := s.sessions.GetSessions(ctx, requestor.UID)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if requestor != nil {
 		logger.Info("Got sessions", "user.sessions.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
@@ -116,17 +115,17 @@ func (s *UserService) UpdateSelfName(ctx context.Context, req *userpb.ChangeSelf
 		return nil, err
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	if s.modifier == nil {
-		return nil, status.Error(codes.Internal, "modifier service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("modifier service not configured")
 	}
 	traceID := TraceIDOrNew(ctx)
 	if requestor != nil {
 		logger.Info("Requested self name update", "user.update_self_name.request", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, traceID)
 	}
 	if _, err := s.modifier.UpdateName(ctx, requestor.UID, req.Name); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if requestor != nil {
 		logger.Info("Updated self name", "user.update_self_name.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
@@ -143,28 +142,28 @@ func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) 
 		return nil, err
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	if s.modifier == nil {
-		return nil, status.Error(codes.Internal, "modifier service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("modifier service not configured")
 	}
 	if s.storage == nil {
-		return nil, status.Error(codes.Internal, "storage service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 	}
 	avatar := fromProtoAvatar(req)
 	if avatar == nil || strings.TrimSpace(avatar.Key) == "" {
-		return nil, status.Error(codes.InvalidArgument, "avatar key is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("avatar key is empty")
 	}
 	expectedPrefix := fmt.Sprintf("avatars/%d/", requestor.UID)
 	if !strings.HasPrefix(avatar.Key, expectedPrefix) {
-		return nil, status.Error(codes.PermissionDenied, "avatar key is invalid")
+		return nil, apperrors.AccessDenied.AddErrDetails("avatar key is invalid")
 	}
 	exists, err := s.storage.Exists(ctx, avatar.Key)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to validate avatar object")
+		return nil, apperrors.ServerError.AddErrDetails("failed to validate avatar object")
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, "avatar object not found")
+		return nil, apperrors.RecordNotFound.AddErrDetails("avatar object not found")
 	}
 
 	traceID := TraceIDOrNew(ctx)
@@ -172,7 +171,7 @@ func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) 
 		logger.Info("Requested self avatar update", "user.update_self_avatar.request", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, traceID)
 	}
 	if _, err := s.modifier.UpdateAvatar(ctx, requestor.UID, *avatar); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	if requestor != nil {
 		logger.Info("Updated self avatar", "user.update_self_avatar.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
@@ -186,7 +185,7 @@ func (s *UserService) Ban(ctx context.Context, req *userpb.BanUserRequest) (*use
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersModerationBan); err != nil {
 		return nil, err
@@ -201,7 +200,7 @@ func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersModerationUnban); err != nil {
 		return nil, err
@@ -213,7 +212,7 @@ func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (
 func (s *UserService) formateBanInfoResponse(ctx context.Context, info *user.BanInfo) (*userpb.BanInfoResponse, error) {
 	executor, err := s.info.GetByID(ctx, info.Executor)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	var expr *timestamppb.Timestamp
 	if info.Expires.Valid {
@@ -237,14 +236,14 @@ func (s *UserService) BanInfo(ctx context.Context, _ *emptypb.Empty) (*userpb.Ba
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	info, err := s.info.BanInfo(ctx, requestor.UID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, status.Error(codes.NotFound, "User is not banned")
+			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
 		}
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 
 	return s.formateBanInfoResponse(ctx, info)
@@ -256,7 +255,7 @@ func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserReq
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersModerationBan); err != nil {
 		return nil, err
@@ -264,9 +263,9 @@ func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserReq
 	info, err := s.info.BanInfo(ctx, uint(req.UserID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, status.Error(codes.NotFound, "User is not banned")
+			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
 		}
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return s.formateBanInfoResponse(ctx, info)
 }
@@ -277,14 +276,14 @@ func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.User
 		return nil, err
 	}
 	if requestor == nil {
-		return nil, status.Error(codes.PermissionDenied, "User not logged in")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.StatisticsAll); err != nil {
 		return nil, err
 	}
 	info, err := s.info.GetList(ctx)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	for _, u := range info {
 		s.applyAvatarURL(ctx, u)
@@ -293,11 +292,11 @@ func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.User
 }
 
 func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*userpb.EmptyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "DeleteSelfAvatar is not implemented")
+	return nil, apperrors.NotImplemented.AddErrDetails("delete self avatar is not implemented")
 }
 
 func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.EmptyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "DeleteUserAvatar is not implemented")
+	return nil, apperrors.NotImplemented.AddErrDetails("delete user avatar is not implemented")
 }
 
 func (s *UserService) applyAvatarURL(ctx context.Context, u *userpb.UserPublic) {

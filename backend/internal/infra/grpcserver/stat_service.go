@@ -8,11 +8,10 @@ import (
 	"Aesterial/backend/internal/domain/user"
 	statpb "Aesterial/backend/internal/gen/statistics/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -46,7 +45,7 @@ func authorize(ctx context.Context, auth *Authenticator, perms ...permsdomain.Pe
 
 func (s *StatService) VotesDay(ctx context.Context, _ *emptypb.Empty) (*statpb.VoteCountResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -54,7 +53,7 @@ func (s *StatService) VotesDay(ctx context.Context, _ *emptypb.Empty) (*statpb.V
 	}
 	count, err := s.stat.VoteCount(ctx, time.Now().Add(-24*time.Hour))
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get vote count")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get vote count")
 	}
 	logger.Info("Got statistics about vote count last day", "statservice.votesday", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, TraceIDOrNew(ctx))
 	return &statpb.VoteCountResponse{Count: count, Tracing: TraceIDOrNew(ctx)}, nil
@@ -62,10 +61,10 @@ func (s *StatService) VotesDay(ctx context.Context, _ *emptypb.Empty) (*statpb.V
 
 func (s *StatService) TopVoteCategories(ctx context.Context, req *statpb.CategoriesRequest) (*statpb.TopByCategoriesResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request must not be nil")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request must not be nil")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -74,17 +73,17 @@ func (s *StatService) TopVoteCategories(ctx context.Context, req *statpb.Categor
 	cat, err := s.stat.VoteCategories(ctx, time.Now().Add(-24*7*time.Hour), int(req.Limit))
 	if err != nil {
 		logger.Debug("Failed to get top categories: "+err.Error(), "statService.topVoteCategories")
-		return nil, status.Error(codes.Internal, "failed to get top vote categories")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get top vote categories")
 	}
 	return &statpb.TopByCategoriesResponse{Record: cat, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *StatService) UsersActivity(ctx context.Context, req *statpb.UsersActivityRequest) (*statpb.UsersActivityResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request must not be nil")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request must not be nil")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -98,7 +97,7 @@ func (s *StatService) UsersActivity(ctx context.Context, req *statpb.UsersActivi
 	activity, err := s.stat.UsersActivity(ctx, time.Now().Add(-time.Duration(limit)*24*time.Hour))
 	if err != nil {
 		logger.Debug("Error on getting users activity: "+err.Error(), "service.usersActivity")
-		return nil, status.Error(codes.Internal, "failed to get users activity")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get users activity")
 	}
 
 	data := make(map[int64]*statpb.UsersActivity, len(activity))
@@ -111,7 +110,7 @@ func (s *StatService) UsersActivity(ctx context.Context, req *statpb.UsersActivi
 
 func (s *StatService) ActiveUsers(ctx context.Context, tag *statpb.WithFromTagRequest) (*statpb.ActiveUsersResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -119,14 +118,14 @@ func (s *StatService) ActiveUsers(ctx context.Context, tag *statpb.WithFromTagRe
 	}
 	data, err := s.stat.GetActiveUsers(ctx, tag.Since.AsTime())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get active users")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get active users")
 	}
 	return &statpb.ActiveUsersResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *StatService) OfflineUsers(ctx context.Context, tag *statpb.WithFromTagRequest) (*statpb.OfflineUsersResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -134,14 +133,14 @@ func (s *StatService) OfflineUsers(ctx context.Context, tag *statpb.WithFromTagR
 	}
 	data, err := s.stat.GetOfflineUsers(ctx, tag.Since.AsTime())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get offline users")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get offline users")
 	}
 	return &statpb.OfflineUsersResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *StatService) IdeasDay(ctx context.Context, _ *emptypb.Empty) (*statpb.IdeasCountResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth)
 	if err != nil || requestor == nil {
@@ -149,14 +148,14 @@ func (s *StatService) IdeasDay(ctx context.Context, _ *emptypb.Empty) (*statpb.I
 	}
 	data, err := s.stat.NewIdeasCount(ctx, oClock())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get vote count")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get vote count")
 	}
 	return &statpb.IdeasCountResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *StatService) IdeasRecap(ctx context.Context, _ *emptypb.Empty) (*statpb.IdeasApprovalResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsActivityAll)
 	if err != nil || requestor == nil {
@@ -167,7 +166,7 @@ func (s *StatService) IdeasRecap(ctx context.Context, _ *emptypb.Empty) (*statpb
 
 func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*statpb.EditorsGradeResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsMediaQuality)
 	if err != nil || requestor == nil {
@@ -183,7 +182,7 @@ func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*stat
 
 func (s *StatService) MediaCoverage(ctx context.Context, req *statpb.MediaCoverageRequest) (*statpb.MediaCoverageResponse, error) {
 	if s == nil || s.stat == nil {
-		return nil, status.Error(codes.Internal, "service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("service is not configured")
 	}
 	requestor, err := authorize(ctx, s.auth, permsdomain.StatisticsMediaVolume)
 	if err != nil || requestor == nil {

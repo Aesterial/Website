@@ -8,12 +8,12 @@ import (
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	maintpb "Aesterial/backend/internal/gen/maintenance/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"time"
 
 	"context"
+	"strings"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -29,38 +29,38 @@ func NewMaintenanceService(s *maintenance.Service, ses *sessions.Service, us *us
 
 func (s *MaintenanceService) IsActive(ctx context.Context, _ *emptypb.Empty) (*maintpb.IsSomethingResponse, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	active, err := s.serv.CheckIsActive(ctx)
 	if err != nil {
 		logger.Debug("failed to check: "+err.Error(), "")
-		return nil, status.Error(codes.Internal, "failed to check")
+		return nil, apperrors.ServerError.AddErrDetails("failed to check")
 	}
 	return &maintpb.IsSomethingResponse{Has: active, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) IsPlanned(ctx context.Context, _ *emptypb.Empty) (*maintpb.IsSomethingResponse, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	planned, err := s.serv.IsPlanned(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to check")
+		return nil, apperrors.ServerError.AddErrDetails("failed to check")
 	}
 	return &maintpb.IsSomethingResponse{Has: planned, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maintpb.DataResponse, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	data, err := s.serv.GetData(ctx)
 	if err != nil {
-		if err.Error() == "maintenance is not active" {
-			return nil, status.Error(codes.Unavailable, err.Error())
+		if strings.Contains(strings.ToLower(err.Error()), "maintenance is not active") {
+			return nil, apperrors.Unavailable.AddErrDetails("maintenance is not active")
 		}
 		logger.Debug("Failed to get maintenance data: "+err.Error(), "")
-		return nil, status.Error(codes.Internal, "failed to get data")
+		return nil, apperrors.ServerError.AddErrDetails("failed to get data")
 	}
 	resp := data.ToProto()
 	resp.Tracing = TraceIDOrNew(ctx)
@@ -69,81 +69,81 @@ func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maint
 
 func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateRequest) (*maintpb.Response, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
 			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
-		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: time.Time{}, PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
 		logger.Debug("failed to create maintenance: "+err.Error(), "")
-		return nil, status.Error(codes.Internal, "failed to create maintenance")
+		return nil, apperrors.ServerError.AddErrDetails("failed to create maintenance")
 	}
 	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.CreateRequest) (*maintpb.Response, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
 			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
-		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: req.WillStart.AsTime(), PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
-		return nil, status.Error(codes.Internal, "failed to create maintenance")
+		return nil, apperrors.ServerError.AddErrDetails("failed to create maintenance")
 	}
 	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest) (*maintpb.Response, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
 			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
-		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Edit(ctx, maintdomain.EditST{Description: req.Description, Scope: req.Scope}); err != nil {
-		return nil, status.Error(codes.Internal, "failed to edit maintenance")
+		return nil, apperrors.ServerError.AddErrDetails("failed to edit maintenance")
 	}
 	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*maintpb.Response, error) {
 	if s == nil || s.serv == nil {
-		return nil, status.Error(codes.Internal, "maintenance service is not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
 		if err != nil {
 			logger.Debug("Error while getting user: "+err.Error(), "")
 		}
-		return nil, status.Error(codes.PermissionDenied, "user not authentificated")
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Complete(ctx); err != nil {
-		return nil, status.Error(codes.Internal, "failed to complete maintenance")
+		return nil, apperrors.ServerError.AddErrDetails("failed to complete maintenance")
 	}
 	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
 }

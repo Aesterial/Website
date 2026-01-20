@@ -3,8 +3,9 @@ package rank
 import (
 	"Aesterial/backend/internal/domain/permissions"
 	"Aesterial/backend/internal/domain/rank"
+	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
-	"errors"
 	"strings"
 )
 
@@ -18,101 +19,141 @@ func New(repo rank.Repository) *Service {
 
 func (s *Service) Create(ctx context.Context, name string, color int, description string, perms *permissions.Permissions) error {
 	if s == nil || s.repo == nil {
-		return errors.New("ranks service not configured")
+		return apperrors.NotConfigured
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return errors.New("rank name is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
 	description = strings.TrimSpace(description)
 	if description == "" {
-		return errors.New("rank description is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank description is empty")
 	}
 	if color == 0 {
-		return errors.New("rank color is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank color is empty")
 	}
 	if perms != nil {
-		return s.repo.Create(ctx, name, color, description, *perms)
+		if err := s.repo.Create(ctx, name, color, description, *perms); err != nil {
+			logger.Debug("error appeared: "+err.Error(), "rank.create")
+			return apperrors.Wrap(err)
+		}
+		return nil
 	}
-	return s.repo.Create(ctx, name, color, description)
+	if err := s.repo.Create(ctx, name, color, description); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.create")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) Edit(ctx context.Context, name string, target string, data any) error {
 	if s == nil || s.repo == nil {
-		return errors.New("ranks service not configured")
+		return apperrors.NotConfigured
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return errors.New("rank name is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
 	target = strings.TrimSpace(target)
 	if target == "" {
-		return errors.New("rank target is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank target is empty")
 	}
 	if data == nil {
-		return errors.New("rank data is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank data is empty")
 	}
-	return s.repo.Edit(ctx, name, target, data)
+	if err := s.repo.Edit(ctx, name, target, data); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.edit")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) Get(ctx context.Context, name string) (*rank.Rank, error) {
 	if s == nil || s.repo == nil {
-		return nil, errors.New("ranks service not configured")
+		return nil, apperrors.NotConfigured
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, errors.New("rank name is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
-	return s.repo.Get(ctx, name)
+	data, err := s.repo.Get(ctx, name)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.get")
+		return nil, apperrors.Wrap(err)
+	}
+	return data, nil
 }
 
 func (s *Service) Delete(ctx context.Context, name string) error {
 	if s == nil || s.repo == nil {
-		return errors.New("ranks service not configured")
+		return apperrors.NotConfigured
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return errors.New("rank name is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
-	return s.repo.Delete(ctx, name)
+	if err := s.repo.Delete(ctx, name); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.delete")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) List(ctx context.Context) ([]*rank.Rank, error) {
 	if s == nil || s.repo == nil {
-		return nil, errors.New("ranks service not configured")
+		return nil, apperrors.NotConfigured
 	}
-	return s.repo.List(ctx)
+	list, err := s.repo.List(ctx)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.list")
+		return nil, apperrors.Wrap(err)
+	}
+	return list, nil
 }
 
 func (s *Service) UsersWithRank(ctx context.Context, name string) ([]*uint, error) {
 	if s == nil || s.repo == nil {
-		return nil, errors.New("ranks service not configured")
+		return nil, apperrors.NotConfigured
 	}
 	if strings.TrimSpace(name) == "" {
-		return nil, errors.New("rank name is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
-	return s.repo.UsersWithRank(ctx, name)
+	list, err := s.repo.UsersWithRank(ctx, name)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.users_with_rank")
+		return nil, apperrors.Wrap(err)
+	}
+	return list, nil
 }
 
 func (s *Service) Perms(ctx context.Context, name string) (*permissions.Permissions, error) {
 	if s == nil || s.repo == nil {
-		return nil, errors.New("ranks service not configured")
+		return nil, apperrors.NotConfigured
 	}
 	if strings.TrimSpace(name) == "" {
-		return nil, errors.New("rank name is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
-	return s.repo.Perms(ctx, name)
+	perms, err := s.repo.Perms(ctx, name)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.perms")
+		return nil, apperrors.Wrap(err)
+	}
+	return perms, nil
 }
 
 func (s *Service) ChangePerms(ctx context.Context, name string, perm permissions.Permission, state bool) error {
 	if s == nil || s.repo == nil {
-		return errors.New("ranks service not configured")
+		return apperrors.NotConfigured
 	}
 	if strings.TrimSpace(name) == "" {
-		return errors.New("rank name is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
 	if strings.TrimSpace(perm.String()) == "" {
-		return errors.New("permission is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
-	return s.repo.ChangePerms(ctx, name, perm, state)
+	if err := s.repo.ChangePerms(ctx, name, perm, state); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "rank.change_perms")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }

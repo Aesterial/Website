@@ -3,11 +3,9 @@ package grpcserver
 import (
 	storageapp "Aesterial/backend/internal/app/storage"
 	storagepb "Aesterial/backend/internal/gen/storage/v1"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"strings"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type StorageService struct {
@@ -21,18 +19,18 @@ func NewStorageService(storage *storageapp.Service) *StorageService {
 
 func (s *StorageService) ReceiveGetPresign(ctx context.Context, req *storagepb.PresignGetRequest) (*storagepb.PresignResponse, error) {
 	if s == nil || s.storage == nil {
-		return nil, status.Error(codes.Internal, "storage service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	key := strings.TrimSpace(req.Key)
 	if key == "" {
-		return nil, status.Error(codes.InvalidArgument, "key is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("key is empty")
 	}
 	url, err := s.storage.PresignGet(ctx, key)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &storagepb.PresignResponse{
 		Presign: url,
@@ -42,18 +40,18 @@ func (s *StorageService) ReceiveGetPresign(ctx context.Context, req *storagepb.P
 
 func (s *StorageService) ReceivePutPresign(ctx context.Context, req *storagepb.PresignPutRequest) (*storagepb.PresignResponse, error) {
 	if s == nil || s.storage == nil {
-		return nil, status.Error(codes.Internal, "storage service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	key := strings.TrimSpace(req.Key)
 	if key == "" {
-		return nil, status.Error(codes.InvalidArgument, "key is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("key is empty")
 	}
 	url, err := s.storage.PresignPut(ctx, key, req.ContentType)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &storagepb.PresignResponse{
 		Presign: url,
@@ -63,18 +61,18 @@ func (s *StorageService) ReceivePutPresign(ctx context.Context, req *storagepb.P
 
 func (s *StorageService) GetUserAvatarPresign(ctx context.Context, req *storagepb.UserAvatarRequest) (*storagepb.PresignResponse, error) {
 	if s == nil || s.storage == nil {
-		return nil, status.Error(codes.Internal, "storage service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	key, err := s.storage.UserAvatarKey(req.UserID, req.PicID)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	url, err := s.storage.PresignGet(ctx, key)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &storagepb.PresignResponse{
 		Presign: url,
@@ -84,14 +82,14 @@ func (s *StorageService) GetUserAvatarPresign(ctx context.Context, req *storagep
 
 func (s *StorageService) ListProjectAvatars(ctx context.Context, req *storagepb.ProjectAvatarsRequest) (*storagepb.ProjectAvatarsResponse, error) {
 	if s == nil || s.storage == nil {
-		return nil, status.Error(codes.Internal, "storage service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 	ids, err := s.storage.ListProjectAvatarIDs(ctx, req.ProjectID)
 	if err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 	return &storagepb.ProjectAvatarsResponse{
 		PicIDs:  ids,

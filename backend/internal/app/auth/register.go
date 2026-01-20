@@ -3,19 +3,24 @@ package login
 import (
 	domain "Aesterial/backend/internal/domain/login"
 	apperrors "Aesterial/backend/internal/shared/errors"
+	"Aesterial/backend/internal/infra/logger"
 	"context"
-	"net/http"
-	"strconv"
 )
 
 func (s *Service) Register(ctx context.Context, required domain.RegisterRequire) (*uint, error) {
 	if required.IsEmpty() {
-		return nil, apperrors.BuildError(strconv.Itoa(http.StatusBadRequest), "required body is empty", nil, "")
+		return nil, apperrors.RequiredDataMissing
 	}
 	var err error
 	required.Password, err = GeneratePassword(required.Password)
 	if err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "auth.register.hash")
+		return nil, apperrors.Wrap(err)
 	}
-	return s.repo.Register(ctx, required)
+	uid, err := s.repo.Register(ctx, required)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "auth.register")
+		return nil, apperrors.Wrap(err)
+	}
+	return uid, nil
 }

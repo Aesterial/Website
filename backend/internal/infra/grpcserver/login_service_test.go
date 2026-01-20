@@ -1,22 +1,22 @@
 package grpcserver_test
 
 import (
-	"Aesterial/backend/internal/domain/permissions"
-	userpb "Aesterial/backend/internal/gen/user/v1"
-	"context"
-	"testing"
-	"time"
-
 	loginapp "Aesterial/backend/internal/app/auth"
-	permsapp "Aesterial/backend/internal/app/info/permissions"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userinfo "Aesterial/backend/internal/app/info/user"
+	verificationapp "Aesterial/backend/internal/app/verification"
 	logindomain "Aesterial/backend/internal/domain/login"
+	"Aesterial/backend/internal/domain/permissions"
 	rankdomain "Aesterial/backend/internal/domain/rank"
 	sessionsdomain "Aesterial/backend/internal/domain/sessions"
 	userdomain "Aesterial/backend/internal/domain/user"
+	verdomain "Aesterial/backend/internal/domain/verification"
 	loginpb "Aesterial/backend/internal/gen/login/v1"
+	userpb "Aesterial/backend/internal/gen/user/v1"
 	grpcserver "Aesterial/backend/internal/infra/grpcserver"
+	"context"
+	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -30,9 +30,8 @@ func TestRegister(t *testing.T) {
 	loginRepo := &loginRepoStub{registerUID: 42}
 	sessionsRepo := &sessionsRepoStub{}
 	userRepo := &userRepoStub{}
-	permsRepo := &permsRepoStub{}
 
-	service := newLoginService(loginRepo, sessionsRepo, userRepo, permsRepo)
+	service := newLoginService(loginRepo, sessionsRepo, userRepo)
 	ctx, _ := newTestContext("/login.v1.LoginService/Register")
 
 	resp, err := service.Register(ctx, &loginpb.RegisterRequest{
@@ -61,9 +60,8 @@ func TestAuthorization(t *testing.T) {
 	loginRepo := &loginRepoStub{authUID: 7}
 	sessionsRepo := &sessionsRepoStub{}
 	userRepo := &userRepoStub{}
-	permsRepo := &permsRepoStub{}
 
-	service := newLoginService(loginRepo, sessionsRepo, userRepo, permsRepo)
+	service := newLoginService(loginRepo, sessionsRepo, userRepo)
 	ctx, _ := newTestContext("/login.v1.LoginService/Authorization")
 
 	resp, err := service.Authorization(ctx, &loginpb.AuthRequest{
@@ -84,12 +82,12 @@ func TestAuthorization(t *testing.T) {
 	}
 }
 
-func newLoginService(repo logindomain.Repository, sessionsRepo sessionsdomain.Repository, userRepo userdomain.Repository, permsRepo permissions.Repository) *grpcserver.LoginService {
+func newLoginService(repo logindomain.Repository, sessionsRepo sessionsdomain.Repository, userRepo userdomain.Repository) *grpcserver.LoginService {
 	sessionsService := sessionsapp.New(sessionsRepo)
 	userService := userinfo.New(userRepo, sessionsRepo)
+	verificationService := verificationapp.New(&verificationRepoStub{}, nil)
 	loginService := loginapp.New(repo, sessionsService, userService)
-	permsService := permsapp.New(permsRepo)
-	return grpcserver.NewLoginService(loginService, sessionsService, permsService, userService)
+	return grpcserver.NewLoginService(loginService, sessionsService, userService, verificationService)
 }
 
 func newTestContext(method string) (context.Context, *transportStreamStub) {
@@ -228,7 +226,7 @@ func (u *userRepoStub) GetEmail(ctx context.Context, uid uint) (*userdomain.Emai
 	return nil, nil
 }
 
-func (u *userRepoStub) GetRank(ctx context.Context, uid uint) (*rankdomain.Rank, error) {
+func (u *userRepoStub) GetRank(ctx context.Context, uid uint) (*rankdomain.UserRank, error) {
 	return nil, nil
 }
 
@@ -271,64 +269,40 @@ func (u *userRepoStub) IsExists(ctx context.Context, user userdomain.User) (bool
 	return false, nil
 }
 
-type permsRepoStub struct {
-	forRank *permissions.Permissions
-	forUser *permissions.Permissions
-
-	has    bool
-	hasAll bool
-
-	// ошибки по методам
-	getForRankErr    error
-	getForUserErr    error
-	hasErr           error
-	hasAllErr        error
-	changeForUserErr error
-	changeForRankErr error
-	setForUserErr    error
-	setForRankErr    error
+func (u *userRepoStub) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
+	return false, nil
 }
 
-func (r *permsRepoStub) GetForRank(ctx context.Context, rank string) (*permissions.Permissions, error) {
-	if r.getForRankErr != nil {
-		return nil, r.getForRankErr
-	}
-	return r.forRank, nil
+func (u *userRepoStub) HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error) {
+	return false, nil
 }
 
-func (r *permsRepoStub) GetForUser(ctx context.Context, uid uint) (*permissions.Permissions, error) {
-	if r.getForUserErr != nil {
-		return nil, r.getForUserErr
-	}
-	return r.forUser, nil
+func (u *userRepoStub) Perms(ctx context.Context, uid uint) (*permissions.Permissions, error) {
+	return nil, nil
 }
 
-func (r *permsRepoStub) Has(ctx context.Context, uid uint, need permissions.Permission) (bool, error) {
-	if r.hasErr != nil {
-		return false, r.hasErr
-	}
-	return r.has, nil
+func (u *userRepoStub) ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error {
+	return nil
 }
 
-func (r *permsRepoStub) HasAll(ctx context.Context, uid uint, need ...permissions.Permission) (bool, error) {
-	if r.hasAllErr != nil {
-		return false, r.hasAllErr
-	}
-	return r.hasAll, nil
+type verificationRepoStub struct{}
+
+func (v *verificationRepoStub) Create(ctx context.Context, email string, purpose verdomain.Purpose, ip string, userAgent string, ttl time.Duration) (token string, err error) {
+	return "", nil
 }
 
-func (r *permsRepoStub) ChangeForUser(ctx context.Context, uid uint, need permissions.Permission, state bool) error {
-	return r.changeForUserErr
+func (v *verificationRepoStub) Consume(ctx context.Context, purpose verdomain.Purpose, token string) (*verdomain.TokenRecord, error) {
+	return nil, nil
 }
 
-func (r *permsRepoStub) ChangeForRank(ctx context.Context, rank string, need permissions.Permission, state bool) error {
-	return r.changeForRankErr
+func (v *verificationRepoStub) BanEmail(ctx context.Context, email string, reason string) error {
+	return nil
 }
 
-func (r *permsRepoStub) SetForUser(ctx context.Context, uid uint, perms *permissions.Permissions) error {
-	return r.setForUserErr
+func (v *verificationRepoStub) IsBanned(ctx context.Context, email string) (bool, error) {
+	return false, nil
 }
 
-func (r *permsRepoStub) SetForRank(ctx context.Context, rank string, perms *permissions.Permissions) error {
-	return r.setForRankErr
+func (v *verificationRepoStub) GetRecord(ctx context.Context, purpose verdomain.Purpose, token string) (*verdomain.TokenRecord, error) {
+	return nil, nil
 }

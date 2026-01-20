@@ -2,6 +2,8 @@ package mailer
 
 import (
 	"Aesterial/backend/internal/app/config"
+	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"fmt"
 	"net/url"
@@ -54,7 +56,8 @@ func (s *Service) SendEmailVerify(ctx context.Context, email string, token strin
 
 	resp, _, err := s.client.TransactionalEmailsApi.SendTransacEmail(ctx, em)
 	if err != nil {
-		return "", err
+		logger.Debug("error appeared: "+err.Error(), "mailer.send_email_verify")
+		return "", apperrors.Wrap(err)
 	}
 	return resp.MessageId, nil
 }
@@ -82,7 +85,8 @@ func (s *Service) SendPasswordReset(ctx context.Context, email string, token str
 	}
 	resp, _, err := s.client.TransactionalEmailsApi.SendTransacEmail(ctx, em)
 	if err != nil {
-		return "", err
+		logger.Debug("error appeared: "+err.Error(), "mailer.send_password_reset")
+		return "", apperrors.Wrap(err)
 	}
 	return resp.MessageId, nil
 }

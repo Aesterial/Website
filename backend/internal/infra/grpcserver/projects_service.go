@@ -10,12 +10,11 @@ import (
 	"Aesterial/backend/internal/domain/user"
 	projpb "Aesterial/backend/internal/gen/projects/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"strings"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -45,10 +44,10 @@ func NewProjectService(projects *projectsapp.Service, sess *sessionsapp.Service,
 
 func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) (*projpb.EmptyResponse, error) {
 	if s == nil || s.projects == nil {
-		return nil, status.Error(codes.Internal, "projects service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
 	}
 
 	requestor, err := s.auth.RequireUser(ctx)
@@ -63,14 +62,14 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 	project.Author = &user.User{UID: requestor.UID}
 	project.Info.Title = strings.TrimSpace(req.Title)
 	if project.Info.Title == "" {
-		return nil, status.Error(codes.InvalidArgument, "title is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("title is empty")
 	}
 	if req.Description != nil {
 		project.Info.Description = strings.TrimSpace(*req.Description)
 	}
 	project.Info.Category = projectsdomain.ProjectCategory(normalizeProjectCategory(req.Category))
 	if project.Info.Category == "" {
-		return nil, status.Error(codes.InvalidArgument, "category is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("category is empty")
 	}
 	if req.Location != nil {
 		project.Info.Location.City = strings.TrimSpace(req.Location.City)
@@ -84,23 +83,23 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 		}
 		key := strings.TrimSpace(avatar.Key)
 		if key == "" {
-			return nil, status.Error(codes.InvalidArgument, "photo key is empty")
+			return nil, apperrors.RequiredDataMissing.AddErrDetails("photo key is empty")
 		}
 		if s.storage == nil {
-			return nil, status.Error(codes.Internal, "storage service not configured")
+			return nil, apperrors.NotConfigured.AddErrDetails("storage service not configured")
 		}
 		exists, err := s.storage.Exists(ctx, key)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to validate project photo object")
+			return nil, apperrors.ServerError.AddErrDetails("failed to validate project photo object")
 		}
 		if !exists {
-			return nil, status.Error(codes.NotFound, "project photo object not found")
+			return nil, apperrors.RecordNotFound.AddErrDetails("project photo object not found")
 		}
 		project.Info.Photos = append(project.Info.Photos, avatar)
 	}
 
 	if err := s.projects.CreateProject(ctx, project); err != nil {
-		return nil, statusFromError(err)
+		return nil, apperrors.Wrap(err)
 	}
 
 	traceID := TraceIDOrNew(ctx)
@@ -110,7 +109,7 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 
 func (s *ProjectService) Categories(ctx context.Context, _ *emptypb.Empty) (*projpb.CategoriesResponse, error) {
 	if s == nil || s.projects == nil {
-		return nil, status.Error(codes.Internal, "projects service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil || requestor == nil {
@@ -131,7 +130,7 @@ func (s *ProjectService) Categories(ctx context.Context, _ *emptypb.Empty) (*pro
 
 func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {
 	if s == nil || s.projects == nil {
-		return nil, status.Error(codes.Internal, "projects service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
 	trace := TraceIDOrNew(ctx)
 	requestor, err := s.auth.RequireUser(ctx)
@@ -153,7 +152,7 @@ func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*proj
 
 func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {
 	if s == nil || s.projects == nil {
-		return nil, status.Error(codes.Internal, "projects service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
 	trace := TraceIDOrNew(ctx)
 	requestor, err := s.auth.RequireUser(ctx)
@@ -175,7 +174,7 @@ func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest
 
 func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest) (*projpb.EmptyResponse, error) {
 	if s == nil || s.projects == nil {
-		return nil, status.Error(codes.Internal, "projects service not configured")
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
 	trace := TraceIDOrNew(ctx)
 	requestor, err := s.auth.RequireUser(ctx)
@@ -187,7 +186,7 @@ func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest
 	}
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, apperrors.InvalidArguments.AddErrDetails(err.Error())
 	}
 	logger.Info("Toggled like for project with ID: "+id.String(), "projects.like.toggle", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, trace)
 	if err := s.projects.ToggleLike(ctx, id, requestor.UID); err != nil {

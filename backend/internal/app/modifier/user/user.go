@@ -2,10 +2,10 @@ package user
 
 import (
 	"Aesterial/backend/internal/domain/user"
+	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -19,34 +19,26 @@ func New(repo user.Repository) *Service {
 
 func (s *Service) UpdateName(ctx context.Context, id uint, name string) (*user.User, error) {
 	if id == 0 {
-		return nil, apperrors.BuildError(
-			"InvalidUserID",
-			"user id must be greater than zero",
-			map[string]string{"userID": "must be greater than zero"},
-			"",
-		)
+		return nil, apperrors.InvalidArguments
 	}
 
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
-		return nil, apperrors.BuildError(
-			"InvalidName",
-			"name must not be empty",
-			map[string]string{"name": "must not be empty"},
-			"",
-		)
+		return nil, apperrors.InvalidArguments
 	}
 
 	u, err := s.repo.GetUserByUID(ctx, id)
 	if err != nil {
 		if isNotFound(err) {
-			return nil, apperrors.UserNotFound(strconv.FormatUint(uint64(id), 10), "")
+			return nil, apperrors.RecordNotFound
 		}
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.update_name")
+		return nil, apperrors.Wrap(err)
 	}
 
 	if err = s.repo.UpdateDisplayName(ctx, id, trimmed); err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.update_name.save")
+		return nil, apperrors.Wrap(err)
 	}
 
 	if u.Settings == nil {
@@ -59,27 +51,24 @@ func (s *Service) UpdateName(ctx context.Context, id uint, name string) (*user.U
 
 func (s *Service) UpdateAvatar(ctx context.Context, id uint, avatar user.Avatar) (*user.User, error) {
 	if id == 0 {
-		return nil, apperrors.BuildError(
-			"InvalidUserID",
-			"user id must be greater than zero",
-			map[string]string{"userID": "must be greater than zero"},
-			"",
-		)
+		return nil, apperrors.InvalidArguments
 	}
 	if strings.TrimSpace(avatar.Key) == "" {
-		return nil, errors.New("avatar key is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("avatar key is empty")
 	}
 
 	u, err := s.repo.GetUserByUID(ctx, id)
 	if err != nil {
 		if isNotFound(err) {
-			return nil, apperrors.UserNotFound(strconv.FormatUint(uint64(id), 10), "")
+			return nil, apperrors.RecordNotFound
 		}
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.update_avatar")
+		return nil, apperrors.Wrap(err)
 	}
 
 	if err := s.repo.AddAvatar(ctx, id, avatar); err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.update_avatar.save")
+		return nil, apperrors.Wrap(err)
 	}
 
 	if u.Settings == nil {
@@ -92,6 +81,10 @@ func (s *Service) UpdateAvatar(ctx context.Context, id uint, avatar user.Avatar)
 func isNotFound(err error) bool {
 	if err == nil {
 		return false
+	}
+	var appErr apperrors.ErrorST
+	if errors.As(err, &appErr) {
+		return appErr.Is(apperrors.RecordNotFound)
 	}
 	return strings.EqualFold(err.Error(), "user not found")
 }

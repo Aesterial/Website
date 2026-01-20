@@ -7,8 +7,9 @@ import (
 	projpb "Aesterial/backend/internal/gen/projects/v1"
 	submpb "Aesterial/backend/internal/gen/submissions/v1"
 	userpb "Aesterial/backend/internal/gen/user/v1"
+	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
-	"errors"
 	"strings"
 )
 
@@ -82,17 +83,20 @@ func toGenProject(p *projects.Project) *projpb.Project {
 func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, error) {
 	data, err := s.repo.GetList(ctx)
 	if err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "submissions.get_list")
+		return nil, apperrors.Wrap(err)
 	}
 	var response []*submpb.ListResponseTarget
 	for _, v := range data {
 		p, err := s.proj.GetProject(ctx, v.ProjectID)
 		if err != nil {
-			return nil, err
+			logger.Debug("error appeared: "+err.Error(), "submissions.get_list.project")
+			return nil, apperrors.Wrap(err)
 		}
 		author, err := s.usrs.GetUserByUID(ctx, p.Author.UID)
 		if err != nil {
-			return nil, err
+			logger.Debug("error appeared: "+err.Error(), "submissions.get_list.author")
+			return nil, apperrors.Wrap(err)
 		}
 		p.Author = author
 		reason := ""
@@ -112,6 +116,7 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.ListResponseTarget, er
 func (s *Service) GetActive(ctx context.Context) ([]*submpb.ListResponseTarget, error) {
 	data, err := s.GetList(ctx)
 	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "submissions.get_active")
 		return nil, err
 	}
 	var response []*submpb.ListResponseTarget
@@ -125,14 +130,22 @@ func (s *Service) GetActive(ctx context.Context) ([]*submpb.ListResponseTarget, 
 
 func (s *Service) Approve(ctx context.Context, id int32) error {
 	if id == 0 {
-		return errors.New("invalid id")
+		return apperrors.InvalidArguments.AddErrDetails("invalid id")
 	}
-	return s.repo.Approve(ctx, id)
+	if err := s.repo.Approve(ctx, id); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "submissions.approve")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) Decline(ctx context.Context, id int32, reason string) error {
 	if id == 0 || reason == "" {
-		return errors.New("invalid data")
+		return apperrors.InvalidArguments.AddErrDetails("invalid data")
 	}
-	return s.repo.Decline(ctx, id, reason)
+	if err := s.repo.Decline(ctx, id, reason); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "submissions.decline")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }

@@ -19,6 +19,7 @@ import (
 	"Aesterial/backend/internal/domain/user"
 	statpb "Aesterial/backend/internal/gen/statistics/v1"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"crypto/rand"
 	"database/sql"
@@ -114,7 +115,7 @@ type compositeField struct {
 
 func parseComposite(raw string) ([]compositeField, error) {
 	if raw == "" {
-		return nil, errors.New("composite value is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("composite value is empty")
 	}
 	if raw[0] != '(' || raw[len(raw)-1] != ')' {
 		return nil, fmt.Errorf("invalid composite value: %q", raw)
@@ -199,7 +200,7 @@ func parsePostgresBool(raw string) (bool, error) {
 func parsePostgresTime(raw string) (time.Time, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return time.Time{}, errors.New("time value is empty")
+		return time.Time{}, apperrors.InvalidArguments.AddErrDetails("time value is empty")
 	}
 	layouts := []string{
 		"2006-01-02 15:04:05.999999999Z07:00",
@@ -475,7 +476,7 @@ func (u *UserRepository) GetUserByUID(ctx context.Context, uid uint) (*user.User
 		return nil, err
 	}
 	if at == nil {
-		return nil, errors.New("joined at pointer is null")
+		return nil, apperrors.ServerError.AddErrDetails("joined at pointer is null")
 	}
 	us.Joined = *at
 	us.Email, err = u.GetEmail(ctx, uid)
@@ -503,7 +504,7 @@ func (u *UserRepository) GetUserByUsername(ctx context.Context, username string)
 
 func (u *UserRepository) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.SessionTime, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var liveTime int
 	if err := u.DB.QueryRowContext(ctx, "SELECT (u.settings).session_live_time FROM users u WHERE u.uid = $1", uid).Scan(&liveTime); err != nil {
@@ -517,7 +518,7 @@ func (u *UserRepository) GetUserSessionLiveTime(ctx context.Context, uid uint) (
 
 func (u *UserRepository) GetAvatar(ctx context.Context, uid uint) (*user.Avatar, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var avatar user.Avatar
 	var record struct {
@@ -561,7 +562,7 @@ func (u *UserRepository) IsExists(ctx context.Context, user user.User) (bool, er
 		return false, err
 	}
 	if !exists {
-		return false, errors.New("user not found")
+		return false, apperrors.RecordNotFound
 	}
 	return exists, nil
 }
@@ -572,7 +573,7 @@ func (u *UserRepository) IsExistsByUID(ctx context.Context, uid uint) (bool, err
 
 func (u *UserRepository) UpdateDisplayName(ctx context.Context, uid uint, displayName string) error {
 	if uid == 0 {
-		return errors.New("uid is zero")
+		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	res, err := u.DB.ExecContext(ctx, `
 		UPDATE users u
@@ -586,14 +587,14 @@ func (u *UserRepository) UpdateDisplayName(ctx context.Context, uid uint, displa
 		return err
 	}
 	if affected == 0 {
-		return errors.New("user not found")
+		return apperrors.RecordNotFound
 	}
 	return nil
 }
 
 func (u *UserRepository) SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error {
 	if strings.TrimSpace(email) == "" {
-		return errors.New("email is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
 	res, err := u.DB.ExecContext(ctx, `
 		UPDATE users u
@@ -608,14 +609,14 @@ func (u *UserRepository) SetEmailVerifiedByAddress(ctx context.Context, email st
 		return err
 	}
 	if affected == 0 {
-		return errors.New("user not found")
+		return apperrors.RecordNotFound
 	}
 	return nil
 }
 
 func (u *UserRepository) UpdatePasswordByEmail(ctx context.Context, email string, passwordHash string) error {
 	if strings.TrimSpace(email) == "" || passwordHash == "" {
-		return errors.New("email or password is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("email or password is empty")
 	}
 	res, err := u.DB.ExecContext(ctx, `
 		UPDATE users u
@@ -630,14 +631,14 @@ func (u *UserRepository) UpdatePasswordByEmail(ctx context.Context, email string
 		return err
 	}
 	if affected == 0 {
-		return errors.New("user not found")
+		return apperrors.RecordNotFound
 	}
 	return nil
 }
 
 func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {
 	if uid == 0 {
-		return false, nil, errors.New("uid is zero")
+		return false, nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var found bool
 	err := u.DB.QueryRowContext(ctx, `
@@ -658,7 +659,7 @@ func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.Ba
 
 func (u *UserRepository) Ban(ctx context.Context, info user.BanInfo) error {
 	if info.Empty() {
-		return errors.New("invalid argument")
+		return apperrors.InvalidArguments.AddErrDetails("invalid argument")
 	}
 	var expr *time.Time = nil
 	if info.Expire.IsZero() {
@@ -670,7 +671,7 @@ func (u *UserRepository) Ban(ctx context.Context, info user.BanInfo) error {
 
 func (u *UserRepository) UnBan(ctx context.Context, uid uint) error {
 	if uid == 0 {
-		return errors.New("uid is zero")
+		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	_, err := u.DB.ExecContext(ctx, "DELETE FROM bans b WHERE b.target = $1", uid)
 	return err
@@ -678,7 +679,7 @@ func (u *UserRepository) UnBan(ctx context.Context, uid uint) error {
 
 func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var info user.BanInfo
 	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info.ID, &info.Executor, &info.Reason, &info.At, &info.Expires); err != nil {
@@ -689,10 +690,10 @@ func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, 
 
 func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Avatar) error {
 	if uid == 0 {
-		return errors.New("uid is zero")
+		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	if strings.TrimSpace(avatar.Key) == "" {
-		return errors.New("avatar key is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("avatar key is empty")
 	}
 	_, err := u.DB.ExecContext(ctx, `
 		INSERT INTO user_avatars (user_id, object_key, content_type, size_bytes, updated_at)
@@ -709,10 +710,10 @@ func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Av
 
 func (u *UserRepository) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
 	if uid == 0 {
-		return false, errors.New("uid is zero")
+		return false, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	if perm.String() == "" {
-		return false, errors.New("permission is empty")
+		return false, apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
 	var has bool
 	if err := u.DB.QueryRowContext(ctx, "SELECT perm_allowed(u.permissions, $1) FROM users u WHERE u.uid = $2", perm.String(), uid).Scan(&has); err != nil {
@@ -752,7 +753,7 @@ func (u *UserRepository) Perms(ctx context.Context, uid uint) (*permissions.Perm
 
 func (u *UserRepository) ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error {
 	if uid == 0 {
-		return errors.New("uid is null")
+		return apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
 	res, err := u.DB.ExecContext(ctx, "UPDATE users u SET permissions = perm_set(u.permissions, $1, $2) WHERE u.uid = $3", perm.String(), state, uid)
 	if err != nil {
@@ -815,7 +816,7 @@ func (l *LoggerRepository) GetList(ctx context.Context, limit uint, offset uint)
 
 func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRequire) (*uint, error) {
 	if require.IsEmpty() {
-		return nil, errors.New("some of params is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("some of params is empty")
 	}
 	var id uint
 	err := l.DB.QueryRowContext(ctx, `
@@ -833,7 +834,7 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 
 func (l *LoginRepository) Authorization(ctx context.Context, require login.AuthorizationRequire) (*uint, error) {
 	if require.IsEmpty() {
-		return nil, errors.New("some of params is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("some of params is empty")
 	}
 	var uid uint
 	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", require.Usermail).Scan(&uid); err != nil {
@@ -844,13 +845,13 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 	if uid == 0 {
 		if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE (u.email).address = $1", require.Usermail).Scan(&uid); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, errors.New("user not found")
+				return nil, apperrors.RecordNotFound
 			}
 			return nil, err
 		}
 	}
 	if uid == 0 {
-		return nil, errors.New("user not found")
+		return nil, apperrors.RecordNotFound
 	}
 	var password string
 	if err := l.DB.QueryRowContext(ctx, "SELECT u.password FROM users u WHERE u.uid = $1", uid).Scan(&password); err != nil {
@@ -864,7 +865,7 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 
 func (l *LoginRepository) Logout(ctx context.Context, sessionID uuid.UUID) error {
 	if sessionID == uuid.Nil {
-		return errors.New("invalid session")
+		return apperrors.InvalidArguments.AddErrDetails("invalid session")
 	}
 	_, err := l.DB.ExecContext(ctx, "UPDATE sessions SET revoked = true WHERE id = $1", sessionID)
 	return err
@@ -1179,7 +1180,7 @@ func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdoma
 			}
 			key := strings.TrimSpace(photo.Key)
 			if key == "" {
-				return errors.New("project photo key is empty")
+				return apperrors.RequiredDataMissing.AddErrDetails("project photo key is empty")
 			}
 			if _, err = stmt.Exec(projectId, key, strings.TrimSpace(photo.ContentType), photo.SizeBytes); err != nil {
 				return err
@@ -1273,7 +1274,7 @@ func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit 
 
 func (p *ProjectsRepository) ToggleLike(ctx context.Context, id uuid.UUID, userID uint) error {
 	if userID == 0 {
-		return errors.New("user is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("user is empty")
 	}
 	var set bool
 	if err := p.DB.QueryRowContext(ctx, `select toggle_project_like($1::uuid, $2::bigint)`, id, userID).Scan(&set); err != nil {
@@ -1287,7 +1288,7 @@ var _ statistics.Repository = (*StatisticsRepository)(nil)
 
 func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (uint32, error) {
 	if since.IsZero() {
-		return 0, errors.New("since is zero")
+		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 	var count uint
 	err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM project_likes WHERE created_at >= $1", since).Scan(&count)
@@ -1299,7 +1300,7 @@ func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (
 
 func (s *StatisticsRepository) GetOnlineUsers(ctx context.Context, since time.Time) (uint32, error) {
 	if since.IsZero() {
-		return 0, errors.New("since is zero")
+		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 
 	var count uint32
@@ -1317,7 +1318,7 @@ func (s *StatisticsRepository) GetOnlineUsers(ctx context.Context, since time.Ti
 
 func (s *StatisticsRepository) GetOfflineUsers(ctx context.Context, since time.Time) (uint32, error) {
 	if since.IsZero() {
-		return 0, errors.New("since is zero")
+		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 
 	var offline int64
@@ -1338,7 +1339,7 @@ func (s *StatisticsRepository) GetOfflineUsers(ctx context.Context, since time.T
 
 func (s *StatisticsRepository) NewIdeasCount(ctx context.Context, since time.Time) (uint32, error) {
 	if since.IsZero() {
-		return 0, errors.New("since is zero")
+		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 	var count int
 	row := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects WHERE created_at >= $1", since)
@@ -1408,7 +1409,7 @@ func (s *StatisticsRepository) SaveStatisticsRecap(ctx context.Context) error {
 
 func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.Time) (map[time.Time]*statpb.StatisticsRecap, error) {
 	if since.IsZero() {
-		return nil, errors.New("since is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 
 	recap := make(map[time.Time]*statpb.StatisticsRecap)
@@ -1474,7 +1475,7 @@ func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.T
 
 func (s *StatisticsRepository) UsersActivity(ctx context.Context, since time.Time) (map[time.Time]*statpb.UsersActivity, error) {
 	if since.IsZero() {
-		return nil, errors.New("since is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 	data, err := s.StatisticsRecap(ctx, since)
 	if err != nil {
@@ -1489,7 +1490,7 @@ func (s *StatisticsRepository) UsersActivity(ctx context.Context, since time.Tim
 
 func (s *StatisticsRepository) VoteCategories(ctx context.Context, since time.Time, limit int) ([]*statpb.CategoryRecord, error) {
 	if since.IsZero() {
-		return nil, errors.New("since is zero")
+		return nil, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 
 	base := `
@@ -1659,7 +1660,7 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 
 func (s *SubmissionsRepository) AlreadySetted(ctx context.Context, id int32) (bool, error) {
 	if id == 0 {
-		return false, errors.New("invalid id")
+		return false, apperrors.InvalidArguments.AddErrDetails("invalid id")
 	}
 	var setted bool
 	if err := s.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM submissions WHERE id = $1 AND state <> 'waiting')", id).Scan(&setted); err != nil {
@@ -1670,14 +1671,14 @@ func (s *SubmissionsRepository) AlreadySetted(ctx context.Context, id int32) (bo
 
 func (s *SubmissionsRepository) Approve(ctx context.Context, id int32) error {
 	if id == 0 {
-		return errors.New("invalid id")
+		return apperrors.InvalidArguments.AddErrDetails("invalid id")
 	}
 	setted, err := s.AlreadySetted(ctx, id)
 	if err != nil {
 		return err
 	}
 	if setted {
-		return errors.New("idea already moderated")
+		return apperrors.Conflict.AddErrDetails("idea already moderated")
 	}
 	_, err = s.DB.ExecContext(ctx, `
 		WITH upd AS (
@@ -1695,14 +1696,14 @@ func (s *SubmissionsRepository) Approve(ctx context.Context, id int32) error {
 
 func (s *SubmissionsRepository) Decline(ctx context.Context, id int32, reason string) error {
 	if id == 0 {
-		return errors.New("invalid id")
+		return apperrors.InvalidArguments.AddErrDetails("invalid id")
 	}
 	setted, err := s.AlreadySetted(ctx, id)
 	if err != nil {
 		return err
 	}
 	if setted {
-		return errors.New("idea already moderated")
+		return apperrors.Conflict.AddErrDetails("idea already moderated")
 	}
 	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'declined', reason = $1 WHERE id = $2", reason, id); err != nil {
 		return err
@@ -1714,7 +1715,7 @@ var _ verification.Repository = (*VerificationRepository)(nil)
 
 func (v *VerificationRepository) Create(ctx context.Context, email string, purpose verification.Purpose, ip string, userAgent string, ttl time.Duration) (string, error) {
 	if email == "" || !purpose.IsValid() || ip == "" || userAgent == "" || ttl == 0 {
-		return "", errors.New("invalid params")
+		return "", apperrors.InvalidArguments.AddErrDetails("invalid params")
 	}
 	token, err := generateString(32)
 	if err != nil {
@@ -1741,7 +1742,7 @@ func (v *VerificationRepository) Create(ctx context.Context, email string, purpo
 
 func (v *VerificationRepository) GetRecord(ctx context.Context, purpose verification.Purpose, token string) (*verification.TokenRecord, error) {
 	if !purpose.IsValid() || token == "" {
-		return nil, errors.New("params in empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
 	var record verification.TokenRecord
 	if err := v.DB.QueryRowContext(ctx, "SELECT id, email, purpose, expires_at, used_at FROM auth_action_tokens WHERE token_hash = $1 AND purpose = $2", []byte(token), purpose.String()).Scan(
@@ -1752,7 +1753,7 @@ func (v *VerificationRepository) GetRecord(ctx context.Context, purpose verifica
 		&record.UsedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("not found")
+			return nil, apperrors.RecordNotFound
 		}
 		return nil, err
 	}
@@ -1761,7 +1762,7 @@ func (v *VerificationRepository) GetRecord(ctx context.Context, purpose verifica
 
 func (v *VerificationRepository) Consume(ctx context.Context, purpose verification.Purpose, token string) (*verification.TokenRecord, error) {
 	if !purpose.IsValid() || token == "" {
-		return nil, errors.New("invalid params")
+		return nil, apperrors.InvalidArguments.AddErrDetails("invalid params")
 	}
 	res, err := v.DB.ExecContext(ctx, "UPDATE auth_action_tokens SET used_at = $1 WHERE token_hash = $2 AND purpose = $3 AND used_at IS NULL", time.Now(), []byte(token), purpose.String())
 	if err != nil {
@@ -1772,7 +1773,7 @@ func (v *VerificationRepository) Consume(ctx context.Context, purpose verificati
 		return nil, err
 	}
 	if affected == 0 {
-		return nil, errors.New("not found")
+		return nil, apperrors.RecordNotFound
 	}
 	data, err := v.GetRecord(ctx, purpose, token)
 	if err != nil {
@@ -1783,7 +1784,7 @@ func (v *VerificationRepository) Consume(ctx context.Context, purpose verificati
 
 func (v *VerificationRepository) BanEmail(ctx context.Context, email string, reason string) error {
 	if email == "" || reason == "" {
-		return errors.New("params is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
 	if _, err := v.DB.ExecContext(ctx, "INSERT INTO banned_emails (email, reason) VALUES ($1, $2)", email, reason); err != nil {
 		return err
@@ -1793,7 +1794,7 @@ func (v *VerificationRepository) BanEmail(ctx context.Context, email string, rea
 
 func (v *VerificationRepository) IsBanned(ctx context.Context, email string) (bool, error) {
 	if email == "" {
-		return false, errors.New("param is empty")
+		return false, apperrors.RequiredDataMissing.AddErrDetails("param is empty")
 	}
 	var found bool
 	if err := v.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM banned_emails WHERE email = $1)", email).Scan(&found); err != nil {
@@ -1831,7 +1832,7 @@ func (m *MaintenanceRepository) GetData(ctx context.Context) (*maintenance.Infor
 		return nil, err
 	}
 	if !active {
-		return nil, errors.New("maintenance is not active")
+		return nil, apperrors.Conflict.AddErrDetails("maintenance is not active")
 	}
 	var info maintenance.Information
 	var actualEnd sql.NullTime
@@ -1853,7 +1854,7 @@ func (m *MaintenanceRepository) Start(ctx context.Context, req maintenance.Creat
 		return err
 	}
 	if active {
-		return errors.New("maintenance already active")
+		return apperrors.Conflict.AddErrDetails("maintenance already active")
 	}
 	var typ string = "planned"
 	var scope string = "all"
@@ -1874,10 +1875,10 @@ func (m *MaintenanceRepository) Edit(ctx context.Context, req maintenance.EditST
 		return err
 	}
 	if !active {
-		return errors.New("maintenance is not active")
+		return apperrors.Conflict.AddErrDetails("maintenance is not active")
 	}
 	if req.Description == nil && req.Scope == nil {
-		return errors.New("params is nil")
+		return apperrors.RequiredDataMissing.AddErrDetails("params is nil")
 	}
 	if req.Description != nil {
 		if _, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET description = $1 WHERE status = 'in progress'", *req.Description); err != nil {
@@ -1898,7 +1899,7 @@ func (m *MaintenanceRepository) Complete(ctx context.Context) error {
 		return err
 	}
 	if !active {
-		return errors.New("maintenance is not active")
+		return apperrors.Conflict.AddErrDetails("maintenance is not active")
 	}
 	if _, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET status = 'completed', actual_end_at = $1 WHERE status = 'in progress'", time.Now()); err != nil {
 		return err
@@ -1955,12 +1956,15 @@ func (m *MaintenanceRepository) GetList(ctx context.Context) (maintenance.Inform
 var _ tickets.Repository = (*TicketsRepository)(nil)
 
 func (t *TicketsRepository) Create(ctx context.Context, data tickets.TicketCreationRequestor, topic tickets.TicketTopic, brief string) (*tickets.TicketCreationData, error) {
-	if topic == "" || !topic.Valid() || brief == "" {
+	if topic == "" || !topic.Valid() {
 		logger.Debug(fmt.Sprintf("topic: %s, brief: %s", topic.String(), brief), "")
-		return nil, errors.New("params is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("invalid topic")
+	}
+	if brief == "" {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("brief is empty")
 	}
 	if !data.Authorized && (data.Name == "" || data.Email == "") {
-		return nil, errors.New("authorize params is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("authorize params is empty")
 	}
 	if data.Authorized {
 		usr, err := getAuthor(ctx, *data.UID, t.DB)
@@ -2027,11 +2031,11 @@ func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) 
 	}
 	if accepted {
 		logger.Debug("ticket already accepted", "")
-		return errors.New("ticket already accepted")
+		return apperrors.Conflict.AddErrDetails("ticket already accepted")
 	}
 	logger.Debug("ticket not accepted", "")
 	if who == 0 {
-		return errors.New("params is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
 	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET acceptor = $1, accepted = $2, status = $3 WHERE id = $4", who, time.Now(), tickets.InProcessStatus.String(), id); err != nil {
 		return err
@@ -2152,7 +2156,7 @@ func (t *TicketsRepository) parseMessage(scanner scanner) (*tickets.TicketMessag
 	var author tickets.TicketMessageAuthor
 	atype := tickets.TicketMessageAuthorType(authorType)
 	if !atype.Valid() {
-		return nil, errors.New("invalid author type")
+		return nil, apperrors.InvalidArguments.AddErrDetails("invalid author type")
 	}
 	switch atype {
 	case tickets.AuthorStaff:
@@ -2228,10 +2232,10 @@ func (t *TicketsRepository) IsReqValid(ctx context.Context, id uuid.UUID, token 
 
 func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.TicketClosedBy, reason string) error {
 	if by == "" || !by.Valid() {
-		return errors.New("params is incorrect")
+		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 	if by != tickets.ClosedByUser && reason == "" {
-		return errors.New("reason not provided")
+		return apperrors.RequiredDataMissing.AddErrDetails("reason not provided")
 	}
 	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET closed = NOW(), closed_by = $1, close_reason = $2 WHERE id = $3", by.String(), reason, id); err != nil {
 		return err
@@ -2245,7 +2249,7 @@ func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.
 		return nil, err
 	}
 	if !valid {
-		return nil, errors.New("don't have access")
+		return nil, apperrors.AccessDenied.AddErrDetails("don't have access")
 	}
 	var data tickets.TicketUserData
 	if req.Token != nil {
@@ -2341,7 +2345,7 @@ func (r *RanksRepository) ChangePerms(ctx context.Context, rank string, perm per
 
 func (r *RanksRepository) Create(ctx context.Context, name string, color int, description string, perms ...permissions.Permissions) error {
 	if name == "" || color == 0 || description == "" {
-		return errors.New("params is incorrect")
+		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 	if len(perms) > 0 {
 		bytes, err := json.Marshal(perms[0])
@@ -2362,7 +2366,7 @@ func (r *RanksRepository) Create(ctx context.Context, name string, color int, de
 }
 func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, data any) error {
 	if rank == "" || target == "" || data == nil {
-		return errors.New("params is incorrect")
+		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 
 	type colInfo struct {
@@ -2378,7 +2382,7 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 
 	info, ok := cols[target]
 	if !ok {
-		return errors.New("unknown target")
+		return apperrors.InvalidArguments.AddErrDetails("unknown target")
 	}
 
 	var (
@@ -2390,7 +2394,7 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 	case "string":
 		s, ok := data.(string)
 		if !ok {
-			return errors.New("invalid data type for target")
+			return apperrors.InvalidArguments.AddErrDetails("invalid data type for target")
 		}
 		val = s
 	case "int":
@@ -2403,14 +2407,14 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 			val = v
 		case uint:
 			if uint64(v) > uint64(^uint64(0)>>1) {
-				return errors.New("uint overflow")
+				return apperrors.InvalidArguments.AddErrDetails("uint overflow")
 			}
 			val = int64(v)
 		default:
-			return errors.New("invalid data type for target")
+			return apperrors.InvalidArguments.AddErrDetails("invalid data type for target")
 		}
 	default:
-		return errors.New("invalid target config")
+		return apperrors.InvalidArguments.AddErrDetails("invalid target config")
 	}
 
 	query = "UPDATE ranks SET " + info.col + " = $1 WHERE name = $2"
@@ -2420,7 +2424,7 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 
 func (r *RanksRepository) Get(ctx context.Context, name string) (*rank.Rank, error) {
 	if name == "" {
-		return nil, errors.New("params is incorrect")
+		return nil, apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 	var ra rank.Rank
 	if err := r.DB.QueryRowContext(ctx, "SELECT color, description, added_at FROM ranks WHERE name = $1", name).Scan(&ra.Color, &ra.Description, &ra.AddedAt); err != nil {
@@ -2432,7 +2436,7 @@ func (r *RanksRepository) Get(ctx context.Context, name string) (*rank.Rank, err
 
 func (r *RanksRepository) Delete(ctx context.Context, rank string) error {
 	if rank == "" {
-		return errors.New("params is incorrect")
+		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 	if _, err := r.DB.ExecContext(ctx, "DELETE FROM ranks WHERE name = $1", rank); err != nil {
 		return err

@@ -11,7 +11,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,20 +28,16 @@ func New(repo user.Repository, sessionRepo sessions.Repository) *Service {
 
 func (s *Service) GetByID(ctx context.Context, id uint) (*user.User, error) {
 	if id == 0 {
-		return nil, apperrors.BuildError(
-			"InvalidUserID",
-			"user id must be greater than zero",
-			map[string]string{"userID": "must be greater than zero"},
-			"",
-		)
+		return nil, apperrors.InvalidArguments
 	}
 
 	u, err := s.repo.GetUserByUID(ctx, id)
 	if err != nil {
 		if isNotFound(err) {
-			return nil, apperrors.UserNotFound(strconv.FormatUint(uint64(id), 10), "")
+			return nil, apperrors.RecordNotFound
 		}
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user.get_by_id")
+		return nil, apperrors.Wrap(err)
 	}
 
 	return u, nil
@@ -50,14 +45,16 @@ func (s *Service) GetByID(ctx context.Context, id uint) (*user.User, error) {
 
 func (s *Service) GetSelf(ctx context.Context, sessionID uuid.UUID) (*user.User, error) {
 	if sessionID == uuid.Nil {
-		return nil, errors.New("session id is null")
+		return nil, apperrors.InvalidArguments.AddErrDetails("session id is null")
 	}
 	uid, err := s.sessionRepo.GetUID(ctx, sessionID)
 	if err != nil {
-		return nil, err
+		logger.Debug("error appeared: "+err.Error(), "user.get_self.uid")
+		return nil, apperrors.Wrap(err)
 	}
 	usr, err := s.GetByID(ctx, *uid)
 	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_self")
 		return nil, err
 	}
 	return usr, nil
@@ -65,179 +62,296 @@ func (s *Service) GetSelf(ctx context.Context, sessionID uuid.UUID) (*user.User,
 
 func (s *Service) GetUID(ctx context.Context, username string) (uint, error) {
 	if username == "" {
-		return 0, errors.New("username is empty")
+		return 0, apperrors.RequiredDataMissing.AddErrDetails("username is empty")
 	}
-	return s.repo.GetUID(ctx, username)
+	uid, err := s.repo.GetUID(ctx, username)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_uid")
+		return 0, apperrors.Wrap(err)
+	}
+	return uid, nil
 }
 
 func (s *Service) GetUsername(ctx context.Context, uid uint) (string, error) {
 	if uid == 0 {
-		return "", errors.New("uid is empty")
+		return "", apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetUsername(ctx, uid)
+	name, err := s.repo.GetUsername(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_username")
+		return "", apperrors.Wrap(err)
+	}
+	return name, nil
 }
 
 func (s *Service) GetUserByUsername(ctx context.Context, username string) (*user.User, error) {
 	if username == "" {
-		return nil, errors.New("username is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("username is empty")
 	}
-	return s.repo.GetUserByUsername(ctx, username)
+	u, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_user_by_username")
+		return nil, apperrors.Wrap(err)
+	}
+	return u, nil
 }
 
 func (s *Service) GetUserByUID(ctx context.Context, uid uint) (*user.User, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetUserByUID(ctx, uid)
+	u, err := s.repo.GetUserByUID(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_user_by_uid")
+		return nil, apperrors.Wrap(err)
+	}
+	return u, nil
 }
 
 func (s *Service) GetAvatar(ctx context.Context, uid uint) (*user.Avatar, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetAvatar(ctx, uid)
+	avatar, err := s.repo.GetAvatar(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_avatar")
+		return nil, apperrors.Wrap(err)
+	}
+	return avatar, nil
 }
 
 func (s *Service) AddAvatar(ctx context.Context, uid uint, avatar user.Avatar) error {
 	if uid == 0 {
-		return errors.New("uid is empty")
+		return apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.AddAvatar(ctx, uid, avatar)
+	if err := s.repo.AddAvatar(ctx, uid, avatar); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.add_avatar")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) UpdateDisplayName(ctx context.Context, uid uint, displayName string) error {
 	if uid == 0 || displayName == "" {
-		return errors.New("some argument is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("some argument is empty")
 	}
-	return s.repo.UpdateDisplayName(ctx, uid, displayName)
+	if err := s.repo.UpdateDisplayName(ctx, uid, displayName); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.update_display_name")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error {
 	if strings.TrimSpace(email) == "" {
-		return errors.New("email is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
-	return s.repo.SetEmailVerifiedByAddress(ctx, email, verified)
+	if err := s.repo.SetEmailVerifiedByAddress(ctx, email, verified); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.set_email_verified")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) UpdatePasswordByEmail(ctx context.Context, email string, passwordHash string) error {
 	if strings.TrimSpace(email) == "" || passwordHash == "" {
-		return errors.New("email or password is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("email or password is empty")
 	}
-	return s.repo.UpdatePasswordByEmail(ctx, email, passwordHash)
+	if err := s.repo.UpdatePasswordByEmail(ctx, email, passwordHash); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.update_password")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) IsExists(ctx context.Context, user user.User) (bool, error) {
 	if user.UID == 0 {
-		return false, errors.New("user uid is empty")
+		return false, apperrors.InvalidArguments.AddErrDetails("user uid is empty")
 	}
-	return s.repo.IsExists(ctx, user)
+	exists, err := s.repo.IsExists(ctx, user)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.is_exists")
+		return false, apperrors.Wrap(err)
+	}
+	return exists, nil
 }
 
 func (s *Service) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetSettings(ctx, uid)
+	settings, err := s.repo.GetSettings(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_settings")
+		return nil, apperrors.Wrap(err)
+	}
+	return settings, nil
 }
 
 func (s *Service) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetJoinedAT(ctx, uid)
+	at, err := s.repo.GetJoinedAT(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_joined_at")
+		return nil, apperrors.Wrap(err)
+	}
+	return at, nil
 }
 
 func (s *Service) GetRank(ctx context.Context, uid uint) (*rank.UserRank, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetRank(ctx, uid)
+	r, err := s.repo.GetRank(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_rank")
+		return nil, apperrors.Wrap(err)
+	}
+	return r, nil
 }
 
 func (s *Service) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.GetEmail(ctx, uid)
+	email, err := s.repo.GetEmail(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_email")
+		return nil, apperrors.Wrap(err)
+	}
+	return email, nil
 }
 
 func (s *Service) IsBanned(ctx context.Context, uid uint) (bool, *user.BanInfo, error) {
 	if uid == 0 {
-		return false, nil, errors.New("uid is empty")
+		return false, nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.IsBanned(ctx, uid)
+	banned, info, err := s.repo.IsBanned(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.is_banned")
+		return false, nil, apperrors.Wrap(err)
+	}
+	return banned, info, nil
 }
 
 func (s *Service) Ban(ctx context.Context, info user.BanInfo) error {
 	if info.Empty() {
 		logger.Debug(fmt.Sprintf("target: %d, reason: %s", info.Target, info.Reason), "a")
-		return errors.New("argument is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("argument is empty")
 	}
-	return s.repo.Ban(ctx, info)
+	if err := s.repo.Ban(ctx, info); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.ban")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) UnBan(ctx context.Context, uid uint) error {
 	if uid == 0 {
-		return errors.New("argument is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("argument is empty")
 	}
-	return s.repo.UnBan(ctx, uid)
+	if err := s.repo.UnBan(ctx, uid); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.unban")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, error) {
 	if uid == 0 {
-		return nil, errors.New("argument is empty")
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("argument is empty")
 	}
-	return s.repo.BanInfo(ctx, uid)
+	info, err := s.repo.BanInfo(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.ban_info")
+		return nil, apperrors.Wrap(err)
+	}
+	return info, nil
 }
 
 func (s *Service) GetList(ctx context.Context) ([]*userpb.UserPublic, error) {
-	return s.repo.GetList(ctx)
+	list, err := s.repo.GetList(ctx)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_list")
+		return nil, apperrors.Wrap(err)
+	}
+	return list, nil
 }
 
 func (s *Service) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.SessionTime, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is null")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
-	return s.repo.GetUserSessionLiveTime(ctx, uid)
+	live, err := s.repo.GetUserSessionLiveTime(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.get_user_session_live_time")
+		return nil, apperrors.Wrap(err)
+	}
+	return live, nil
 }
 
 func (s *Service) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
 	if uid == 0 {
-		return false, errors.New("uid is empty")
+		return false, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
 	if strings.TrimSpace(perm.String()) == "" {
-		return false, errors.New("permission is empty")
+		return false, apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
-	return s.repo.HasPerm(ctx, uid, perm)
+	has, err := s.repo.HasPerm(ctx, uid, perm)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.has_perm")
+		return false, apperrors.Wrap(err)
+	}
+	return has, nil
 }
 
 func (s *Service) HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error) {
 	if uid == 0 {
-		return false, errors.New("uid is empty")
+		return false, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.HasAllPerms(ctx, uid, perms...)
+	ok, err := s.repo.HasAllPerms(ctx, uid, perms...)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.has_all_perms")
+		return false, apperrors.Wrap(err)
+	}
+	return ok, nil
 }
 
 func (s *Service) Perms(ctx context.Context, uid uint) (*permissions.Permissions, error) {
 	if uid == 0 {
-		return nil, errors.New("uid is empty")
+		return nil, apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
-	return s.repo.Perms(ctx, uid)
+	perms, err := s.repo.Perms(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.perms")
+		return nil, apperrors.Wrap(err)
+	}
+	return perms, nil
 }
 
 func (s *Service) ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error {
 	if uid == 0 {
-		return errors.New("uid is empty")
+		return apperrors.InvalidArguments.AddErrDetails("uid is empty")
 	}
 	if strings.TrimSpace(perm.String()) == "" {
-		return errors.New("permission is empty")
+		return apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
-	return s.repo.ChangePerms(ctx, uid, perm, state)
+	if err := s.repo.ChangePerms(ctx, uid, perm, state); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.change_perms")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func isNotFound(err error) bool {
 	if err == nil {
 		return false
+	}
+	var appErr apperrors.ErrorST
+	if errors.As(err, &appErr) {
+		return appErr.Is(apperrors.RecordNotFound)
 	}
 	return strings.EqualFold(err.Error(), "user not found")
 }
