@@ -39,13 +39,30 @@ export function MapLibreMap({
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!maplibregl.workerUrl) {
-      maplibregl.workerUrl = new URL(
+ 
+    const hasSetter = "setWorkerUrl" in maplibregl;
+  
+    if (hasSetter) {
+ 
+      if (!maplibregl.getWorkerUrl?.()) {
+        maplibregl.setWorkerUrl(
+          new URL(
+            "maplibre-gl/dist/maplibre-gl-csp-worker.js",
+            import.meta.url,
+          ).toString(),
+        );
+      }
+    } else {
+      
+      (maplibregl as any).workerUrl ??= new URL(
         "maplibre-gl/dist/maplibre-gl-csp-worker.js",
         import.meta.url,
       ).toString();
     }
+    
+    
   }, []);
+
 
 
   useEffect(() => {
