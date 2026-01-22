@@ -563,6 +563,51 @@ export const translations: Translations = {
     EN: "Reset avatar",
     KZ: "Аватарды қалпына келтіру",
   },
+  adminUserSettingsPermissionsLoading: {
+    RU: "Загрузка прав...",
+    EN: "Loading permissions...",
+    KZ: "Құқықтар жүктелуде...",
+  },
+  adminUserSettingsPermissionsEmpty: {
+    RU: "Права не назначены.",
+    EN: "No permissions assigned.",
+    KZ: "Құқықтар тағайындалмаған.",
+  },
+  adminUserSettingsPermissionsError: {
+    RU: "Не удалось загрузить права.",
+    EN: "Failed to load permissions.",
+    KZ: "Құқықтарды жүктеу мүмкін болмады.",
+  },
+  adminUserSettingsPermissionsUpdateError: {
+    RU: "Не удалось обновить право.",
+    EN: "Failed to update permission.",
+    KZ: "Құқықты жаңарту мүмкін болмады.",
+  },
+  adminUserSettingsRoleLoading: {
+    RU: "Загрузка рангов...",
+    EN: "Loading ranks...",
+    KZ: "Рангтар жүктелуде...",
+  },
+  adminUserSettingsRoleEmpty: {
+    RU: "Ранги не найдены.",
+    EN: "No ranks found.",
+    KZ: "Рангтар табылмады.",
+  },
+  adminUserSettingsRoleError: {
+    RU: "Не удалось загрузить ранги.",
+    EN: "Failed to load ranks.",
+    KZ: "Рангтарды жүктеу мүмкін болмады.",
+  },
+  adminUserSettingsRoleUnavailable: {
+    RU: "Нужен API для изменения роли.",
+    EN: "Role updates require an API.",
+    KZ: "Рөлді өзгерту үшін API қажет.",
+  },
+  adminUserSettingsRetry: {
+    RU: "Повторить",
+    EN: "Retry",
+    KZ: "Қайталау",
+  },
 
   adminTheme: {
     RU: "\u0422\u0435\u043c\u0430",

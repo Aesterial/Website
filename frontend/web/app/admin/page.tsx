@@ -900,6 +900,8 @@ export default function AdminPage() {
         let nextAudienceSnapshot = previous.audienceSnapshot;
 
         if (usersActivityResult.status === "fulfilled") {
+          const rangeStart =
+            Date.now() - activityRangeDays * 24 * 60 * 60 * 1000;
           const formatter = new Intl.DateTimeFormat(locale, {
             month: "short",
             day: "numeric",
@@ -918,6 +920,7 @@ export default function AdminPage() {
               };
             })
             .filter((item): item is ActivityPoint => Boolean(item))
+            .filter((item) => item.timestamp >= rangeStart)
             .sort((a, b) => a.timestamp - b.timestamp);
 
           nextActivityPoints = mapped;
@@ -1496,7 +1499,7 @@ export default function AdminPage() {
                             {t("adminStatsActivitySubtitle")}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1 rounded-full border border-border/70 bg-background/60 p-1">
+                        <div className="flex flex-wrap items-center gap-1 rounded-full border border-border/70 bg-background/60 p-1">
                           {activityRanges.map((range) => {
                             const isActive = range.id === activityRange;
                             return (

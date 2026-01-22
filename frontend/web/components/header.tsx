@@ -358,6 +358,24 @@ export function Header() {
                           </SheetClose>
                         ))}
                       </div>
+                      {status === "authenticated" ? (
+                        <SheetClose asChild>
+                          <button
+                            type="button"
+                            onClick={() => void handleLogout()}
+                            className="group relative overflow-hidden rounded-2xl border border-border bg-card/70 px-4 py-3 text-left transition hover:bg-muted/60"
+                          >
+                            <span className="relative flex items-center gap-4">
+                              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-destructive text-destructive-foreground">
+                                <LogOut className="h-5 w-5" />
+                              </span>
+                              <span className="text-base font-semibold">
+                                {t("logout")}
+                              </span>
+                            </span>
+                          </button>
+                        </SheetClose>
+                      ) : null}
 
                       <div className="rounded-2xl border border-border bg-card/60 p-4">
                         <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">

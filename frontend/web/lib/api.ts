@@ -22,6 +22,13 @@ export type ApiRank = {
   expires?: string | null;
 };
 
+export type ApiRankListItem = {
+  name: string;
+  description?: string;
+  color?: number;
+  added?: string;
+};
+
 export type ApiAvatar = {
   contentType?: string;
   data?: string;
@@ -146,6 +153,20 @@ type ApiPermissionsResponse = {
   tracing?: string;
 };
 
+type ApiRankListEntry = {
+  name?: string;
+  description?: string;
+  color?: number;
+  added?: string | { seconds?: number | string; nanos?: number } | null;
+};
+
+type ApiRankListResponse = {
+  ranks?: ApiRankListEntry[] | null;
+  data?: ApiRankListEntry[] | null;
+  items?: ApiRankListEntry[] | null;
+  tracing?: string;
+};
+
 type ApiUsersResponse = {
   data?: ApiUserPublic[] | null;
   tracing?: string;
@@ -267,6 +288,48 @@ function toAvatar(value: unknown): ApiAvatar | undefined {
     ...(key ? { key } : {}),
   };
 }
+
+const toRankAdded = (value: ApiRankListEntry["added"]): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+  }
+  if (typeof value !== "object") {
+    return undefined;
+  }
+  const secondsRaw = value.seconds;
+  const seconds =
+    typeof secondsRaw === "number"
+      ? secondsRaw
+      : typeof secondsRaw === "string"
+        ? Number(secondsRaw)
+        : NaN;
+  if (!Number.isFinite(seconds)) {
+    return undefined;
+  }
+  return new Date(seconds * 1000).toISOString();
+};
+
+const toRankListItem = (value: ApiRankListEntry): ApiRankListItem | null => {
+  const name = typeof value.name === "string" ? value.name.trim() : "";
+  if (!name) {
+    return null;
+  }
+  const description =
+    typeof value.description === "string"
+      ? value.description.trim() || undefined
+      : undefined;
+  const color = typeof value.color === "number" ? value.color : undefined;
+  return {
+    name,
+    description,
+    color,
+    added: toRankAdded(value.added),
+  };
+};
 
 const BAN_STORAGE_KEY = "banInfo";
 const BANNED_ERROR_MATCH = "user is banned";
@@ -483,6 +546,45 @@ export async function fetchUserPermissions(
     return null;
   }
   return isPermissionsResponse(payload) ? (payload.data ?? null) : payload;
+}
+
+export async function updateUserPermission(
+  userID: number,
+  permission: string,
+  state: boolean,
+): Promise<void> {
+  const trimmed = permission.trim();
+  if (!Number.isFinite(userID) || userID <= 0) {
+    throw new Error("User id is required.");
+  }
+  if (!trimmed) {
+    throw new Error("Permission is required.");
+  }
+  await apiRequest(
+    `/api/user/${userID}/permissions/patch/${encodeURIComponent(trimmed)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ state }),
+    },
+  );
+}
+
+export async function fetchRanksList(options?: {
+  signal?: AbortSignal;
+}): Promise<ApiRankListItem[]> {
+  const payload = await apiRequest<ApiRankListResponse | ApiRankListEntry[]>(
+    "/api/ranks/list",
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  const records = Array.isArray(payload)
+    ? payload
+    : (payload?.ranks ?? payload?.data ?? payload?.items ?? []);
+  return records
+    .map(toRankListItem)
+    .filter((item): item is ApiRankListItem => Boolean(item));
 }
 
 export async function fetchUsers(options?: {
