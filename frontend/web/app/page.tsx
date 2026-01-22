@@ -283,28 +283,35 @@ export default function HomePage() {
             address: getPopularAddress(project),
           }));
         setPopularIdeas(mapped);
-        const center = resolveCityCenter(selectedCity);
-        const markers = projects
-          .map((project, index) => {
-            const info = getProjectInfo(project);
-            const location = info?.location as
-              | Record<string, unknown>
-              | undefined;
-            const coordinates =
-              resolveCoordinates(location) ??
-              applyCoordinateJitter(center, `${project.id ?? index}`);
-            const id = project.id?.toString() ?? null;
-            if (!id) {
-              return null;
-            }
-            return {
-              id,
-              coordinates,
-              title: info?.title?.trim() || getPopularAddress(project),
-              description: info?.description?.trim(),
-            } satisfies MapMarker;
-          })
-          .filter((marker): marker is MapMarker => Boolean(marker));
+
+        const markers: MapMarker[] = projects.flatMap((project) => {
+          const info = getProjectInfo(project);
+          const id = project.id?.toString();
+
+          if (!id) return [];
+
+          const center = resolveCityCenter(selectedCity);
+          const location = info?.location as
+            | Record<string, unknown>
+            | undefined;
+
+          const coordinates =
+            resolveCoordinates(location) ?? applyCoordinateJitter(center, id);
+
+          const marker: MapMarker = {
+            id,
+            coordinates,
+            title: info?.title?.trim() || getPopularAddress(project),
+          };
+
+          const trimmedDescription = info?.description?.trim();
+          if (trimmedDescription) {
+            marker.description = trimmedDescription;
+          }
+
+          return [marker];
+        });
+
         setMapMarkers(markers);
       } catch {
         if (!controller.signal.aborted) {
