@@ -32,5 +32,5 @@ func TestUserServiceOtherNilRequest(t *testing.T) {
 func TestUserServiceDeleteSelfAvatarNotImplemented(t *testing.T) {
 	svc := grpcserver.NewUserService(nil, nil, nil, nil)
 	_, err := svc.DeleteSelfAvatar(nil, &emptypb.Empty{})
-	assertAppError(t, err, apperrors.NotImplemented)
+	assertAppError(t, err, apperrors.NotConfigured)
 }

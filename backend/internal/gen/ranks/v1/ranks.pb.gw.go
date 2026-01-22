@@ -438,7 +438,7 @@ func RegisterRanksServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ranks.v1.RanksService/List", runtime.WithHTTPPathPattern("/api/rank/list"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ranks.v1.RanksService/List", runtime.WithHTTPPathPattern("/api/ranks/list"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -624,7 +624,7 @@ func RegisterRanksServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ranks.v1.RanksService/List", runtime.WithHTTPPathPattern("/api/rank/list"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ranks.v1.RanksService/List", runtime.WithHTTPPathPattern("/api/ranks/list"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -696,7 +696,7 @@ var (
 	pattern_RanksService_Patch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "patch"}, ""))
 	pattern_RanksService_Get_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "ranks", "name"}, ""))
 	pattern_RanksService_Users_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "users"}, ""))
-	pattern_RanksService_List_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "rank", "list"}, ""))
+	pattern_RanksService_List_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "ranks", "list"}, ""))
 	pattern_RanksService_Delete_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "delete"}, ""))
 	pattern_RanksService_PermsPatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "ranks", "name", "perms", "perm"}, ""))
 	pattern_RanksService_Perms_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "perms"}, ""))

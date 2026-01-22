@@ -29,6 +29,7 @@ type Repository interface {
 	UnBan(ctx context.Context, uid uint) error
 	BanInfo(ctx context.Context, uid uint) (*BanInfo, error)
 	AddAvatar(ctx context.Context, uid uint, avatar Avatar) error
+	DeleteAvatar(ctx context.Context, uid uint) error
 	HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error)
 	HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error)
 	Perms(ctx context.Context, uid uint) (*permissions.Permissions, error)

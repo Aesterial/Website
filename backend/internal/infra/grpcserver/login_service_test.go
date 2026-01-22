@@ -189,6 +189,11 @@ func (u *userRepoStub) AddAvatar(ctx context.Context, uid uint, avatar userdomai
 	return nil
 }
 
+// DeleteAvatar implements user.Repository.
+func (u *userRepoStub) DeleteAvatar(ctx context.Context, uid uint) error {
+	return nil
+}
+
 // GetAvatar implements user.Repository.
 func (u *userRepoStub) GetAvatar(ctx context.Context, uid uint) (*userdomain.Avatar, error) {
 	return nil, nil

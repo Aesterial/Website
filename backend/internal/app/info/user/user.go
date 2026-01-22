@@ -131,6 +131,17 @@ func (s *Service) AddAvatar(ctx context.Context, uid uint, avatar user.Avatar) e
 	return nil
 }
 
+func (s *Service) DeleteAvatar(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments.AddErrDetails("uid is empty")
+	}
+	if err := s.repo.DeleteAvatar(ctx, uid); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user.delete_avatar")
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
 func (s *Service) UpdateDisplayName(ctx context.Context, uid uint, displayName string) error {
 	if uid == 0 || displayName == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("some argument is empty")

@@ -34,7 +34,7 @@ service RanksService {
   }
   rpc List(google.protobuf.Empty) returns (RanksResponse) {
     option (google.api.http) = {
-      get: "/api/rank/list"
+      get: "/api/ranks/list"
     };
   }
   rpc Delete(NameRequest) returns (EmptyResponse) {

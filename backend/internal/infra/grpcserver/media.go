@@ -21,7 +21,6 @@ func applyPresignedAvatarURL(ctx context.Context, storage *storageapp.Service, a
 		return
 	}
 	avatar.Url = url
-	avatar.Data = nil
 	avatar.Key = ""
 }
 

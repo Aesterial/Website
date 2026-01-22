@@ -708,6 +708,24 @@ func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Av
 	return err
 }
 
+func (u *UserRepository) DeleteAvatar(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
+	}
+	res, err := u.DB.ExecContext(ctx, "DELETE FROM user_avatars WHERE user_id = $1", uid)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return apperrors.RecordNotFound.AddErrDetails("avatar not found")
+	}
+	return nil
+}
+
 func (u *UserRepository) HasPerm(ctx context.Context, uid uint, perm permissions.Permission) (bool, error) {
 	if uid == 0 {
 		return false, apperrors.InvalidArguments.AddErrDetails("uid is zero")

@@ -294,11 +294,62 @@ func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.User
 }
 
 func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*userpb.EmptyResponse, error) {
-	return nil, apperrors.NotImplemented.AddErrDetails("delete self avatar is not implemented")
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersSettingsDeleteAvatarOwn); err != nil {
+		return nil, err
+	}
+	if s.modifier == nil {
+		return nil, apperrors.NotConfigured.AddErrDetails("modifier service not configured")
+	}
+	avatar, err := s.modifier.DeleteAvatar(ctx, requestor.UID)
+	if err != nil {
+		return nil, err
+	}
+	if s.storage != nil && avatar != nil && strings.TrimSpace(avatar.Key) != "" {
+		if err := s.storage.Delete(ctx, avatar.Key); err != nil {
+			logger.Debug("error appeared: "+err.Error(), "user.delete_self_avatar.storage")
+		}
+	}
+	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.EmptyResponse, error) {
-	return nil, apperrors.NotImplemented.AddErrDetails("delete user avatar is not implemented")
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
+	}
+	if req == nil {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersSettingsDeleteAvatarAny); err != nil {
+		return nil, err
+	}
+	if s.modifier == nil {
+		return nil, apperrors.NotConfigured.AddErrDetails("modifier service not configured")
+	}
+	targetID := uint(req.UserID)
+	if targetID == 0 {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("user id is empty")
+	}
+	avatar, err := s.modifier.DeleteAvatar(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if s.storage != nil && avatar != nil && strings.TrimSpace(avatar.Key) != "" {
+		if err := s.storage.Delete(ctx, avatar.Key); err != nil {
+			logger.Debug("error appeared: "+err.Error(), "user.delete_user_avatar.storage")
+		}
+	}
+	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *UserService) applyAvatarURL(ctx context.Context, u *userpb.UserPublic) {

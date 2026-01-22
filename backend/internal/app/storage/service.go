@@ -161,6 +161,28 @@ func (s *Service) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
+func (s *Service) Delete(ctx context.Context, key string) error {
+	if s == nil || s.client == nil {
+		return apperrors.NotConfigured
+	}
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return apperrors.RequiredDataMissing.AddErrDetails("key is empty")
+	}
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		if isNotFound(err) {
+			return nil
+		}
+		logger.Debug("error appeared: "+err.Error(), "storage.delete")
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
 func (s *Service) UserAvatarKey(userID, picID string) (string, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {

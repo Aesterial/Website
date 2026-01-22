@@ -1568,9 +1568,6 @@ components:
             properties:
                 contentType:
                     type: string
-                data:
-                    type: string
-                    format: bytes
                 url:
                     type: string
                 key:

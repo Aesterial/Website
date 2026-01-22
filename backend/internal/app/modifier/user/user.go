@@ -78,6 +78,25 @@ func (s *Service) UpdateAvatar(ctx context.Context, id uint, avatar user.Avatar)
 	return u, nil
 }
 
+func (s *Service) DeleteAvatar(ctx context.Context, id uint) (*user.Avatar, error) {
+	if id == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	avatar, err := s.repo.GetAvatar(ctx, id)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.delete_avatar.get")
+		return nil, apperrors.Wrap(err)
+	}
+	if avatar == nil || strings.TrimSpace(avatar.Key) == "" {
+		return nil, apperrors.RecordNotFound.AddErrDetails("avatar not found")
+	}
+	if err := s.repo.DeleteAvatar(ctx, id); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "user_modifier.delete_avatar.save")
+		return nil, apperrors.Wrap(err)
+	}
+	return avatar, nil
+}
+
 func isNotFound(err error) bool {
 	if err == nil {
 		return false

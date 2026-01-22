@@ -27,13 +27,13 @@ var File_ranks_ranks_proto protoreflect.FileDescriptor
 
 const file_ranks_ranks_proto_rawDesc = "" +
 	"\n" +
-	"\x11ranks/ranks.proto\x12\branks.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12ranks/domain.proto\x1a\x18permissions/domain.proto2\xf3\x05\n" +
+	"\x11ranks/ranks.proto\x12\branks.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12ranks/domain.proto\x1a\x18permissions/domain.proto2\xf4\x05\n" +
 	"\fRanksService\x12X\n" +
 	"\x06Create\x12\x17.ranks.v1.CreateRequest\x1a\x17.ranks.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/ranks/create\x12\\\n" +
 	"\x05Patch\x12\x16.ranks.v1.PatchRequest\x1a\x17.ranks.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/api/ranks/{name}/patch\x12O\n" +
 	"\x03Get\x12\x15.ranks.v1.NameRequest\x1a\x16.ranks.v1.RankResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/ranks/{name}\x12X\n" +
-	"\x05Users\x12\x15.ranks.v1.NameRequest\x1a\x17.ranks.v1.UsersResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/ranks/{name}/users\x12O\n" +
-	"\x04List\x12\x16.google.protobuf.Empty\x1a\x17.ranks.v1.RanksResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/rank/list\x12Z\n" +
+	"\x05Users\x12\x15.ranks.v1.NameRequest\x1a\x17.ranks.v1.UsersResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/ranks/{name}/users\x12P\n" +
+	"\x04List\x12\x16.google.protobuf.Empty\x1a\x17.ranks.v1.RanksResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/api/ranks/list\x12Z\n" +
 	"\x06Delete\x12\x15.ranks.v1.NameRequest\x1a\x17.ranks.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/ranks/{name}/delete\x12m\n" +
 	"\n" +
 	"PermsPatch\x12\x1b.ranks.v1.PermsPatchRequest\x1a\x17.ranks.v1.EmptyResponse\")\x82\xd3\xe4\x93\x02#:\x01*2\x1e/api/ranks/{name}/perms/{perm}\x12d\n" +
