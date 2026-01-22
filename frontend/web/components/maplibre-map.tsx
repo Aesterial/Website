@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -34,55 +34,26 @@ export function MapLibreMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+
   const onMarkerClickRef = useRef(onMarkerClick);
   const onMapClickRef = useRef(onMapClick);
+
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
- 
-    const hasSetter = "setWorkerUrl" in maplibregl;
-  
-    if (hasSetter) {
- 
-      if (!maplibregl.getWorkerUrl?.()) {
-        maplibregl.setWorkerUrl(
-          new URL(
-            "maplibre-gl/dist/maplibre-gl-csp-worker.js",
-            import.meta.url,
-          ).toString(),
-        );
-      }
-    } else {
-      
-      (maplibregl as any).workerUrl ??= new URL(
-        "maplibre-gl/dist/maplibre-gl-csp-worker.js",
-        import.meta.url,
-      ).toString();
-    }
-    
-    
-  }, []);
-
-
-
-  useEffect(() => {
     onMarkerClickRef.current = onMarkerClick;
-  }, [onMarkerClick]);
-
-  useEffect(() => {
     onMapClickRef.current = onMapClick;
-  }, [onMapClick]);
+  }, [onMarkerClick, onMapClick]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) {
-      return;
-    }
+    if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
-      center,
-      zoom,
+
+      style: "https://api.maptiler.com/maps/toner-v2/style.json?key=wjV3hWuYtgJbK3Nmy76Z",
+      center: center,
+      zoom: zoom,
       attributionControl: false,
     });
 
@@ -91,7 +62,11 @@ export function MapLibreMap({
       "top-right",
     );
 
-    map.on("load", () => setIsLoaded(true));
+    map.on("load", () => {
+      setIsLoaded(true);
+      map.resize();
+    });
+
     map.on("click", (event) => {
       onMapClickRef.current?.([event.lngLat.lng, event.lngLat.lat]);
     });
@@ -102,83 +77,103 @@ export function MapLibreMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [center, zoom]);
+  }, []);
+
+  useEffect(() => {
+    if (mapRef.current && isLoaded) {
+      mapRef.current.easeTo({
+        center,
+        zoom,
+        duration: 800,
+        essential: true,
+      });
+    }
+  }, [center, zoom, isLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) {
-      return;
-    }
-    map.easeTo({ center, zoom, duration: 600 });
-  }, [center, zoom]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) {
-      return;
-    }
+    if (!map || !isLoaded) return;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    markers.forEach((marker) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.setAttribute("aria-label", marker.title);
-      button.title = marker.title;
-      button.style.width = "14px";
-      button.style.height = "14px";
-      button.style.borderRadius = "9999px";
-      button.style.background = "#111827";
-      button.style.border = "2px solid #ffffff";
-      button.style.boxShadow = "0 8px 18px rgba(0,0,0,0.28)";
-      button.style.cursor = "pointer";
+    markers.forEach((markerData) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "map-custom-marker";
 
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        onMarkerClickRef.current?.(marker);
+      Object.assign(el.style, {
+        width: "16px",
+        height: "16px",
+        borderRadius: "50%",
+        backgroundColor: "#111827",
+        border: "2px solid #ffffff",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        cursor: "pointer",
+        transition: "transform 0.2s ease",
       });
 
-      const mapMarker = new maplibregl.Marker({
-        element: button,
-        anchor: "bottom",
+      el.addEventListener(
+        "mouseenter",
+        () => (el.style.transform = "scale(1.2)"),
+      );
+      el.addEventListener(
+        "mouseleave",
+        () => (el.style.transform = "scale(1)"),
+      );
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onMarkerClickRef.current?.(markerData);
+      });
+
+      const m = new maplibregl.Marker({
+        element: el,
+        anchor: "center",
       })
-        .setLngLat(marker.coordinates)
+        .setLngLat(markerData.coordinates)
         .addTo(map);
 
-      markersRef.current.push(mapMarker);
+      markersRef.current.push(m);
     });
-  }, [markers]);
+  }, [markers, isLoaded]);
 
   return (
     <motion.div
-      className={`relative flex flex-col overflow-hidden rounded-3xl ${className}`}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
+      className={`relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card shadow-xl ${className}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      <div className="bg-card border-b border-border px-3 py-2 flex items-center gap-2 sm:px-4 sm:py-3">
-        <div className="w-3 h-3 rounded-full bg-red-500" />
-        <div className="w-3 h-3 rounded-full bg-yellow-500" />
-        <div className="w-3 h-3 rounded-full bg-green-500" />
+      <div className="flex items-center gap-1.5 border-b border-border bg-muted/50 px-4 py-3">
+        <div className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+        <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+        <div className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+        <span className="ml-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
+          Interactive Map
+        </span>
       </div>
 
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <motion.div
-            className="text-muted-foreground"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
-          >
-            Loading map...
-          </motion.div>
-        </div>
-      )}
+      <div className="relative flex-1 min-h-[300px] sm:min-h-[400px]">
+        <AnimatePresence>
+          {!isLoaded && (
+            <motion.div
+              key="loader"
+              className="absolute inset-0 z-10 flex items-center justify-center bg-muted"
+              exit={{ opacity: 0 }}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                  Инициализация карты...
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <div
-        ref={mapContainerRef}
-        className="w-full flex-1 min-h-[260px] bg-muted sm:min-h-[320px] lg:min-h-[360px]"
-      />
+        <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
+      </div>
     </motion.div>
   );
 }

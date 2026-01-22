@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type {
-  ApiAvatar,
+  AvatarUploadPayload,
   ApiPermissions,
   AuthorizationPayload,
   AuthUser,
@@ -18,12 +18,14 @@ import type {
 } from "@/lib/api";
 import {
   authorizeUser,
+  deleteAvatar,
   fetchCurrentUser,
   fetchUserPermissions,
   logoutUser,
   registerUser,
   updateAvatar,
   updateDisplayName,
+  updateProfileDescription,
 } from "@/lib/api";
 
 type AuthStatus = "loading" | "authenticated" | "anonymous";
@@ -37,7 +39,9 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   refreshUser: (options?: { silent?: boolean }) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<AuthUser | null>;
-  updateAvatar: (avatar: ApiAvatar) => Promise<AuthUser | null>;
+  updateProfileDescription: (description: string) => Promise<AuthUser | null>;
+  updateAvatar: (payload: AvatarUploadPayload) => Promise<AuthUser | null>;
+  deleteAvatar: () => Promise<AuthUser | null>;
   hasAdminAccess: boolean;
 };
 
@@ -193,16 +197,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const handleUpdateAvatar = useCallback(
-    async (avatar: ApiAvatar) => {
+    async (payload: AvatarUploadPayload) => {
       if (!user) {
         return null;
       }
-      const updated = await updateAvatar(avatar);
+      const updated = await updateAvatar(payload);
       setUser(updated);
       return updated;
     },
     [user],
   );
+
+  const handleUpdateProfileDescription = useCallback(
+    async (description: string) => {
+      if (!user) {
+        return null;
+      }
+      const updated = await updateProfileDescription(description);
+      setUser(updated);
+      return updated;
+    },
+    [user],
+  );
+
+  const handleDeleteAvatar = useCallback(async () => {
+    if (!user) {
+      return null;
+    }
+    const updated = await deleteAvatar();
+    setUser(updated);
+    return updated;
+  }, [user]);
 
   const hasAdminAccess = useMemo(() => {
     if (hasAnyPermission(permissions, adminPermissionPaths)) {
@@ -221,7 +246,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser,
       updateDisplayName: handleUpdateDisplayName,
+      updateProfileDescription: handleUpdateProfileDescription,
       updateAvatar: handleUpdateAvatar,
+      deleteAvatar: handleDeleteAvatar,
       hasAdminAccess,
     }),
     [
@@ -233,7 +260,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser,
       handleUpdateDisplayName,
+      handleUpdateProfileDescription,
       handleUpdateAvatar,
+      handleDeleteAvatar,
       hasAdminAccess,
     ],
   );

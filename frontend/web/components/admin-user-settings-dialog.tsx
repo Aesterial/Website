@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useLanguage } from "@/components/language-provider";
 
 export type AdminUserSettingsTarget = {
+  userID: number;
   name: string;
   username?: string;
   role?: string;

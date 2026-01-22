@@ -23,15 +23,30 @@ export type ApiRank = {
 };
 
 export type ApiAvatar = {
-  contentType: string;
-  data: string;
+  contentType?: string;
+  data?: string;
   url?: string;
+  key?: string;
+};
+
+type PresignResponse = {
+  presign?: string;
+  tracing?: string;
+};
+
+export type AvatarUploadPayload = {
+  userId: number;
+  file: File;
+  contentType?: string;
   key?: string;
 };
 
 type ApiUserSettings = {
   display_name?: string | null;
   displayName?: string | null;
+  description?: string | null;
+  description_text?: string | null;
+  descriptionText?: string | null;
   session_live_time?: number | null;
   sessionLiveTime?: number | null;
   avatar?: ApiAvatar | null;
@@ -180,6 +195,7 @@ export type AuthUser = {
   username: string;
   email?: string;
   displayName?: string;
+  description?: string;
   avatar?: ApiAvatar | null;
   rank?: ApiRank | null;
   joined?: string;
@@ -230,15 +246,26 @@ function toAvatar(value: unknown): ApiAvatar | undefined {
     contentType?: unknown;
     content_type?: unknown;
     data?: unknown;
+    url?: unknown;
+    key?: unknown;
   };
   const contentType =
     (typeof payload.contentType === "string" && payload.contentType.trim()) ||
-    (typeof payload.content_type === "string" && payload.content_type.trim());
-  const data = typeof payload.data === "string" ? payload.data.trim() : "";
-  if (!contentType || !data) {
+    (typeof payload.content_type === "string" && payload.content_type.trim()) ||
+    undefined;
+  const data =
+    typeof payload.data === "string" ? payload.data.trim() : undefined;
+  const url = typeof payload.url === "string" ? payload.url.trim() : undefined;
+  const key = typeof payload.key === "string" ? payload.key.trim() : undefined;
+  if (!contentType && !data && !url && !key) {
     return undefined;
   }
-  return { contentType, data };
+  return {
+    ...(contentType ? { contentType } : {}),
+    ...(data ? { data } : {}),
+    ...(url ? { url } : {}),
+    ...(key ? { key } : {}),
+  };
 }
 
 const BAN_STORAGE_KEY = "banInfo";
@@ -283,6 +310,11 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const settings = publicUser?.settings ?? user.settings;
   const displayName =
     settings?.display_name ?? settings?.displayName ?? undefined;
+  const description =
+    settings?.description ??
+    settings?.description_text ??
+    settings?.descriptionText ??
+    undefined;
   const avatar = toAvatar(settings?.avatar);
   const rank = publicUser?.rank ?? user.rank ?? undefined;
   const joined =
@@ -293,6 +325,7 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
     username,
     email: user.email?.address,
     displayName,
+    description,
     avatar,
     rank,
     joined,
@@ -535,17 +568,67 @@ export async function updateDisplayName(name: string): Promise<AuthUser> {
   return fetchCurrentUser();
 }
 
-export async function updateAvatar(payload: ApiAvatar): Promise<AuthUser> {
-  const contentType = payload?.contentType?.trim();
-  const data = payload?.data?.trim();
-  if (!contentType || !data) {
-    throw new Error("Avatar payload is required.");
+export async function updateProfileDescription(
+  description: string,
+): Promise<AuthUser> {
+  const encoded = encodeURIComponent(description);
+  await apiRequest(`/api/user/change/description/${encoded}`, {
+    method: "PATCH",
+  });
+  return fetchCurrentUser();
+}
+
+export async function updateAvatar(
+  payload: AvatarUploadPayload,
+): Promise<AuthUser> {
+  if (!payload?.file) {
+    throw new Error("Avatar file is required.");
+  }
+  if (!Number.isFinite(payload.userId) || payload.userId <= 0) {
+    throw new Error("User id is required.");
+  }
+  const contentType =
+    payload.contentType?.trim() ||
+    payload.file.type ||
+    "application/octet-stream";
+  const key = payload.key?.trim() || `avatars/${payload.userId}/current`;
+  const presignResponse = await apiRequest<PresignResponse>(
+    `/api/storage/presign/put?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(contentType)}`,
+    {
+      method: "GET",
+    },
+  );
+  const presignUrl = presignResponse?.presign?.trim();
+  if (!presignUrl) {
+    throw new Error("Avatar upload URL is missing.");
+  }
+  const uploadResponse = await fetch(presignUrl, {
+    method: "PUT",
+    body: payload.file,
+    credentials: "omit",
+    headers: contentType ? { "Content-Type": contentType } : undefined,
+  });
+  if (!uploadResponse.ok) {
+    throw new Error(`Avatar upload failed (${uploadResponse.status}).`);
   }
   await apiRequest("/api/user/avatar", {
     method: "POST",
-    body: JSON.stringify({ contentType, data }),
+    body: JSON.stringify({ key, contentType }),
   });
   return fetchCurrentUser();
+}
+
+export async function deleteAvatar(): Promise<AuthUser> {
+  await apiRequest("/api/user/delete/avatar", {
+    method: "DELETE",
+  });
+  return fetchCurrentUser();
+}
+
+export async function deleteUserAvatar(userID: number): Promise<void> {
+  await apiRequest(`/api/user/${userID}/delete/avatar`, {
+    method: "DELETE",
+  });
 }
 
 export async function fetchProjects(options?: {

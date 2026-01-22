@@ -41,6 +41,7 @@ import {
 } from "@/components/tutorial/tutorial-provider";
 import {
   banUser,
+  deleteUserAvatar,
   fetchUserBanInfo,
   fetchUsers,
   handleBannedUser,
@@ -1080,15 +1081,15 @@ export default function AdminPage() {
               role: item.rank?.name || t("labelUser"),
               status: isBanned ? "banned" : "active",
               lastActive: formatUserDate(item.joined),
-            reports: 0,
-          };
-        });
-        setUsers(mapped);
-        writeAdminCache(cacheKey, {
-          timestamp: Date.now(),
-          users: mapped,
-        });
-      } catch (error) {
+              reports: 0,
+            };
+          });
+          setUsers(mapped);
+          writeAdminCache(cacheKey, {
+            timestamp: Date.now(),
+            users: mapped,
+          });
+        } catch (error) {
           if (!controller.signal.aborted) {
             toast.error(t("adminErrorLoadUsers"), {
               description: error instanceof Error ? error.message : undefined,
@@ -1203,10 +1204,23 @@ export default function AdminPage() {
     });
   };
 
-  const handleSettingsAction = (
+  const handleSettingsAction = async (
     action: "permissions" | "role" | "profile",
     user: AdminUserSettingsTarget,
   ) => {
+    if (action === "profile") {
+      try {
+        await deleteUserAvatar(user.userID);
+        toast.success(t("adminUserAvatarResetSuccess"), {
+          description: user.name,
+        });
+      } catch (error) {
+        toast.error(t("adminUserAvatarResetError"), {
+          description: error instanceof Error ? error.message : undefined,
+        });
+      }
+      return;
+    }
     const labelMap = {
       permissions: t("adminUserSettingsPermissions"),
       role: t("adminUserSettingsRole"),
@@ -1307,7 +1321,7 @@ export default function AdminPage() {
                       <p className="hidden lg:block text-s textforeground max-w-[260px] text-left">
                         {t("adminHeaderNote")}
                       </p>
-                    
+
                       <div className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                         <button
                           type="button"
@@ -1315,10 +1329,16 @@ export default function AdminPage() {
                           data-tutorial="admin-theme-toggle"
                           className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/70 bg-background px-4 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
                         >
-                          {mounted ? (theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />) : null}
+                          {mounted ? (
+                            theme === "light" ? (
+                              <Moon className="h-4 w-4" />
+                            ) : (
+                              <Sun className="h-4 w-4" />
+                            )
+                          ) : null}
                           {t("adminThemeToggle")}
                         </button>
-                    
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -1330,15 +1350,21 @@ export default function AdminPage() {
                               <ChevronDown className="h-3 w-3" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="min-w-[90px]">
+                          <DropdownMenuContent
+                            align="end"
+                            className="min-w-[90px]"
+                          >
                             {languageOptions.map((option) => (
-                              <DropdownMenuItem key={option.code} onClick={() => setLanguage(option.code)}>
+                              <DropdownMenuItem
+                                key={option.code}
+                                onClick={() => setLanguage(option.code)}
+                              >
                                 {option.label}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                    
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -1346,9 +1372,13 @@ export default function AdminPage() {
                               className="flex items-center gap-3 rounded-full border border-border/60 bg-background/90 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
                             >
                               <Avatar className="h-9 w-9">
-                                <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                                <AvatarFallback className="text-xs font-semibold">
+                                  {initials}
+                                </AvatarFallback>
                               </Avatar>
-                              <span className="text-sm font-semibold">{displayName || user?.username || "admin"}</span>
+                              <span className="text-sm font-semibold">
+                                {displayName || user?.username || "admin"}
+                              </span>
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
                             </button>
                           </DropdownMenuTrigger>
@@ -2101,6 +2131,7 @@ export default function AdminPage() {
                                       className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
                                       onClick={() =>
                                         setSettingsUser({
+                                          userID: user.userID,
                                           name: user.name,
                                           username: user.username,
                                           role: user.role,

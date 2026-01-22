@@ -15,6 +15,7 @@ import {
 } from "@/components/admin-user-settings-dialog";
 import {
   banUser,
+  deleteUserAvatar,
   fetchUserBanInfo,
   fetchUsers,
   unbanUser,
@@ -376,10 +377,23 @@ export default function AdminUsersPage() {
     });
   };
 
-  const handleSettingsAction = (
+  const handleSettingsAction = async (
     action: "permissions" | "role" | "profile",
     user: AdminUserSettingsTarget,
   ) => {
+    if (action === "profile") {
+      try {
+        await deleteUserAvatar(user.userID);
+        toast.success(t("adminUserAvatarResetSuccess"), {
+          description: user.name,
+        });
+      } catch (error) {
+        toast.error(t("adminUserAvatarResetError"), {
+          description: error instanceof Error ? error.message : undefined,
+        });
+      }
+      return;
+    }
     const labelMap = {
       permissions: t("adminUserSettingsPermissions"),
       role: t("adminUserSettingsRole"),
@@ -690,6 +704,7 @@ export default function AdminUsersPage() {
                             className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 text-foreground transition-all duration-300 hover:bg-foreground hover:text-background"
                             onClick={() =>
                               setSettingsUser({
+                                userID: user.userID,
                                 name: user.name,
                                 username: user.username,
                                 role: user.role,

@@ -29,16 +29,27 @@ const getInitials = (value: string) => {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, status, updateDisplayName, updateAvatar } = useAuth();
+  const {
+    user,
+    status,
+    updateDisplayName,
+    updateProfileDescription,
+    updateAvatar,
+    deleteAvatar,
+  } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [displayName, setDisplayName] = useState("");
+  const [profileDescription, setProfileDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
-  const [isAvatarSaving, setIsAvatarSaving] = useState(false);
+  const [avatarAction, setAvatarAction] = useState<"upload" | "reset" | null>(
+    null,
+  );
+  const isAvatarSaving = avatarAction !== null;
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const languageOptions = [
     { code: "RU" as const, label: "RU" },
@@ -57,11 +68,15 @@ export default function AccountPage() {
     setDisplayName(user?.displayName ?? "");
   }, [user?.displayName]);
 
+  useEffect(() => {
+    setProfileDescription(user?.description ?? "");
+  }, [user?.description]);
+
   const handleAvatarSelect = () => {
     avatarInputRef.current?.click();
   };
 
-  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -81,39 +96,47 @@ export default function AccountPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      if (!result) {
-        setAvatarError(t("accountAvatarErrorRead"));
-        return;
-      }
-      setAvatarPreview(result);
-      const commaIndex = result.indexOf(",");
-      const base64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : "";
-      if (!base64) {
-        setAvatarError(t("accountAvatarErrorRead"));
-        return;
-      }
-      setIsAvatarSaving(true);
-      try {
-        await updateAvatar({ contentType: file.type, data: base64 });
-        setAvatarSuccess(t("accountAvatarSuccess"));
-        setAvatarPreview(null);
-      } catch (err) {
-        setAvatarError(
-          err instanceof Error ? err.message : t("accountAvatarErrorRead"),
-        );
-        setAvatarPreview(null);
-      } finally {
-        setIsAvatarSaving(false);
-      }
-    };
-    reader.onerror = () => {
-      setAvatarError(t("accountAvatarErrorRead"));
-    };
-    reader.readAsDataURL(file);
+    if (!user) {
+      event.target.value = "";
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+    setAvatarAction("upload");
+    try {
+      await updateAvatar({ userId: user.uid, file, contentType: file.type });
+      setAvatarSuccess(t("accountAvatarSuccess"));
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : t("accountAvatarErrorUpload"),
+      );
+    } finally {
+      setAvatarAction(null);
+      setAvatarPreview(null);
+      URL.revokeObjectURL(previewUrl);
+    }
     event.target.value = "";
+  };
+
+  const handleAvatarReset = async () => {
+    if (!user) {
+      return;
+    }
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    setAvatarAction("reset");
+    try {
+      await deleteAvatar();
+      setAvatarSuccess(t("accountAvatarResetSuccess"));
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : t("accountAvatarErrorUpload"),
+      );
+    } finally {
+      setAvatarAction(null);
+      setAvatarPreview(null);
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -126,18 +149,57 @@ export default function AccountPage() {
     }
 
     const nextName = displayName.trim();
-    if (!nextName) {
-      setErrorMessage("Display name cannot be empty.");
+    const nextDescription = profileDescription.trim();
+    const currentName = (user.displayName ?? "").trim();
+    const currentDescription = (user.description ?? "").trim();
+    const nameChanged = nextName !== currentName;
+    const descriptionChanged = nextDescription !== currentDescription;
+
+    if (!nameChanged && !descriptionChanged) {
+      return;
+    }
+
+    if (nameChanged && !nextName) {
+      setErrorMessage(t("accountDisplayNameEmpty"));
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateDisplayName(nextName);
-      setSuccessMessage("Saved.");
+      if (nameChanged) {
+        await updateDisplayName(nextName);
+      }
+      if (descriptionChanged) {
+        await updateProfileDescription(nextDescription);
+      }
+      setSuccessMessage(t("accountProfileSaved"));
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Failed to update profile.",
+        err instanceof Error ? err.message : t("accountProfileError"),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetDisplayName = async () => {
+    if (!user) {
+      return;
+    }
+    const fallbackName = user.username?.trim();
+    if (!fallbackName) {
+      return;
+    }
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsSaving(true);
+    try {
+      await updateDisplayName(fallbackName);
+      setDisplayName(fallbackName);
+      setSuccessMessage(t("displayNameResetSuccess"));
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : t("accountProfileError"),
       );
     } finally {
       setIsSaving(false);
@@ -163,11 +225,15 @@ export default function AccountPage() {
 
   const nameForAvatar = user.displayName || user.username || "User";
   const initials = getInitials(nameForAvatar);
-  const avatarSrc =
-    avatarPreview ||
+  const storedAvatarSrc =
+    user.avatar?.url ||
     (user.avatar?.contentType && user.avatar?.data
       ? `data:${user.avatar.contentType};base64,${user.avatar.data}`
       : null);
+  const avatarSrc = avatarPreview || storedAvatarSrc;
+  const canResetAvatar = Boolean(storedAvatarSrc);
+  const canResetDisplayName =
+    Boolean(user.username) && displayName.trim() !== user.username;
 
   return (
     <div className="min-h-screen bg-background">
@@ -219,16 +285,30 @@ export default function AccountPage() {
                   onChange={handleAvatarChange}
                   className="hidden"
                 />
-                <GradientButton
-                  type="button"
-                  className="w-full justify-center sm:w-auto"
-                  onClick={handleAvatarSelect}
-                  disabled={isAvatarSaving}
-                >
-                  {isAvatarSaving
-                    ? t("accountAvatarUploading")
-                    : t("accountAvatarChange")}
-                </GradientButton>
+                <div className="flex flex-wrap gap-2">
+                  <GradientButton
+                    type="button"
+                    className="w-full justify-center sm:w-auto"
+                    onClick={handleAvatarSelect}
+                    disabled={isAvatarSaving}
+                  >
+                    {avatarAction === "upload"
+                      ? t("accountAvatarUploading")
+                      : t("accountAvatarChange")}
+                  </GradientButton>
+                  {canResetAvatar ? (
+                    <button
+                      type="button"
+                      className="w-full rounded-full border border-border/70 px-4 py-3 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background sm:w-auto"
+                      onClick={() => void handleAvatarReset()}
+                      disabled={isAvatarSaving}
+                    >
+                      {avatarAction === "reset"
+                        ? t("accountAvatarResetting")
+                        : t("accountAvatarReset")}
+                    </button>
+                  ) : null}
+                </div>
                 {avatarError ? (
                   <p className="mt-2 text-xs text-destructive">{avatarError}</p>
                 ) : null}
@@ -274,14 +354,34 @@ export default function AccountPage() {
             transition={{ duration: 0.4, delay: 0.2 }}
           >
             <div className="space-y-3">
-              <label className="block text-sm font-medium">
-                {t("displayNameLabel")}
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium">
+                  {t("displayNameLabel")}
+                </label>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => void handleResetDisplayName()}
+                  disabled={isSaving || !canResetDisplayName}
+                >
+                  {t("displayNameReset")}
+                </button>
+              </div>
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder={t("displayNamePlaceholder")}
+                className="w-full bg-background border border-border rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
+              />
+              <label className="block text-sm font-medium">
+                {t("profileDescriptionLabel")}
+              </label>
+              <textarea
+                value={profileDescription}
+                onChange={(event) => setProfileDescription(event.target.value)}
+                placeholder={t("profileDescriptionPlaceholder")}
+                rows={4}
                 className="w-full bg-background border border-border rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
               />
               {errorMessage ? (
