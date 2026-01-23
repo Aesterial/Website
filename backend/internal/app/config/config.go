@@ -113,6 +113,16 @@ func ensure() {
 			FromName: envValue("SMTP_FROM_NAME"),
 			Secure:   parseBool("SMTP_SECURE", false),
 		},
+		VK: domain.VK{
+			ClientID:           envValue("VK_CLIENT_ID"),
+			ClientSecret:       envValue("VK_CLIENT_SECRET"),
+			RedirectURI:        envValue("VK_REDIRECT_URI"),
+			Scope:              envValue("VK_SCOPE"),
+			APIVersion:         envValue("VK_API_VERSION"),
+			SuccessRedirectURL: envValue("VK_SUCCESS_REDIRECT_URL", "VK_REDIRECT_SUCCESS_URL"),
+			StateTTLSeconds:    parseInt("VK_STATE_TTL_SECONDS", 600),
+			StateSecret:        envValue("VK_STATE_SECRET"),
+		},
 	}
 	env.MarkLoaded()
 }

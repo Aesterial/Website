@@ -777,7 +777,7 @@ func (u *UserRepository) Perms(ctx context.Context, uid uint) (*permissions.Perm
 	`, uid).Scan(&raw); err != nil {
 		return nil, err
 	}
-	logger.Debug("response from db: " + string(raw), "")
+	logger.Debug("response from db: "+string(raw), "")
 	var perms permissions.Permissions
 	if err := json.Unmarshal(raw, &perms); err != nil {
 		return nil, err
@@ -909,6 +909,47 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 		return nil, err
 	}
 	return &uid, nil
+}
+
+func (l *LoginRepository) GetUIDByEmail(ctx context.Context, email string) (*uint, error) {
+	if strings.TrimSpace(email) == "" {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
+	}
+	var uid uint
+	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE lower((u.email).address) = lower($1)", email).Scan(&uid); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.RecordNotFound
+		}
+		return nil, err
+	}
+	return &uid, nil
+}
+
+func (l *LoginRepository) GetOAuthUID(ctx context.Context, service login.OAuthService, linkedID string) (*uint, error) {
+	if !service.IsValid() || strings.TrimSpace(linkedID) == "" {
+		return nil, apperrors.InvalidArguments.AddErrDetails("oauth params are invalid")
+	}
+	var uid uint
+	if err := l.DB.QueryRowContext(ctx, "SELECT uid FROM oauth WHERE service = $1 AND linked_id = $2", service.String(), linkedID).Scan(&uid); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.RecordNotFound
+		}
+		return nil, err
+	}
+	return &uid, nil
+}
+
+func (l *LoginRepository) LinkOAuth(ctx context.Context, service login.OAuthService, linkedID string, uid uint) error {
+	if !service.IsValid() || strings.TrimSpace(linkedID) == "" || uid == 0 {
+		return apperrors.InvalidArguments.AddErrDetails("oauth params are invalid")
+	}
+	_, err := l.DB.ExecContext(ctx, `
+		INSERT INTO oauth (uid, service, linked_id)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (service, uid)
+		DO UPDATE SET linked_id = EXCLUDED.linked_id
+	`, uid, service.String(), linkedID)
+	return err
 }
 
 func (l *LoginRepository) Logout(ctx context.Context, sessionID uuid.UUID) error {
@@ -1849,6 +1890,21 @@ func (v *VerificationRepository) IsBanned(ctx context.Context, email string) (bo
 		return false, err
 	}
 	return found, nil
+}
+
+func (v *VerificationRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+	if email == "" {
+		return false, apperrors.RequiredDataMissing.AddErrDetails("param is empty")
+	}
+	var exists bool
+	if err := v.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users WHERE (email).address = $1)", email).Scan(&exists); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		logger.Debug("error: "+err.Error(), "")
+		return false, err
+	}
+	return exists, nil
 }
 
 var _ maintenance.Repository = (*MaintenanceRepository)(nil)

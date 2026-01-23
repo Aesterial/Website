@@ -57,6 +57,17 @@ type Mailer struct {
 	Secure   bool
 }
 
+type VK struct {
+	ClientID           string
+	ClientSecret       string
+	RedirectURI        string
+	Scope              string
+	APIVersion         string
+	SuccessRedirectURL string
+	StateTTLSeconds    int
+	StateSecret        string
+}
+
 type Environment struct {
 	Startup  Startup
 	TLS      TLS
@@ -66,6 +77,7 @@ type Environment struct {
 	Cors     CORS
 	Database Database
 	Mailer   Mailer
+	VK       VK
 
 	load bool
 }

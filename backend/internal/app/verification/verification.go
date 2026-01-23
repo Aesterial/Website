@@ -76,3 +76,15 @@ func (s *Service) GetRecord(ctx context.Context, purpose verification.Purpose, t
 	}
 	return record, nil
 }
+
+func (s *Service) EmailExists(ctx context.Context, email string) (bool, error) {
+	if email == "" {
+		return false, apperrors.RequiredDataMissing
+	}
+	found, err := s.repo.EmailExists(ctx, email)
+	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "verification_email_exists")
+		return false, apperrors.Wrap(err)
+	}
+	return found, nil
+}

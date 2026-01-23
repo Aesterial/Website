@@ -153,7 +153,7 @@ func main() {
 		return
 	}
 
-	loginServer := grpcserver.NewLoginService(loginService, sessionsService, userInfoService, verificationService)
+	loginServer := grpcserver.NewLoginService(loginService, sessionsService, userInfoService, verificationService, storageService)
 	userServer := grpcserver.NewUserService(userInfoService, userModifierService, sessionsService, storageService)
 	statServer := grpcserver.NewStatService(statService, sessionsService, userInfoService)
 	projectServer := grpcserver.NewProjectService(projectsService, sessionsService, userInfoService, storageService)

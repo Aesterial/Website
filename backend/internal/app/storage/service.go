@@ -6,6 +6,7 @@ import (
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"errors"
+	"io"
 	"path"
 	"sort"
 	"strings"
@@ -137,6 +138,36 @@ func (s *Service) PresignPut(ctx context.Context, key, contentType string) (stri
 		return "", apperrors.Wrap(err)
 	}
 	return out.URL, nil
+}
+
+func (s *Service) PutObject(ctx context.Context, key string, body io.Reader, contentType string, sizeBytes int64) error {
+	if s == nil || s.client == nil {
+		return apperrors.NotConfigured
+	}
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return apperrors.RequiredDataMissing.AddErrDetails("key is empty")
+	}
+	if body == nil {
+		return apperrors.RequiredDataMissing.AddErrDetails("body is empty")
+	}
+	input := &s3.PutObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+		Body:   body,
+	}
+	contentType = strings.TrimSpace(contentType)
+	if contentType != "" {
+		input.ContentType = aws.String(contentType)
+	}
+	if sizeBytes > 0 {
+		input.ContentLength = aws.Int64(sizeBytes)
+	}
+	if _, err := s.client.PutObject(ctx, input); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "storage.put")
+		return apperrors.Wrap(err)
+	}
+	return nil
 }
 
 func (s *Service) Exists(ctx context.Context, key string) (bool, error) {

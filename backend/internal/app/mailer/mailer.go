@@ -82,6 +82,24 @@ func (s *Service) SendPasswordReset(ctx context.Context, email string, token str
 	return s.sendMail(ctx, email, subject, htmlBody, textBody)
 }
 
+func (s *Service) SendRegistrationPassword(ctx context.Context, email string, password string) (string, error) {
+	if strings.TrimSpace(password) == "" {
+		return "", apperrors.RequiredDataMissing.AddErrDetails("password is empty")
+	}
+	cfg := config.Get()
+	loginUrl := fmt.Sprintf("https://%s/login", cfg.Cookies.Domain)
+	subject := "Welcome to " + cfg.Cookies.Domain
+	htmlBody := fmt.Sprintf(
+		`<p>Your account has been created via VK.</p><p>Password: <strong>%s</strong></p><p>You can log in here: <a href="%s">%s</a></p>`,
+		password,
+		loginUrl,
+		loginUrl,
+	)
+	textBody := "Your account has been created via VK.\nPassword: " + password + "\nLogin: " + loginUrl
+
+	return s.sendMail(ctx, email, subject, htmlBody, textBody)
+}
+
 func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlBody string, textBody string) (string, error) {
 	to = strings.TrimSpace(to)
 	if to == "" {

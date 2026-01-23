@@ -11,4 +11,5 @@ type Repository interface {
 	BanEmail(ctx context.Context, email string, reason string) error
 	IsBanned(ctx context.Context, email string) (bool, error)
 	GetRecord(ctx context.Context, purpose Purpose, token string) (*TokenRecord, error)
+	EmailExists(ctx context.Context, email string) (bool, error)
 }

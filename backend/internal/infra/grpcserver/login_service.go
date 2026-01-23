@@ -4,6 +4,7 @@ import (
 	loginapp "Aesterial/backend/internal/app/auth"
 	"Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
+	storageapp "Aesterial/backend/internal/app/storage"
 	"Aesterial/backend/internal/app/verification"
 	logindomain "Aesterial/backend/internal/domain/login"
 	verdomain "Aesterial/backend/internal/domain/verification"
@@ -24,10 +25,11 @@ type LoginService struct {
 	login        *loginapp.Service
 	auth         *Authenticator
 	verification *verification.Service
+	storage      *storageapp.Service
 }
 
-func NewLoginService(login *loginapp.Service, ses *sessions.Service, us *userapp.Service, ver *verification.Service) *LoginService {
-	return &LoginService{login: login, auth: NewAuthenticator(ses, us), verification: ver}
+func NewLoginService(login *loginapp.Service, ses *sessions.Service, us *userapp.Service, ver *verification.Service, storage *storageapp.Service) *LoginService {
+	return &LoginService{login: login, auth: NewAuthenticator(ses, us), verification: ver, storage: storage}
 }
 
 func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthRequest) (*loginpb.AuthResponse, error) {
@@ -125,6 +127,14 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 	if email == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
+	exists, err := s.verification.EmailExists(ctx, email)
+	if err != nil {
+		logger.Debug("failed to check exists: "+err.Error(), "")
+		return nil, apperrors.ServerError.AddErrDetails("error: " + err.Error())
+	}
+	if !exists {
+		return nil, apperrors.RecordNotFound
+	}
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
 		logger.Debug("error while getting banned state: "+err.Error(), "")
@@ -133,18 +143,19 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 	if banned {
 		return nil, apperrors.AccessDenied.AddErrDetails("email is banned")
 	}
-	ip, exists := clientIP(ctx)
-	if !exists {
-		return nil, apperrors.InvalidArguments.AddErrDetails("ip not found")
-	}
-	token, err := s.verification.Create(ctx, email, verdomain.PasswordReset, ip, userAgentHash(ctx), 5*time.Minute)
+	// ip, exists := clientIP(ctx)
+	// if !exists {
+	// 	logger.Debug("ip not found, returning", "")
+	// 	return nil, apperrors.InvalidArguments.AddErrDetails("ip not found")
+	// }
+	token, err := s.verification.Create(ctx, email, verdomain.PasswordReset, "127.0.0.1", userAgentHash(ctx), 5*time.Minute)
 	if err != nil {
-		logger.Debug("failed to create verification record: " + err.Error(), "")
+		logger.Debug("failed to create verification record: "+err.Error(), "")
 		return nil, err
 	}
 	_, err = s.verification.Mailer.SendPasswordReset(ctx, email, token)
 	if err != nil {
-		logger.Debug("failed to send mail message: " + err.Error(), "")
+		logger.Debug("failed to send mail message: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil

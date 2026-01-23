@@ -87,7 +87,7 @@ func newLoginService(repo logindomain.Repository, sessionsRepo sessionsdomain.Re
 	userService := userinfo.New(userRepo, sessionsRepo)
 	verificationService := verificationapp.New(&verificationRepoStub{}, nil)
 	loginService := loginapp.New(repo, sessionsService, userService)
-	return grpcserver.NewLoginService(loginService, sessionsService, userService, verificationService)
+	return grpcserver.NewLoginService(loginService, sessionsService, userService, verificationService, nil)
 }
 
 func newTestContext(method string) (context.Context, *transportStreamStub) {
@@ -144,6 +144,18 @@ func (r *loginRepoStub) Register(ctx context.Context, user logindomain.RegisterR
 }
 
 func (r *loginRepoStub) Logout(ctx context.Context, sessionID uuid.UUID) error {
+	return r.registerErr
+}
+
+func (r *loginRepoStub) GetUIDByEmail(ctx context.Context, email string) (*uint, error) {
+	return nil, r.registerErr
+}
+
+func (r *loginRepoStub) GetOAuthUID(ctx context.Context, service logindomain.OAuthService, linkedID string) (*uint, error) {
+	return nil, r.registerErr
+}
+
+func (r *loginRepoStub) LinkOAuth(ctx context.Context, service logindomain.OAuthService, linkedID string, uid uint) error {
 	return r.registerErr
 }
 
@@ -314,4 +326,8 @@ func (v *verificationRepoStub) IsBanned(ctx context.Context, email string) (bool
 
 func (v *verificationRepoStub) GetRecord(ctx context.Context, purpose verdomain.Purpose, token string) (*verdomain.TokenRecord, error) {
 	return nil, nil
+}
+
+func (v *verificationRepoStub) EmailExists(ctx context.Context, email string) (bool, error) {
+	return false, nil
 }
