@@ -61,6 +61,17 @@ func (s *Service) SendTicketClose(ctx context.Context, email string, id string, 
 	return s.sendMail(ctx, email, subject, htmlBody, textBody)
 }
 
+func (s *Service) SendTicketMessage(ctx context.Context, email string, id string, name string, content string) (string, error) {
+	ticketID := "#" + id
+	subject := "New Message in Ticket " + ticketID
+	htmlBody := fmt.Sprintf(
+		`<p>%s sent a message with content: %s, at: %s</p>`,
+		name, content, time.Now().String(),
+	)
+	textBody := fmt.Sprintf(`<p>%s sent a message with content: %s, at: %s</p>`, name, content, time.Now().String())
+	return s.sendMail(ctx, email, subject, htmlBody, textBody)
+}
+
 func (s *Service) SendEmailVerify(ctx context.Context, email string, token string) (string, error) {
 	cfg := config.Get()
 	verifyURL := fmt.Sprintf(
