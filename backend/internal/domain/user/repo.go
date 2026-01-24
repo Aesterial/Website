@@ -19,6 +19,7 @@ type Repository interface {
 	GetUserByUID(ctx context.Context, uid uint) (*User, error)
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
 	GetUserSessionLiveTime(ctx context.Context, uid uint) (*SessionTime, error)
+	GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error)
 	GetAvatar(ctx context.Context, uid uint) (*Avatar, error)
 	UpdateDisplayName(ctx context.Context, uid uint, displayName string) error
 	SetEmailVerifiedByAddress(ctx context.Context, email string, verified bool) error

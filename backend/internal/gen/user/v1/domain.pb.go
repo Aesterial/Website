@@ -31,6 +31,7 @@ type UserPublic struct {
 	Settings      *UserPublicSettings    `protobuf:"bytes,4,opt,name=settings,proto3,oneof" json:"settings,omitempty"`
 	Banned        bool                   `protobuf:"varint,5,opt,name=banned,proto3" json:"banned,omitempty"`
 	JoinedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=joinedAt,proto3" json:"joinedAt,omitempty"`
+	ActiveAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=activeAt,proto3,oneof" json:"activeAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -103,6 +104,13 @@ func (x *UserPublic) GetBanned() bool {
 func (x *UserPublic) GetJoinedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.JoinedAt
+	}
+	return nil
+}
+
+func (x *UserPublic) GetActiveAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ActiveAt
 	}
 	return nil
 }
@@ -1423,7 +1431,7 @@ var File_user_domain_proto protoreflect.FileDescriptor
 
 const file_user_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x11user/domain.proto\x12\auser.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfe\x01\n" +
+	"\x11user/domain.proto\x12\auser.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc8\x02\n" +
 	"\n" +
 	"UserPublic\x12\x16\n" +
 	"\x06userID\x18\x01 \x01(\rR\x06userID\x12\x1a\n" +
@@ -1431,8 +1439,10 @@ const file_user_domain_proto_rawDesc = "" +
 	"\x04rank\x18\x03 \x01(\v2\r.user.v1.RankR\x04rank\x12<\n" +
 	"\bsettings\x18\x04 \x01(\v2\x1b.user.v1.UserPublicSettingsH\x00R\bsettings\x88\x01\x01\x12\x16\n" +
 	"\x06banned\x18\x05 \x01(\bR\x06banned\x126\n" +
-	"\bjoinedAt\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAtB\v\n" +
-	"\t_settings\"a\n" +
+	"\bjoinedAt\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAt\x12;\n" +
+	"\bactiveAt\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x01R\bactiveAt\x88\x01\x01B\v\n" +
+	"\t_settingsB\v\n" +
+	"\t_activeAt\"a\n" +
 	"\bUserSelf\x12+\n" +
 	"\x06public\x18\x01 \x01(\v2\x13.user.v1.UserPublicR\x06public\x12(\n" +
 	"\x05email\x18\x02 \x01(\v2\x12.user.v1.UserEmailR\x05email\"Z\n" +
@@ -1569,30 +1579,31 @@ var file_user_domain_proto_depIdxs = []int32{
 	5,  // 0: user.v1.UserPublic.rank:type_name -> user.v1.Rank
 	4,  // 1: user.v1.UserPublic.settings:type_name -> user.v1.UserPublicSettings
 	25, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
-	0,  // 3: user.v1.UserSelf.public:type_name -> user.v1.UserPublic
-	6,  // 4: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
-	2,  // 5: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
-	2,  // 6: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
-	25, // 7: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
-	8,  // 8: user.v1.UserSessions.sessions:type_name -> user.v1.Session
-	25, // 9: user.v1.Session.created:type_name -> google.protobuf.Timestamp
-	25, // 10: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
-	25, // 11: user.v1.Session.expires:type_name -> google.protobuf.Timestamp
-	26, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
-	25, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
-	1,  // 14: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
-	0,  // 15: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
-	0,  // 16: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
-	7,  // 17: user.v1.UserSessionsResponse.data:type_name -> user.v1.UserSessions
-	13, // 18: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
-	0,  // 19: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
-	25, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
-	25, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	25, // 3: user.v1.UserPublic.activeAt:type_name -> google.protobuf.Timestamp
+	0,  // 4: user.v1.UserSelf.public:type_name -> user.v1.UserPublic
+	6,  // 5: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
+	2,  // 6: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
+	2,  // 7: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
+	25, // 8: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
+	8,  // 9: user.v1.UserSessions.sessions:type_name -> user.v1.Session
+	25, // 10: user.v1.Session.created:type_name -> google.protobuf.Timestamp
+	25, // 11: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
+	25, // 12: user.v1.Session.expires:type_name -> google.protobuf.Timestamp
+	26, // 13: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
+	25, // 14: user.v1.Message.at:type_name -> google.protobuf.Timestamp
+	1,  // 15: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
+	0,  // 16: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
+	0,  // 17: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
+	7,  // 18: user.v1.UserSessionsResponse.data:type_name -> user.v1.UserSessions
+	13, // 19: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
+	0,  // 20: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
+	25, // 21: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
+	25, // 22: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_user_domain_proto_init() }

@@ -435,6 +435,32 @@ func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time,
 	return &t, nil
 }
 
+func (u *UserRepository) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
+    var at time.Time
+    logger.Debug("requested active with uid: " + strconv.Itoa(int(uid)), "")
+
+    err := u.DB.QueryRowContext(ctx, `
+        SELECT at
+        FROM events
+        WHERE actor_type = 'User' AND actor_id = $1
+        ORDER BY at DESC, id DESC
+        LIMIT 1
+    `, uid).Scan(&at)
+
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+        	logger.Debug("record not found", "")
+            return nil, nil
+        }
+        logger.Debug("failed to receive last active: " + err.Error(), "")
+        return nil, err
+    }
+    
+    logger.Debug("active: " + at.String(), "")
+
+    return &at, nil
+}
+
 func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
 	var err error
 	rowMain := u.DB.QueryRowContext(ctx,
@@ -488,6 +514,10 @@ func (u *UserRepository) GetUserByUID(ctx context.Context, uid uint) (*user.User
 		return nil, err
 	}
 	us.Settings, err = u.GetSettings(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	us.Active, err = u.GetUserLastActive(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -777,7 +807,6 @@ func (u *UserRepository) Perms(ctx context.Context, uid uint) (*permissions.Perm
 	`, uid).Scan(&raw); err != nil {
 		return nil, err
 	}
-	logger.Debug("response from db: "+string(raw), "")
 	var perms permissions.Permissions
 	if err := json.Unmarshal(raw, &perms); err != nil {
 		return nil, err

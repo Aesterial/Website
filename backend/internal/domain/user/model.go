@@ -65,6 +65,7 @@ type User struct {
 	Rank     *rank.UserRank
 	Banned   bool
 	Joined   time.Time
+	Active   *time.Time
 }
 
 type Users []*User
@@ -78,6 +79,12 @@ func (u *User) ToPublic() *userpb.UserPublic {
 			return nil
 		}
 		return timestamppb.New(*u.Rank.Expires)
+	}
+	active := func() *timestamppb.Timestamp {
+		if u.Active == nil {
+			return nil
+		}
+		return timestamppb.New(*u.Active)
 	}
 	var avatar *userpb.Avatar
 	if u.Settings != nil && u.Settings.Avatar != nil {
@@ -97,6 +104,7 @@ func (u *User) ToPublic() *userpb.UserPublic {
 		},
 		Banned:   u.Banned,
 		JoinedAt: timestamppb.New(u.Joined),
+		ActiveAt: active(),
 	}
 }
 

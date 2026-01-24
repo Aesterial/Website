@@ -5,6 +5,7 @@ import (
 	userapp "Aesterial/backend/internal/app/info/user"
 	projectsapp "Aesterial/backend/internal/app/projects"
 	storageapp "Aesterial/backend/internal/app/storage"
+	"Aesterial/backend/internal/domain/permissions"
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	projectsdomain "Aesterial/backend/internal/domain/projects"
 	"Aesterial/backend/internal/domain/user"
@@ -148,6 +149,27 @@ func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*proj
 	projects := list.ToProto()
 	applyPresignedProjectsURLs(ctx, s.storage, projects)
 	return &projpb.GetResponse{Projects: projects, Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) ByUID(ctx context.Context, req *projpb.MadeByRequest) (*projpb.GetResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logon")
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersViewProfilePublic); err != nil {
+		return nil, err
+	}
+	list, err := s.projects.GetProjectsByUID(ctx, int(req.UserId))
+	if err != nil {
+		return nil, err
+	}
+	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {

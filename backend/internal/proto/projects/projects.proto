@@ -12,6 +12,9 @@ service ProjectService {
   rpc Get(GetRequest) returns (GetResponse) {
     option (google.api.http) = {get: "/api/projects"};
   }
+  rpc ByUID(MadeByRequest) returns (GetResponse) {
+    option (google.api.http) = {get: "/api/projects/by/{user_id}"};
+  }
   rpc GetTop(GetTopRequest) returns (GetResponse) {
     option (google.api.http) = {get: "/api/projects/top"};
   }

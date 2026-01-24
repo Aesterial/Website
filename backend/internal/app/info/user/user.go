@@ -84,6 +84,18 @@ func (s *Service) GetUsername(ctx context.Context, uid uint) (string, error) {
 	return name, nil
 }
 
+func (s *Service) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
+	if uid == 0 {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("uid is empty")
+	}
+	at, err := s.repo.GetUserLastActive(ctx, uid)
+	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "users.get_user_last_active")
+		return nil, apperrors.Wrap(err)
+	}
+	return at, nil
+}
+
 func (s *Service) GetUserByUsername(ctx context.Context, username string) (*user.User, error) {
 	if username == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("username is empty")

@@ -87,6 +87,30 @@ func (p Permission) String() string {
 	return string(p)
 }
 
+func (p Permission) IsValid() bool {
+	s := string(p)
+	if s == "all" {
+		return true
+	}
+	if s == "" || s[0] == '.' || s[len(s)-1] == '.' {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_' {
+			continue
+		}
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] == '.' {
+			return true
+		}
+	}
+	return false
+}
+
+
 type ProjectsUpdatePermissions struct {
 	All bool `json:"all"`
 	Own bool `json:"own"`

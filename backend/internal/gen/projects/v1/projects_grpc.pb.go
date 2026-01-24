@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ProjectService_Get_FullMethodName               = "/projects.v1.ProjectService/Get"
+	ProjectService_ByUID_FullMethodName             = "/projects.v1.ProjectService/ByUID"
 	ProjectService_GetTop_FullMethodName            = "/projects.v1.ProjectService/GetTop"
 	ProjectService_GetArchived_FullMethodName       = "/projects.v1.ProjectService/GetArchived"
 	ProjectService_Create_FullMethodName            = "/projects.v1.ProjectService/Create"
@@ -36,6 +37,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProjectServiceClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	ByUID(ctx context.Context, in *MadeByRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	GetTop(ctx context.Context, in *GetTopRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	GetArchived(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -58,6 +60,16 @@ func (c *projectServiceClient) Get(ctx context.Context, in *GetRequest, opts ...
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetResponse)
 	err := c.cc.Invoke(ctx, ProjectService_Get_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ByUID(ctx context.Context, in *MadeByRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ByUID_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +161,7 @@ func (c *projectServiceClient) ToggleLike(ctx context.Context, in *LikeRequest, 
 // for forward compatibility.
 type ProjectServiceServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
+	ByUID(context.Context, *MadeByRequest) (*GetResponse, error)
 	GetTop(context.Context, *GetTopRequest) (*GetResponse, error)
 	GetArchived(context.Context, *GetRequest) (*GetResponse, error)
 	Create(context.Context, *CreateRequest) (*EmptyResponse, error)
@@ -169,6 +182,9 @@ type UnimplementedProjectServiceServer struct{}
 
 func (UnimplementedProjectServiceServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedProjectServiceServer) ByUID(context.Context, *MadeByRequest) (*GetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ByUID not implemented")
 }
 func (UnimplementedProjectServiceServer) GetTop(context.Context, *GetTopRequest) (*GetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTop not implemented")
@@ -229,6 +245,24 @@ func _ProjectService_Get_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProjectServiceServer).Get(ctx, req.(*GetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ByUID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MadeByRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ByUID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ByUID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ByUID(ctx, req.(*MadeByRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -387,6 +421,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _ProjectService_Get_Handler,
+		},
+		{
+			MethodName: "ByUID",
+			Handler:    _ProjectService_ByUID_Handler,
 		},
 		{
 			MethodName: "GetTop",
