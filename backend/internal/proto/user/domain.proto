@@ -13,6 +13,7 @@ message UserPublic {
   optional UserPublicSettings settings = 4;
   bool banned = 5;
   google.protobuf.Timestamp joinedAt = 6;
+  optional google.protobuf.Timestamp activeAt = 7;
 }
 
 message UserSelf {

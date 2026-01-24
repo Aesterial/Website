@@ -417,3 +417,25 @@ func (s *UserService) DeleteProfile(ctx context.Context, _ *emptypb.Empty) (*emp
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *UserService) ChangePerms(ctx context.Context, req *userpb.OtherUserPermsPatchRequest) (*userpb.EmptyResponse, error) {
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.All); err != nil {
+		return nil, err
+	}
+	perm := permissions.Permission(req.GetPerm())
+	if !perm.IsValid() {
+		return nil, apperrors.InvalidArguments
+	}
+	if err := s.info.ChangePerms(ctx, requestor.UID, perm, req.GetState()); err != nil {
+		logger.Debug("Error on change perms: " + err.Error(), "")
+		return nil, apperrors.ServerError
+	}
+	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+}

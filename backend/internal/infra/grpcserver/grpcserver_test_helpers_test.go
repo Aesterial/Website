@@ -197,6 +197,7 @@ type authUserRepoStub struct {
 	getUserByUIDFn          func(ctx context.Context, uid uint) (*user.User, error)
 	getUserByUsernameFn     func(ctx context.Context, username string) (*user.User, error)
 	getUserSessionLiveFn    func(ctx context.Context, uid uint) (*user.SessionTime, error)
+	getUserLastActiveFn     func(ctx context.Context, uid uint) (*time.Time, error)
 	getAvatarFn             func(ctx context.Context, uid uint) (*user.Avatar, error)
 	updateDisplayNameFn     func(ctx context.Context, uid uint, displayName string) error
 	setEmailVerifiedFn      func(ctx context.Context, email string, verified bool) error
@@ -281,6 +282,13 @@ func (u *authUserRepoStub) GetUserByUsername(ctx context.Context, username strin
 func (u *authUserRepoStub) GetUserSessionLiveTime(ctx context.Context, uid uint) (*user.SessionTime, error) {
 	if u.getUserSessionLiveFn != nil {
 		return u.getUserSessionLiveFn(ctx, uid)
+	}
+	return nil, nil
+}
+
+func (u *authUserRepoStub) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
+	if u.getUserLastActiveFn != nil {
+		return u.getUserLastActiveFn(ctx, uid)
 	}
 	return nil, nil
 }

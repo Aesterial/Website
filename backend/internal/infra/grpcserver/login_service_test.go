@@ -306,6 +306,10 @@ func (u *userRepoStub) ChangePerms(ctx context.Context, uid uint, perm permissio
 	return nil
 }
 
+func (u *userRepoStub) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
+	return nil, nil
+}
+
 type verificationRepoStub struct{}
 
 func (v *verificationRepoStub) Create(ctx context.Context, email string, purpose verdomain.Purpose, ip string, userAgent string, ttl time.Duration) (token string, err error) {
