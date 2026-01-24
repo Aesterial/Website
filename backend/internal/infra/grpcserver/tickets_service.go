@@ -10,9 +10,7 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
-	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -191,9 +189,9 @@ func (t *TicketsService) Tickets(ctx context.Context, _ *emptypb.Empty) (*tickpb
 	}
 	resp := make(ticketsdomain.Tickets, 0, len(list))
 	for _, l := range list {
-	    if l.Creator.UID != nil && *l.Creator.UID == requestor.UID {
-	        resp = append(resp, l)
-	    }
+		if l.Creator.UID != nil && *l.Creator.UID == requestor.UID {
+			resp = append(resp, l)
+		}
 	}
 	return &tickpb.UserTicketsResponse{Tickets: resp.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
