@@ -795,6 +795,58 @@ func (x *IsValidResponse) GetTracing() string {
 	return ""
 }
 
+type UserTicketsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tickets       []*TicketInfo          `protobuf:"bytes,1,rep,name=tickets,proto3" json:"tickets,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserTicketsResponse) Reset() {
+	*x = UserTicketsResponse{}
+	mi := &file_tickets_domain_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserTicketsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserTicketsResponse) ProtoMessage() {}
+
+func (x *UserTicketsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tickets_domain_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserTicketsResponse.ProtoReflect.Descriptor instead.
+func (*UserTicketsResponse) Descriptor() ([]byte, []int) {
+	return file_tickets_domain_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UserTicketsResponse) GetTickets() []*TicketInfo {
+	if x != nil {
+		return x.Tickets
+	}
+	return nil
+}
+
+func (x *UserTicketsResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 type TicketInfoCreatorST struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          *string                `protobuf:"bytes,1,opt,name=name,proto3,oneof" json:"name,omitempty"`
@@ -807,7 +859,7 @@ type TicketInfoCreatorST struct {
 
 func (x *TicketInfoCreatorST) Reset() {
 	*x = TicketInfoCreatorST{}
-	mi := &file_tickets_domain_proto_msgTypes[13]
+	mi := &file_tickets_domain_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +871,7 @@ func (x *TicketInfoCreatorST) String() string {
 func (*TicketInfoCreatorST) ProtoMessage() {}
 
 func (x *TicketInfoCreatorST) ProtoReflect() protoreflect.Message {
-	mi := &file_tickets_domain_proto_msgTypes[13]
+	mi := &file_tickets_domain_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -937,6 +989,9 @@ const file_tickets_domain_proto_rawDesc = "" +
 	"\x05token\x18\x02 \x01(\tR\x05token\"A\n" +
 	"\x0fIsValidResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing\"a\n" +
+	"\x13UserTicketsResponse\x120\n" +
+	"\atickets\x18\x01 \x03(\v2\x16.tickets.v1.TicketInfoR\atickets\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracingB3Z1Aesterial/backend/internal/gen/tickets/v1;ticketsb\x06proto3"
 
 var (
@@ -951,7 +1006,7 @@ func file_tickets_domain_proto_rawDescGZIP() []byte {
 	return file_tickets_domain_proto_rawDescData
 }
 
-var file_tickets_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_tickets_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_tickets_domain_proto_goTypes = []any{
 	(*CreateRequest)(nil),          // 0: tickets.v1.CreateRequest
 	(*CreateResponse)(nil),         // 1: tickets.v1.CreateResponse
@@ -966,26 +1021,28 @@ var file_tickets_domain_proto_goTypes = []any{
 	(*CloseTicketRequest)(nil),     // 10: tickets.v1.CloseTicketRequest
 	(*IsValidRequest)(nil),         // 11: tickets.v1.IsValidRequest
 	(*IsValidResponse)(nil),        // 12: tickets.v1.IsValidResponse
-	(*TicketInfoCreatorST)(nil),    // 13: tickets.v1.TicketInfo.creatorST
-	(*v1.UserPublic)(nil),          // 14: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
+	(*UserTicketsResponse)(nil),    // 13: tickets.v1.UserTicketsResponse
+	(*TicketInfoCreatorST)(nil),    // 14: tickets.v1.TicketInfo.creatorST
+	(*v1.UserPublic)(nil),          // 15: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil),  // 16: google.protobuf.Timestamp
 }
 var file_tickets_domain_proto_depIdxs = []int32{
-	13, // 0: tickets.v1.TicketInfo.creator:type_name -> tickets.v1.TicketInfo.creatorST
-	14, // 1: tickets.v1.TicketInfo.acceptor:type_name -> user.v1.UserPublic
-	15, // 2: tickets.v1.TicketInfo.createdAt:type_name -> google.protobuf.Timestamp
-	15, // 3: tickets.v1.TicketInfo.acceptedAt:type_name -> google.protobuf.Timestamp
-	15, // 4: tickets.v1.TicketInfo.closedAt:type_name -> google.protobuf.Timestamp
+	14, // 0: tickets.v1.TicketInfo.creator:type_name -> tickets.v1.TicketInfo.creatorST
+	15, // 1: tickets.v1.TicketInfo.acceptor:type_name -> user.v1.UserPublic
+	16, // 2: tickets.v1.TicketInfo.createdAt:type_name -> google.protobuf.Timestamp
+	16, // 3: tickets.v1.TicketInfo.acceptedAt:type_name -> google.protobuf.Timestamp
+	16, // 4: tickets.v1.TicketInfo.closedAt:type_name -> google.protobuf.Timestamp
 	3,  // 5: tickets.v1.TicketInfoResponse.ticket:type_name -> tickets.v1.TicketInfo
 	3,  // 6: tickets.v1.TicketsListResponse.list:type_name -> tickets.v1.TicketInfo
-	14, // 7: tickets.v1.TicketMessage.author:type_name -> user.v1.UserPublic
-	15, // 8: tickets.v1.TicketMessage.at:type_name -> google.protobuf.Timestamp
+	15, // 7: tickets.v1.TicketMessage.author:type_name -> user.v1.UserPublic
+	16, // 8: tickets.v1.TicketMessage.at:type_name -> google.protobuf.Timestamp
 	6,  // 9: tickets.v1.TicketMessagesResponse.list:type_name -> tickets.v1.TicketMessage
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 10: tickets.v1.UserTicketsResponse.tickets:type_name -> tickets.v1.TicketInfo
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_tickets_domain_proto_init() }
@@ -996,14 +1053,14 @@ func file_tickets_domain_proto_init() {
 	file_tickets_domain_proto_msgTypes[1].OneofWrappers = []any{}
 	file_tickets_domain_proto_msgTypes[3].OneofWrappers = []any{}
 	file_tickets_domain_proto_msgTypes[10].OneofWrappers = []any{}
-	file_tickets_domain_proto_msgTypes[13].OneofWrappers = []any{}
+	file_tickets_domain_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tickets_domain_proto_rawDesc), len(file_tickets_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

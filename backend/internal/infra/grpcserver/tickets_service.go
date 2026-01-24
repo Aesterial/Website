@@ -10,7 +10,9 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -173,6 +175,27 @@ func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInf
 		return nil, apperrors.Wrap(err)
 	}
 	return &tickpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (t *TicketsService) Tickets(ctx context.Context, _ *emptypb.Empty) (*tickpb.UserTicketsResponse, error) {
+	if t == nil || t.serv == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := t.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := t.serv.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp := make(ticketsdomain.Tickets, 0, len(list))
+	for _, l := range list {
+	    if l.Creator.UID != nil && *l.Creator.UID == requestor.UID {
+	        resp = append(resp, l)
+	    }
+	}
+	return &tickpb.UserTicketsResponse{Tickets: resp.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 // Только для не авторизованных пользователей

@@ -41,4 +41,7 @@ service TicketsService {
   rpc IsValid(IsValidRequest) returns (IsValidResponse) {
     option (google.api.http) = {get: "/api/tickets/{id}/requestor/{token}"};
   }
+  rpc Tickets(google.protobuf.Empty) returns (UserTicketsResponse) {
+    option (google.api.http) = {get: "/api/user/tickets"};
+  }
 }

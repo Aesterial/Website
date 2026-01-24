@@ -2217,8 +2217,6 @@ func (t *TicketsRepository) parseTicket(ctx context.Context, scanner scanner) (*
 	if closeReason.Valid {
 		tr.CloseReason = closeReason.String
 	}
-	fmt.Println("ticket: ")
-	fmt.Println(tr)
 	return &tr, nil
 }
 

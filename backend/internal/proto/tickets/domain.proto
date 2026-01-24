@@ -88,3 +88,8 @@ message IsValidResponse {
   bool valid = 1;
   string tracing = 2;
 }
+
+message UserTicketsResponse {
+    repeated TicketInfo tickets = 1;
+    string tracing = 2;
+}
