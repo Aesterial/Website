@@ -145,3 +145,9 @@ message HasPermissionResponse {
   bool has = 1;
   string tracing = 2;
 }
+
+message SetRankRequest {
+  uint32 userID = 1;
+  string rank = 2;
+  optional google.protobuf.Timestamp expires = 3;
+}

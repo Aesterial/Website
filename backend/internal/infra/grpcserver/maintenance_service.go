@@ -103,7 +103,9 @@ func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateReque
 		logger.Debug("failed to create maintenance: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to create maintenance")
 	}
-	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Started maintenance", "maintenance.start.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &maintpb.Response{Tracing: traceID}, nil
 }
 
 func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.CreateRequest) (*maintpb.Response, error) {
@@ -123,7 +125,9 @@ func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.Crea
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: req.WillStart.AsTime(), PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to create maintenance")
 	}
-	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Started planned maintenance", "maintenance.start_planned.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &maintpb.Response{Tracing: traceID}, nil
 }
 
 func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest) (*maintpb.Response, error) {
@@ -143,7 +147,9 @@ func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest)
 	if err := s.serv.Edit(ctx, maintdomain.EditST{Description: req.Description, Scope: req.Scope}); err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to edit maintenance")
 	}
-	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Edited maintenance", "maintenance.edit.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &maintpb.Response{Tracing: traceID}, nil
 }
 
 func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*maintpb.Response, error) {
@@ -163,5 +169,7 @@ func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*m
 	if err := s.serv.Complete(ctx); err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to complete maintenance")
 	}
-	return &maintpb.Response{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Completed maintenance", "maintenance.complete.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &maintpb.Response{Tracing: traceID}, nil
 }

@@ -506,19 +506,19 @@ create or replace function sync_user_permissions_from_rank()
     language plpgsql
 as $$
 declare
-    v_permissions permissions_t;
+    v_permissions_json jsonb;
 begin
     if (new.rank).name is distinct from (old.rank).name then
-        select r.permissions
-        into v_permissions
+        select to_jsonb(r.permissions)
+        into v_permissions_json
         from ranks r
         where r.name = (new.rank).name;
 
-        if v_permissions is null then
+        if v_permissions_json is null then
             raise exception 'rank % not found', (new.rank).name;
         end if;
 
-        new.permissions := v_permissions;
+        new.permissions := jsonb_populate_record(null::permissions_t, v_permissions_json);
     end if;
 
     return new;

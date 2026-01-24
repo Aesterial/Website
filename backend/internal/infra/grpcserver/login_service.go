@@ -113,6 +113,7 @@ func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*loginpb.E
 	if err = s.login.Logout(ctx, requestor.SessionID); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
+	logger.Info("Logged out", "login.logout.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &loginpb.EmptyResponse{Tracing: traceID}, nil
 }
 

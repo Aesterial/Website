@@ -58,6 +58,12 @@ service UserService {
       body: "*"
     };
   }
+  rpc SetRank(SetRankRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/api/user/{userID}/rank/set"
+      body: "*"
+    };
+  }
   rpc Messages(google.protobuf.Empty) returns (MessagesResponse) {
     option (google.api.http) = {get: "/api/user/messages"};
   }

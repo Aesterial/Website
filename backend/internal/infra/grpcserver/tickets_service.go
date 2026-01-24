@@ -50,10 +50,14 @@ func (t *TicketsService) Create(ctx context.Context, req *tickpb.CreateRequest) 
 	if data == nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to create ticket")
 	}
+	traceID := TraceIDOrNew(ctx)
+	if requestor.UID != nil {
+		logger.Info("Created ticket", "tickets.create.success", logger.EventActor{Type: logger.User, ID: *requestor.UID}, logger.Success, traceID)
+	}
 	return &tickpb.CreateResponse{
 		Id:      data.ID.String(),
 		Token:   data.Token,
-		Tracing: TraceIDOrNew(ctx),
+		Tracing: traceID,
 	}, nil
 }
 
@@ -195,7 +199,9 @@ func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInf
 	if err := t.serv.Accept(ctx, id, requestor.UID); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &tickpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Accepted ticket", "tickets.accept.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &tickpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func (t *TicketsService) Tickets(ctx context.Context, _ *emptypb.Empty) (*tickpb.UserTicketsResponse, error) {
@@ -216,7 +222,9 @@ func (t *TicketsService) Tickets(ctx context.Context, _ *emptypb.Empty) (*tickpb
 			resp = append(resp, l)
 		}
 	}
-	return &tickpb.UserTicketsResponse{Tickets: resp.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got user tickets", "tickets.user_list.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &tickpb.UserTicketsResponse{Tickets: resp.ToProto(), Tracing: traceID}, nil
 }
 
 // Только для не авторизованных пользователей
@@ -229,6 +237,10 @@ func (t *TicketsService) IsValid(ctx context.Context, req *tickpb.IsValidRequest
 	}
 	requestor, err := t.auth.RequireUser(ctx)
 	if err == nil || requestor != nil {
+		if requestor != nil {
+			traceID := TraceIDOrNew(ctx)
+			logger.Info("Registered user attempted ticket validation", "tickets.validate.registered", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+		}
 		return nil, apperrors.InvalidArguments.AddErrDetails("user registered")
 	}
 	id, err := uuid.Parse(req.GetId())

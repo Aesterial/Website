@@ -34,6 +34,7 @@ const (
 	UserService_DeleteSelfAvatar_FullMethodName = "/user.v1.UserService/DeleteSelfAvatar"
 	UserService_DeleteUserAvatar_FullMethodName = "/user.v1.UserService/DeleteUserAvatar"
 	UserService_SendMessage_FullMethodName      = "/user.v1.UserService/SendMessage"
+	UserService_SetRank_FullMethodName          = "/user.v1.UserService/SetRank"
 	UserService_Messages_FullMethodName         = "/user.v1.UserService/Messages"
 	UserService_HasPermissions_FullMethodName   = "/user.v1.UserService/HasPermissions"
 	UserService_Permissions_FullMethodName      = "/user.v1.UserService/Permissions"
@@ -58,6 +59,7 @@ type UserServiceClient interface {
 	DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error)
 	HasPermissions(ctx context.Context, in *HasPermissionRequest, opts ...grpc.CallOption) (*HasPermissionResponse, error)
 	Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
@@ -203,6 +205,16 @@ func (c *userServiceClient) SendMessage(ctx context.Context, in *SendMessageRequ
 	return out, nil
 }
 
+func (c *userServiceClient) SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UserService_SetRank_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MessagesResponse)
@@ -270,6 +282,7 @@ type UserServiceServer interface {
 	DeleteSelfAvatar(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error)
 	SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error)
+	SetRank(context.Context, *SetRankRequest) (*EmptyResponse, error)
 	Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error)
 	HasPermissions(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error)
 	Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error)
@@ -323,6 +336,9 @@ func (UnimplementedUserServiceServer) DeleteUserAvatar(context.Context, *OtherUs
 }
 func (UnimplementedUserServiceServer) SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
+}
+func (UnimplementedUserServiceServer) SetRank(context.Context, *SetRankRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetRank not implemented")
 }
 func (UnimplementedUserServiceServer) Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Messages not implemented")
@@ -594,6 +610,24 @@ func _UserService_SendMessage_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_SetRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRankRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SetRank(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_SetRank_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SetRank(ctx, req.(*SetRankRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_Messages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -742,6 +776,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendMessage",
 			Handler:    _UserService_SendMessage_Handler,
+		},
+		{
+			MethodName: "SetRank",
+			Handler:    _UserService_SetRank_Handler,
 		},
 		{
 			MethodName: "Messages",

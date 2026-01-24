@@ -119,13 +119,14 @@ func (s *ProjectService) Categories(ctx context.Context, _ *emptypb.Empty) (*pro
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsView); err != nil {
 		return nil, err
 	}
-	_ = requestor
 	var resp projpb.CategoriesResponse
 	resp.Categories, err = s.projects.GetCategories(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resp.Tracing = TraceIDOrNew(ctx)
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got project categories", "projects.categories.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	resp.Tracing = traceID
 	return &resp, nil
 }
 
@@ -169,7 +170,9 @@ func (s *ProjectService) ByUID(ctx context.Context, req *projpb.MadeByRequest) (
 	if err != nil {
 		return nil, err
 	}
-	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got projects by user ID", "projects.by_uid.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &projpb.GetResponse{Projects: list.ToProto(), Tracing: traceID}, nil
 }
 
 func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest) (*projpb.GetResponse, error) {

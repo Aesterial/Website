@@ -8,6 +8,7 @@ import (
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	permspb "Aesterial/backend/internal/gen/permissions/v1"
 	rankpb "Aesterial/backend/internal/gen/ranks/v1"
+	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"database/sql"
@@ -69,7 +70,9 @@ func (s *RanksService) Create(ctx context.Context, req *rankpb.CreateRequest) (*
 	if err := s.ranks.Create(ctx, name, int(color), description, perms); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &rankpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Created rank", "ranks.create.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &rankpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*rankpb.EmptyResponse, error) {
@@ -135,7 +138,9 @@ func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*ra
 	if !changed {
 		return nil, apperrors.InvalidArguments.AddErrDetails("nothing to update")
 	}
-	return &rankpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Updated rank", "ranks.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &rankpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*rankpb.EmptyResponse, error) {
@@ -162,7 +167,9 @@ func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*ra
 		}
 		return nil, apperrors.Wrap(err)
 	}
-	return &rankpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Deleted rank", "ranks.delete.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &rankpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func (s *RanksService) Get(ctx context.Context, req *rankpb.NameRequest) (*rankpb.RankResponse, error) {
@@ -190,7 +197,9 @@ func (s *RanksService) Get(ctx context.Context, req *rankpb.NameRequest) (*rankp
 		}
 		return nil, apperrors.Wrap(err)
 	}
-	return &rankpb.RankResponse{Data: rank.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got rank", "ranks.get.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &rankpb.RankResponse{Data: rank.ToProto(), Tracing: traceID}, nil
 }
 
 func (s *RanksService) List(ctx context.Context, _ *emptypb.Empty) (*rankpb.RanksResponse, error) {
@@ -208,7 +217,9 @@ func (s *RanksService) List(ctx context.Context, _ *emptypb.Empty) (*rankpb.Rank
 	if err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	resp := &rankpb.RanksResponse{Tracing: TraceIDOrNew(ctx)}
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got ranks list", "ranks.list.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	resp := &rankpb.RanksResponse{Tracing: traceID}
 	for _, r := range list {
 		if r == nil {
 			continue
@@ -240,7 +251,9 @@ func (s *RanksService) Users(ctx context.Context, req *rankpb.NameRequest) (*ran
 	if err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	resp := &rankpb.UsersResponse{Tracing: TraceIDOrNew(ctx)}
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got users with rank", "ranks.users.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	resp := &rankpb.UsersResponse{Tracing: traceID}
 	for _, uid := range ids {
 		if uid == nil || *uid == 0 {
 			continue
@@ -282,7 +295,9 @@ func (s *RanksService) Perms(ctx context.Context, req *rankpb.NameRequest) (*per
 		}
 		return nil, apperrors.Wrap(err)
 	}
-	return &permspb.PermissionsResponse{Data: perms.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got rank permissions", "ranks.perms.get.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &permspb.PermissionsResponse{Data: perms.ToProto(), Tracing: traceID}, nil
 }
 
 func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchRequest) (*rankpb.EmptyResponse, error) {
@@ -313,7 +328,9 @@ func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchReq
 		}
 		return nil, apperrors.Wrap(err)
 	}
-	return &rankpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Updated rank permissions", "ranks.perms.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &rankpb.EmptyResponse{Tracing: traceID}, nil
 }
 
 func parseRankColor(raw string) (int, error) {

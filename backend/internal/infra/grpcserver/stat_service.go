@@ -55,8 +55,9 @@ func (s *StatService) VotesDay(ctx context.Context, _ *emptypb.Empty) (*statpb.V
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get vote count")
 	}
-	logger.Info("Got statistics about vote count last day", "statservice.votesday", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.None, TraceIDOrNew(ctx))
-	return &statpb.VoteCountResponse{Count: count, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got statistics about vote count last day", "statservice.votesday", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.VoteCountResponse{Count: count, Tracing: traceID}, nil
 }
 
 func (s *StatService) TopVoteCategories(ctx context.Context, req *statpb.CategoriesRequest) (*statpb.TopByCategoriesResponse, error) {
@@ -75,7 +76,9 @@ func (s *StatService) TopVoteCategories(ctx context.Context, req *statpb.Categor
 		logger.Debug("Failed to get top categories: "+err.Error(), "statService.topVoteCategories")
 		return nil, apperrors.ServerError.AddErrDetails("failed to get top vote categories")
 	}
-	return &statpb.TopByCategoriesResponse{Record: cat, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got top vote categories", "statservice.top_vote_categories.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.TopByCategoriesResponse{Record: cat, Tracing: traceID}, nil
 }
 
 func (s *StatService) UsersActivity(ctx context.Context, req *statpb.UsersActivityRequest) (*statpb.UsersActivityResponse, error) {
@@ -104,8 +107,9 @@ func (s *StatService) UsersActivity(ctx context.Context, req *statpb.UsersActivi
 	for at, record := range activity {
 		data[at.Unix()] = record
 	}
-
-	return &statpb.UsersActivityResponse{Data: data, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got users activity statistics", "statservice.users_activity.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.UsersActivityResponse{Data: data, Tracing: traceID}, nil
 }
 
 func (s *StatService) ActiveUsers(ctx context.Context, tag *statpb.WithFromTagRequest) (*statpb.ActiveUsersResponse, error) {
@@ -120,7 +124,9 @@ func (s *StatService) ActiveUsers(ctx context.Context, tag *statpb.WithFromTagRe
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get active users")
 	}
-	return &statpb.ActiveUsersResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got active users statistics", "statservice.active_users.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.ActiveUsersResponse{Count: data, Tracing: traceID}, nil
 }
 
 func (s *StatService) OfflineUsers(ctx context.Context, tag *statpb.WithFromTagRequest) (*statpb.OfflineUsersResponse, error) {
@@ -135,7 +141,9 @@ func (s *StatService) OfflineUsers(ctx context.Context, tag *statpb.WithFromTagR
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get offline users")
 	}
-	return &statpb.OfflineUsersResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got offline users statistics", "statservice.offline_users.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.OfflineUsersResponse{Count: data, Tracing: traceID}, nil
 }
 
 func (s *StatService) IdeasDay(ctx context.Context, _ *emptypb.Empty) (*statpb.IdeasCountResponse, error) {
@@ -150,7 +158,9 @@ func (s *StatService) IdeasDay(ctx context.Context, _ *emptypb.Empty) (*statpb.I
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get vote count")
 	}
-	return &statpb.IdeasCountResponse{Count: data, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got ideas count for day", "statservice.ideas_day.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.IdeasCountResponse{Count: data, Tracing: traceID}, nil
 }
 
 func (s *StatService) IdeasRecap(ctx context.Context, _ *emptypb.Empty) (*statpb.IdeasApprovalResponse, error) {
@@ -161,7 +171,14 @@ func (s *StatService) IdeasRecap(ctx context.Context, _ *emptypb.Empty) (*statpb
 	if err != nil || requestor == nil {
 		return nil, err
 	}
-	return s.stat.IdeasRecap(ctx)
+	recap, err := s.stat.IdeasRecap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got ideas recap", "statservice.ideas_recap.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	recap.Tracing = traceID
+	return recap, nil
 }
 
 func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*statpb.EditorsGradeResponse, error) {
@@ -176,7 +193,9 @@ func (s *StatService) QualityRecap(ctx context.Context, _ *emptypb.Empty) (*stat
 	if err != nil {
 		return nil, err
 	}
-	recap.Tracing = TraceIDOrNew(ctx)
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got quality recap", "statservice.quality_recap.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	recap.Tracing = traceID
 	return recap, nil
 }
 
@@ -192,5 +211,7 @@ func (s *StatService) MediaCoverage(ctx context.Context, req *statpb.MediaCovera
 	if err != nil {
 		return nil, err
 	}
-	return &statpb.MediaCoverageResponse{Medias: coverage, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got media coverage statistics", "statservice.media_coverage.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &statpb.MediaCoverageResponse{Medias: coverage, Tracing: traceID}, nil
 }

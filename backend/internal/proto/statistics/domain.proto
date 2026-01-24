@@ -53,6 +53,7 @@ message IdeasApprovalResponse {
   uint32 approved = 1;
   uint32 waiting = 2;
   uint32 declined = 3;
+  string tracing = 4;
 }
 
 message UsersActivityRequest {

@@ -36,4 +36,5 @@ type Repository interface {
 	HasAllPerms(ctx context.Context, uid uint, perms ...permissions.Permission) (bool, error)
 	Perms(ctx context.Context, uid uint) (*permissions.Permissions, error)
 	ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error
+	SetRank(ctx context.Context, uid uint, rank string, expires *time.Time) error
 }

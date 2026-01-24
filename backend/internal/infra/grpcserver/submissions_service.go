@@ -7,6 +7,7 @@ import (
 	"Aesterial/backend/internal/app/submissions"
 	"Aesterial/backend/internal/domain/permissions"
 	submpb "Aesterial/backend/internal/gen/submissions/v1"
+	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 
@@ -42,7 +43,9 @@ func (s *SubmissionsService) Approve(ctx context.Context, req *submpb.ApproveReq
 	if err := s.submissions.Approve(ctx, req.Id); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &submpb.DataResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Approved submission", "submissions.approve.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &submpb.DataResponse{Tracing: traceID}, nil
 }
 
 func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineRequest) (*submpb.DataResponse, error) {
@@ -59,7 +62,9 @@ func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineReq
 	if err := s.submissions.Decline(ctx, req.Id, req.Reason); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &submpb.DataResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Declined submission", "submissions.decline.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &submpb.DataResponse{Tracing: traceID}, nil
 }
 
 func (s *SubmissionsService) List(ctx context.Context, _ *emptypb.Empty) (*submpb.ListResponse, error) {
@@ -83,5 +88,7 @@ func (s *SubmissionsService) List(ctx context.Context, _ *emptypb.Empty) (*submp
 		}
 		applyPresignedProjectURLs(ctx, s.storage, item.Info)
 	}
-	return &submpb.ListResponse{Data: list, Tracing: TraceIDOrNew(ctx)}, nil
+	traceID := TraceIDOrNew(ctx)
+	logger.Info("Got submissions list", "submissions.list.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
+	return &submpb.ListResponse{Data: list, Tracing: traceID}, nil
 }

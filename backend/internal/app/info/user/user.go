@@ -378,6 +378,16 @@ func (s *Service) DeleteProfile(ctx context.Context, id uint) error {
 	return nil
 }
 
+func (s *Service) SetRank(ctx context.Context, id uint, rank string, expires *time.Time) error {
+	if id == 0 || rank == "" {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.SetRank(ctx, id, rank, expires); err != nil {
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
 func isNotFound(err error) bool {
 	if err == nil {
 		return false

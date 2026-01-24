@@ -128,16 +128,6 @@ func main() {
 
 	loggerServ.Start(ctx, 2*time.Second)
 
-	sessionsService := sessionsinfo.New(sessionsRepo)
-	userInfoService := userinfo.New(userRepo, sessionsRepo)
-	userModifierService := usermodifier.New(userRepo)
-	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
-	statService := appstatistics.New(statisticsRepo)
-	projectsService := projectsapp.New(projectsRepo)
-	maintenanceService := maintenanceapp.New(maintenanceRepo)
-	submissionService := submissions.New(submissionsRepo, projectsService, userInfoService)
-	ticketsService := tickets.New(ticketsRepo)
-	ranksService := rankapp.New(ranksRepo)
 	mailerService := mailer.New(mailer.Config{
 		Host:     env.Mailer.Host,
 		Port:     env.Mailer.Port,
@@ -146,6 +136,16 @@ func main() {
 		FromName: env.Mailer.FromName,
 		Secure:   env.Mailer.Secure,
 	})
+	sessionsService := sessionsinfo.New(sessionsRepo)
+	userInfoService := userinfo.New(userRepo, sessionsRepo)
+	userModifierService := usermodifier.New(userRepo)
+	loginService := loginapp.New(loginRepo, sessionsService, userInfoService)
+	statService := appstatistics.New(statisticsRepo)
+	projectsService := projectsapp.New(projectsRepo)
+	maintenanceService := maintenanceapp.New(maintenanceRepo)
+	submissionService := submissions.New(submissionsRepo, projectsService, userInfoService)
+	ticketsService := tickets.New(ticketsRepo, userRepo, mailerService)
+	ranksService := rankapp.New(ranksRepo)
 	verificationService := verification.New(verificationRepo, mailerService)
 	storageService, err := storageapp.New()
 	if err != nil {

@@ -467,6 +467,7 @@ type IdeasApprovalResponse struct {
 	Approved      uint32                 `protobuf:"varint,1,opt,name=approved,proto3" json:"approved,omitempty"`
 	Waiting       uint32                 `protobuf:"varint,2,opt,name=waiting,proto3" json:"waiting,omitempty"`
 	Declined      uint32                 `protobuf:"varint,3,opt,name=declined,proto3" json:"declined,omitempty"`
+	Tracing       string                 `protobuf:"bytes,4,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -520,6 +521,13 @@ func (x *IdeasApprovalResponse) GetDeclined() uint32 {
 		return x.Declined
 	}
 	return 0
+}
+
+func (x *IdeasApprovalResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
 }
 
 type UsersActivityRequest struct {
@@ -998,11 +1006,12 @@ const file_statistics_domain_proto_rawDesc = "" +
 	"\x0eusers_activity\x18\x03 \x01(\v2\x1c.statistics.v1.UsersActivityR\rusersActivity\x12\x1b\n" +
 	"\tnew_ideas\x18\x04 \x01(\rR\bnewIdeas\x12\x1d\n" +
 	"\n" +
-	"vote_count\x18\x05 \x01(\rR\tvoteCount\"i\n" +
+	"vote_count\x18\x05 \x01(\rR\tvoteCount\"\x83\x01\n" +
 	"\x15IdeasApprovalResponse\x12\x1a\n" +
 	"\bapproved\x18\x01 \x01(\rR\bapproved\x12\x18\n" +
 	"\awaiting\x18\x02 \x01(\rR\awaiting\x12\x1a\n" +
-	"\bdeclined\x18\x03 \x01(\rR\bdeclined\",\n" +
+	"\bdeclined\x18\x03 \x01(\rR\bdeclined\x12\x18\n" +
+	"\atracing\x18\x04 \x01(\tR\atracing\",\n" +
 	"\x14UsersActivityRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\rR\x05limit\"\xcc\x01\n" +
 	"\x15UsersActivityResponse\x12B\n" +

@@ -436,10 +436,9 @@ func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time,
 }
 
 func (u *UserRepository) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
-    var at time.Time
-    logger.Debug("requested active with uid: " + strconv.Itoa(int(uid)), "")
+	var at time.Time
 
-    err := u.DB.QueryRowContext(ctx, `
+	err := u.DB.QueryRowContext(ctx, `
         SELECT at
         FROM events
         WHERE actor_type = 'User' AND actor_id = $1
@@ -447,18 +446,16 @@ func (u *UserRepository) GetUserLastActive(ctx context.Context, uid uint) (*time
         LIMIT 1
     `, uid).Scan(&at)
 
-    if err != nil {
-        if errors.Is(err, sql.ErrNoRows) {
-        	logger.Debug("record not found", "")
-            return nil, nil
-        }
-        logger.Debug("failed to receive last active: " + err.Error(), "")
-        return nil, err
-    }
-    
-    logger.Debug("active: " + at.String(), "")
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.Debug("record not found", "")
+			return nil, nil
+		}
+		logger.Debug("failed to receive last active: "+err.Error(), "")
+		return nil, err
+	}
 
-    return &at, nil
+	return &at, nil
 }
 
 func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
@@ -838,6 +835,34 @@ func (u *UserRepository) DeleteProfile(ctx context.Context, uid uint) error {
 	}
 	if n, _ := resp.RowsAffected(); n == 0 {
 		return sql.ErrTxDone
+	}
+	return nil
+}
+
+func (u *UserRepository) SetRank(ctx context.Context, uid uint, rank string, expires *time.Time) error {
+	if uid == 0 || rank == "" {
+		return apperrors.InvalidArguments.AddErrDetails("uid or rank is null")
+	}
+
+	query := "UPDATE users SET rank = ROW($1, NULL)::users_rank_t WHERE uid = $2"
+	args := []any{rank, uid}
+
+	if expires != nil {
+		query = "UPDATE users SET rank = ROW($1, $2)::users_rank_t WHERE uid = $3"
+		args = []any{rank, *expires, uid}
+	}
+
+	resp, err := u.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	n, err := resp.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
 	}
 	return nil
 }
@@ -2422,6 +2447,19 @@ func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.
 	return &data, nil
 }
 
+func (t *TicketsRepository) LatestAt(ctx context.Context, id uuid.UUID) (*time.Time, error) {
+	var at time.Time
+	err := t.DB.QueryRowContext(ctx, "SELECT at FROM ticket_messages WHERE ticket = $1 ORDER BY at DESC LIMIT 1", id).Scan(&at)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		logger.Debug("error: "+err.Error(), "")
+		return nil, err
+	}
+	return &at, nil
+}
+
 var _ rank.Repository = (*RanksRepository)(nil)
 
 func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
@@ -2507,7 +2545,10 @@ func (r *RanksRepository) Create(ctx context.Context, name string, color int, de
 		if err != nil {
 			return err
 		}
-		_, err = r.DB.ExecContext(ctx, "INSERT INTO ranks (name, color, description, permissions) VALUES ($1, $2, $3, $4)", name, color, description, bytes)
+		_, err = r.DB.ExecContext(ctx, `
+			INSERT INTO ranks (name, color, description, permissions)
+			VALUES ($1, $2, $3, jsonb_populate_record(null::permissions_t, $4::jsonb))
+		`, name, color, description, bytes)
 		if err != nil {
 			return err
 		}

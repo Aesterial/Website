@@ -51,6 +51,16 @@ func New(cfg Config) *Service {
 	}
 }
 
+func (s *Service) SendTicketClose(ctx context.Context, email string, id string, reason string) (string, error) {
+	ticketID := "#" + id
+	subject := "Ticket " + ticketID + "closed"
+	htmlBody := fmt.Sprintf(
+		`<p>Ticket %s closed with reason: %s</p>`, ticketID, reason,
+	)
+	textBody := "Ticket " + ticketID + " closed with reason: " + reason
+	return s.sendMail(ctx, email, subject, htmlBody, textBody)
+}
+
 func (s *Service) SendEmailVerify(ctx context.Context, email string, token string) (string, error) {
 	cfg := config.Get()
 	verifyURL := fmt.Sprintf(

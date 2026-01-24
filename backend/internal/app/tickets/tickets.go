@@ -1,10 +1,14 @@
 package tickets
 
 import (
+	"Aesterial/backend/internal/app/tickets/scheduler"
+	"Aesterial/backend/internal/app/mailer"
 	"Aesterial/backend/internal/domain/tickets"
+	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -13,7 +17,8 @@ type Service struct {
 	repo tickets.Repository
 }
 
-func New(r tickets.Repository) *Service {
+func New(r tickets.Repository, u user.Repository, m *mailer.Service) *Service {
+	scheduler.Run(r, u, time.Local, m)
 	return &Service{repo: r}
 }
 
