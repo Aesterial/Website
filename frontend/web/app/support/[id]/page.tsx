@@ -1,26 +1,9 @@
-﻿"use client";
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { toast } from "sonner";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Clock,
-  ExternalLink,
-  Lock,
-  Maximize2,
-  MessageSquare,
-  Send,
-  ShieldCheck,
-  UserCircle2,
-  X,
-} from "lucide-react";
-import { Header } from "@/components/header";
 import { useAuth } from "@/components/auth-provider";
+import { Header } from "@/components/header";
 import { useLanguage } from "@/components/language-provider";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   closeTicket,
   createTicketMessage,
@@ -34,20 +17,176 @@ import {
   type TicketMessage,
   type TicketStatus,
 } from "@/lib/tickets";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-
-const statusLabel: Record<TicketStatus, string> = {
-  new: "Ожидает",
-  in_progress: "В работе",
-  closed: "Закрыто",
-};
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Clock,
+  ExternalLink,
+  Lock,
+  Maximize2,
+  MessageSquare,
+  Send,
+  ShieldCheck,
+  UserCircle2,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const statusStyles: Record<TicketStatus, string> = {
   new: "bg-foreground/5 text-foreground",
   in_progress: "bg-foreground text-background",
   closed: "border border-foreground/15 text-muted-foreground",
 };
+
+const copyByLanguage = {
+  RU: {
+    statusLabel: {
+      new: "Ожидает",
+      in_progress: "В работе",
+      closed: "Закрыто",
+    },
+    ticketNotFound: "Обращение не найдено.",
+    loadError: "Не удалось загрузить обращение.",
+    newSupportMessageTitle: "Новое сообщение от поддержки",
+    newSupportMessageFallback: "Проверьте диалог",
+    messageSendError: "Не удалось отправить сообщение.",
+    closeError: "Не удалось закрыть обращение.",
+    supportAuthorName: "Поддержка",
+    userAuthorName: "Пользователь",
+    supportRole: "Поддержка",
+    userRole: "Пользователь",
+    messagesTitle: "Сообщения",
+    untitled: "Без темы",
+    messagesCountSuffix: "шт.",
+    refreshing: "Обновляем",
+    popupAction: "Попап",
+    windowAction: "Окно",
+    closeAction: "Закрыть",
+    noMessages: "Сообщений пока нет.",
+    newMessageLabel: "Новое сообщение",
+    closedPlaceholder: "Обращение закрыто",
+    messagePlaceholder: "Напишите уточнение или ответ",
+    sendingAction: "Отправляем...",
+    sendAction: "Отправить",
+    backToForm: "Назад к форме",
+    supportHistory: "История обращений",
+    ticketLabel: "Обращение",
+    autoCloseNote:
+      "Если в обращении не будет новых сообщений в течение 48 часов, оно закроется автоматически.",
+    detailsTitle: "Данные обращения",
+    contactLabel: "Контакт:",
+    emailLabel: "Email:",
+    createdLabel: "Создано:",
+    updatedLabel: "Последнее обновление:",
+    categoryLabel: "Категория:",
+    inProgressTitle: "Обращение в работе",
+    inQueueMessage:
+      "Обращение в очереди. Специалист подключится в ближайшее время.",
+    closedTicketLabel: "Обращение закрыто",
+    closingAction: "Закрываем...",
+    closeTicketAction: "Закрыть обращение",
+  },
+
+  EN: {
+    statusLabel: {
+      new: "Waiting",
+      in_progress: "In progress",
+      closed: "Closed",
+    },
+    ticketNotFound: "Ticket not found.",
+    loadError: "Failed to load ticket.",
+    newSupportMessageTitle: "New message from support",
+    newSupportMessageFallback: "Check the conversation",
+    messageSendError: "Failed to send the message.",
+    closeError: "Failed to close the ticket.",
+    supportAuthorName: "Support",
+    userAuthorName: "User",
+    supportRole: "Support",
+    userRole: "User",
+    messagesTitle: "Messages",
+    untitled: "No subject",
+    messagesCountSuffix: "messages",
+    refreshing: "Refreshing",
+    popupAction: "Popup",
+    windowAction: "Window",
+    closeAction: "Close",
+    noMessages: "No messages yet.",
+    newMessageLabel: "New message",
+    closedPlaceholder: "Ticket is closed",
+    messagePlaceholder: "Write an update or reply",
+    sendingAction: "Sending...",
+    sendAction: "Send",
+    backToForm: "Back to form",
+    supportHistory: "Support history",
+    ticketLabel: "Ticket",
+    autoCloseNote:
+      "If there are no new messages within 48 hours, the ticket will close automatically.",
+    detailsTitle: "Ticket details",
+    contactLabel: "Contact:",
+    emailLabel: "Email:",
+    createdLabel: "Created:",
+    updatedLabel: "Last update:",
+    categoryLabel: "Category:",
+    inProgressTitle: "Ticket in progress",
+    inQueueMessage: "Ticket is in the queue. A specialist will join shortly.",
+    closedTicketLabel: "Ticket closed",
+    closingAction: "Closing...",
+    closeTicketAction: "Close ticket",
+  },
+
+  KZ: {
+    statusLabel: {
+      new: "Күтуде",
+      in_progress: "Қаралуда",
+      closed: "Жабық",
+    },
+    ticketNotFound: "Өтініш табылмады.",
+    loadError: "Өтінішті жүктеу мүмкін болмады.",
+    newSupportMessageTitle: "Қолдаудан жаңа хабар",
+    newSupportMessageFallback: "Диалогты тексеріңіз",
+    messageSendError: "Хабарды жіберу мүмкін болмады.",
+    closeError: "Өтінішті жабу мүмкін болмады.",
+    supportAuthorName: "Қолдау",
+    userAuthorName: "Пайдаланушы",
+    supportRole: "Қолдау",
+    userRole: "Пайдаланушы",
+    messagesTitle: "Хабарламалар",
+    untitled: "Тақырыбы жоқ",
+    messagesCountSuffix: "хабар",
+    refreshing: "Жаңартып жатырмыз",
+    popupAction: "Қалқымалы терезе",
+    windowAction: "Терезе",
+    closeAction: "Жабу",
+    noMessages: "Хабарламалар әлі жоқ.",
+    newMessageLabel: "Жаңа хабарлама",
+    closedPlaceholder: "Өтініш жабық",
+    messagePlaceholder: "Нақтылау немесе жауап жазыңыз",
+    sendingAction: "Жіберілуде...",
+    sendAction: "Жіберу",
+    backToForm: "Формаға оралу",
+    supportHistory: "Қолдау тарихы",
+    ticketLabel: "Өтініш",
+    autoCloseNote:
+      "48 сағат ішінде жаңа хабар болмаса, өтініш автоматты түрде жабылады.",
+    detailsTitle: "Өтініш деректері",
+    contactLabel: "Байланыс:",
+    emailLabel: "Email:",
+    createdLabel: "Жасалған:",
+    updatedLabel: "Соңғы жаңарту:",
+    categoryLabel: "Санат:",
+    inProgressTitle: "Өтініш қаралуда",
+    inQueueMessage: "Өтініш кезекте. Маман жақын арада қосылады.",
+    closedTicketLabel: "Өтініш жабық",
+    closingAction: "Жабылып жатыр...",
+    closeTicketAction: "Өтінішті жабу",
+  },
+} as const;
+
 
 const resolveLocale = (language: string) =>
   language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
@@ -108,6 +247,11 @@ export default function SupportTicketPage() {
   const ticketId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const isDialogView = searchParams?.get("dialog") === "1";
 
+  const copy = useMemo(
+    () => copyByLanguage[language] ?? copyByLanguage.RU,
+    [language],
+  );
+
   const locale = useMemo(() => resolveLocale(language), [language]);
   const dateTimeFormatter = useMemo(
     () =>
@@ -153,11 +297,11 @@ export default function SupportTicketPage() {
         setTicket(mapped);
         setMessages(mapTicketMessages(list));
         if (!mapped && !silent) {
-          setError("Обращение не найдено.");
+          setError(copy.ticketNotFound);
         }
       } catch (err) {
         if (!signal?.aborted && !silent) {
-          setError("Не удалось загрузить обращение.");
+          setError(copy.loadError);
         }
       } finally {
         if (!signal?.aborted && !silent) {
@@ -168,7 +312,7 @@ export default function SupportTicketPage() {
         }
       }
     },
-    [ticketId],
+    [ticketId, copy],
   );
 
   useEffect(() => {
@@ -218,11 +362,11 @@ export default function SupportTicketPage() {
     newMessages.forEach((message) => seen.add(message.id));
     if (newMessages.some((message) => message.isStaff)) {
       notify(
-        "Новое сообщение от поддержки",
-        ticket?.subject || "Проверьте диалог",
+        copy.newSupportMessageTitle,
+        ticket?.subject || copy.newSupportMessageFallback,
       );
     }
-  }, [messages, notify, ticket?.subject]);
+  }, [messages, notify, ticket?.subject, copy]);
 
   useEffect(() => {
     if (!messagesEndRef.current) {
@@ -246,7 +390,7 @@ export default function SupportTicketPage() {
       setMessageText("");
       await loadTicket(undefined, { silent: true });
     } catch (err) {
-      setError("Не удалось отправить сообщение.");
+      setError(copy.messageSendError);
     } finally {
       setSending(false);
     }
@@ -262,7 +406,7 @@ export default function SupportTicketPage() {
       await closeTicket(ticketId);
       await loadTicket(undefined, { silent: true });
     } catch (err) {
-      setError("Не удалось закрыть обращение.");
+      setError(copy.closeError);
     } finally {
       setClosing(false);
     }
@@ -276,16 +420,16 @@ export default function SupportTicketPage() {
       return message.authorName;
     }
     if (message.isStaff) {
-      return "Поддержка";
+      return copy.supportAuthorName;
     }
-    return "Пользователь";
+    return copy.userAuthorName;
   };
 
   const resolveAuthorRole = (message: TicketMessage) => {
     if (message.authorRole && message.authorRole.trim()) {
       return message.authorRole.trim();
     }
-    return message.isStaff ? "Поддержка" : "Пользователь";
+    return message.isStaff ? copy.supportRole : copy.userRole;
   };
 
   const getInitials = (value: string) => {
@@ -328,19 +472,19 @@ export default function SupportTicketPage() {
       <section className="rounded-3xl border border-border/70 bg-card/90 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Сообщения</p>
+            <p className="text-sm font-semibold">{copy.messagesTitle}</p>
             <p className="text-xs text-muted-foreground">
-              {ticket?.subject || "Без темы"}
+              {ticket?.subject || copy.untitled}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {messages.length} шт.
+              {`${messages.length} ${copy.messagesCountSuffix}`}
             </span>
             {refreshing ? (
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60" />
-                Обновляем
+                {copy.refreshing}
               </span>
             ) : null}
             {!isModal && !isWindow ? (
@@ -350,7 +494,7 @@ export default function SupportTicketPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
               >
                 <Maximize2 className="h-3.5 w-3.5" />
-                Попап
+                {copy.popupAction}
               </button>
             ) : null}
             {!isWindow ? (
@@ -360,7 +504,7 @@ export default function SupportTicketPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Окно
+                {copy.windowAction}
               </button>
             ) : null}
             {isModal && onClose ? (
@@ -370,7 +514,7 @@ export default function SupportTicketPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
               >
                 <X className="h-3.5 w-3.5" />
-                Закрыть
+                {copy.closeAction}
               </button>
             ) : null}
           </div>
@@ -513,21 +657,21 @@ export default function SupportTicketPage() {
               })}
             </AnimatePresence>
           ) : (
-            <p className="text-sm text-muted-foreground">Сообщений пока нет.</p>
+            <p className="text-sm text-muted-foreground">{copy.noMessages}</p>
           )}
           <div ref={messagesEndRef} />
         </div>
 
         <div className="mt-5 space-y-3">
           <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Новое сообщение
+            {copy.newMessageLabel}
           </label>
           <textarea
             rows={3}
             value={messageText}
             onChange={(event) => setMessageText(event.target.value)}
             placeholder={
-              isClosed ? "Обращение закрыто" : "Напишите уточнение или ответ"
+              isClosed ? copy.closedPlaceholder : copy.messagePlaceholder
             }
             disabled={isClosed}
             className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20 disabled:opacity-60"
@@ -539,7 +683,7 @@ export default function SupportTicketPage() {
             className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send className="h-4 w-4" />
-            {sending ? "Отправляем..." : "Отправить"}
+            {sending ? copy.sendingAction : copy.sendAction}
           </button>
         </div>
       </section>
@@ -578,22 +722,22 @@ export default function SupportTicketPage() {
                 className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Назад к форме
+                {copy.backToForm}
               </Link>
               <Link
                 href="/support/history"
                 className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
               >
-                История обращений
+                {copy.supportHistory}
               </Link>
             </div>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  Обращение #{ticket?.id ?? ticketId}
+                  {copy.ticketLabel} #{ticket?.id ?? ticketId}
                 </p>
                 <h1 className="text-2xl font-bold sm:text-3xl">
-                  {ticket?.subject || "Без темы"}
+                  {ticket?.subject || copy.untitled}
                 </h1>
               </div>
               <span
@@ -602,12 +746,11 @@ export default function SupportTicketPage() {
                   statusStyles[status],
                 )}
               >
-                {statusLabel[status]}
+                {copy.statusLabel[status]}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Если в обращении не будет новых сообщений в течение 48 часов, оно
-              закроется автоматически.
+              {copy.autoCloseNote}
             </p>
           </motion.div>
 
@@ -627,12 +770,14 @@ export default function SupportTicketPage() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     <MessageSquare className="h-4 w-4" />
-                    Данные обращения
+                    {copy.detailsTitle}
                   </div>
                   <div className="grid gap-3 text-sm">
                     <div className="flex items-center gap-2">
                       <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Контакт:</span>
+                      <span className="text-muted-foreground">
+                        {copy.contactLabel}
+                      </span>
                       <span className="font-semibold">
                         {ticket?.requester?.name ||
                           user?.displayName ||
@@ -642,14 +787,18 @@ export default function SupportTicketPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Email:</span>
+                      <span className="text-muted-foreground">
+                        {copy.emailLabel}
+                      </span>
                       <span className="font-semibold">
                         {ticket?.requester?.email || user?.email || "-"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Создано:</span>
+                      <span className="text-muted-foreground">
+                        {copy.createdLabel}
+                      </span>
                       <span className="font-semibold">
                         {formatDateTime(ticket?.createdAt, dateTimeFormatter)}
                       </span>
@@ -657,7 +806,7 @@ export default function SupportTicketPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        Последнее обновление:
+                        {copy.updatedLabel}
                       </span>
                       <span className="font-semibold">
                         {formatDateTime(
@@ -668,7 +817,9 @@ export default function SupportTicketPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Lock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Категория:</span>
+                      <span className="text-muted-foreground">
+                        {copy.categoryLabel}
+                      </span>
                       <span className="font-semibold">
                         {ticket?.category || "-"}
                       </span>
@@ -679,14 +830,13 @@ export default function SupportTicketPage() {
                     {ticket?.assignee?.name ? (
                       <div className="space-y-1">
                         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                          Обращение в работе
+                          {copy.inProgressTitle}
                         </p>
                         <p className="font-semibold">{ticket.assignee.name}</p>
                       </div>
                     ) : (
                       <p className="text-muted-foreground">
-                        Обращение в очереди. Специалист подключится в ближайшее
-                        время.
+                        {copy.inQueueMessage}
                       </p>
                     )}
                   </div>
@@ -698,10 +848,10 @@ export default function SupportTicketPage() {
                     className="inline-flex items-center justify-center rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isClosed
-                      ? "Обращение закрыто"
+                      ? copy.closedTicketLabel
                       : closing
-                        ? "Закрываем..."
-                        : "Закрыть обращение"}
+                        ? copy.closingAction
+                        : copy.closeTicketAction}
                   </button>
                 </div>
               </motion.section>

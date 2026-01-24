@@ -35,13 +35,14 @@ const copyByLanguage = {
       closed: "Закрыто",
     },
   },
+
   EN: {
     backToSupport: "Back to support",
     sectionLabel: "Support",
     title: "Support history",
     newTicket: "New ticket",
     signInPrompt: "Sign in to view your support history.",
-    goToLogin: "Go to login",
+    goToLogin: "Go to sign in",
     errorLoad: "Failed to load support history.",
     empty: "No tickets yet. Start a new request from the support form.",
     uncategorized: "Uncategorized",
@@ -52,24 +53,26 @@ const copyByLanguage = {
       closed: "Closed",
     },
   },
+
   KZ: {
     backToSupport: "Қолдауға оралу",
     sectionLabel: "Қолдау",
     title: "Қолдау тарихы",
     newTicket: "Жаңа өтініш",
-    signInPrompt: "Қолдау тарихын көру үшін кіріңіз.",
+    signInPrompt: "Өтініштер тарихын көру үшін кіріңіз.",
     goToLogin: "Кіруге өту",
-    errorLoad: "Қолдау тарихын жүктеу мүмкін болмады.",
-    empty: "Өтініштер әлі жоқ. Қолдау формасынан жаңа өтініш жіберіңіз.",
+    errorLoad: "Қолдау тарихын жүктеу сәтсіз аяқталды.",
+    empty: "Әзірге өтініштер жоқ. Қолдау формасы арқылы жаңасын жіберіңіз.",
     uncategorized: "Санатсыз",
     untitled: "Тақырыпсыз өтініш",
     statusLabel: {
       new: "Күтуде",
-      in_progress: "Жұмыста",
+      in_progress: "Қаралуда",
       closed: "Жабық",
     },
   },
 } as const;
+
 
 const resolveLocale = (language: string) =>
   language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
