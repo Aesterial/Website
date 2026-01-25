@@ -39,8 +39,6 @@ func (s *Service) CreateProject(ctx context.Context, project projects.Project) e
 	}
 
 	project.Info.Location.City = strings.TrimSpace(project.Info.Location.City)
-	project.Info.Location.Street = strings.TrimSpace(project.Info.Location.Street)
-	project.Info.Location.House = strings.TrimSpace(project.Info.Location.House)
 
 	if err := s.repo.CreateProject(ctx, project); err != nil {
 		logger.Debug("error appeared: "+err.Error(), "projects.create_project")

@@ -389,8 +389,8 @@ func (x *LikeRequest) GetId() string {
 type ProjectLocation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
-	Street        string                 `protobuf:"bytes,2,opt,name=street,proto3" json:"street,omitempty"`
-	House         string                 `protobuf:"bytes,3,opt,name=house,proto3" json:"house,omitempty"`
+	Latitude      float64                `protobuf:"fixed64,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude     float64                `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -432,18 +432,18 @@ func (x *ProjectLocation) GetCity() string {
 	return ""
 }
 
-func (x *ProjectLocation) GetStreet() string {
+func (x *ProjectLocation) GetLatitude() float64 {
 	if x != nil {
-		return x.Street
+		return x.Latitude
 	}
-	return ""
+	return 0
 }
 
-func (x *ProjectLocation) GetHouse() string {
+func (x *ProjectLocation) GetLongitude() float64 {
 	if x != nil {
-		return x.House
+		return x.Longitude
 	}
-	return ""
+	return 0
 }
 
 type ProjectInfo struct {
@@ -900,11 +900,11 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\bprojects\x18\x01 \x03(\v2\x14.projects.v1.ProjectR\bprojects\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"\x1d\n" +
 	"\vLikeRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"S\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"_\n" +
 	"\x0fProjectLocation\x12\x12\n" +
-	"\x04city\x18\x01 \x01(\tR\x04city\x12\x16\n" +
-	"\x06street\x18\x02 \x01(\tR\x06street\x12\x14\n" +
-	"\x05house\x18\x03 \x01(\tR\x05house\"\xe2\x01\n" +
+	"\x04city\x18\x01 \x01(\tR\x04city\x12\x1a\n" +
+	"\blatitude\x18\x02 \x01(\x01R\blatitude\x12\x1c\n" +
+	"\tlongitude\x18\x03 \x01(\x01R\tlongitude\"\xe2\x01\n" +
 	"\vProjectInfo\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12'\n" +

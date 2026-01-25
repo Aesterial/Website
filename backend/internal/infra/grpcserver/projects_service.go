@@ -74,8 +74,6 @@ func (s *ProjectService) Create(ctx context.Context, req *projpb.CreateRequest) 
 	}
 	if req.Location != nil {
 		project.Info.Location.City = strings.TrimSpace(req.Location.City)
-		project.Info.Location.Street = strings.TrimSpace(req.Location.Street)
-		project.Info.Location.House = strings.TrimSpace(req.Location.House)
 	}
 	for _, photo := range req.Photos {
 		avatar := fromProtoAvatar(photo)

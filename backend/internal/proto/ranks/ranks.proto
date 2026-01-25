@@ -18,7 +18,7 @@ service RanksService {
   }
   rpc Patch(PatchRequest) returns (EmptyResponse) {
     option (google.api.http) = {
-      patch: "/api/ranks/{name}/patch"
+      patch: "/api/ranks/{name}/patch/{target}"
       body: "*"
     };
   }

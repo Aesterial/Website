@@ -30,6 +30,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -1224,8 +1225,8 @@ func getProject(ctx context.Context, id uuid.UUID, db *sql.DB) (*projectdomain.P
 	var project projectdomain.Project
 	var err error
 	var authorID uint
-	if err = db.QueryRowContext(ctx, "SELECT p.id, p.author_uid, (p.info).title, (p.info).description, (p.info).category, ((p.info).location).city, ((p.info).location).street, ((p.info).location).house, p.likes_count, p.created_at, p.status FROM projects p WHERE p.id = $1", id).Scan(
-		&project.ID, &authorID, &project.Info.Title, &project.Info.Description, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Street, &project.Info.Location.House, &project.Likes, &project.At, &project.Status); err != nil {
+	if err = db.QueryRowContext(ctx, "SELECT p.id, p.author_uid, (p.info).title, (p.info).description, (p.info).category, ((p.info).location).city, ((p.info).location).latitude, ((p.info).location).longitude, p.likes_count, p.created_at, p.status FROM projects p WHERE p.id = $1", id).Scan(
+		&project.ID, &authorID, &project.Info.Title, &project.Info.Description, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Latitude, &project.Info.Location.Longitude, &project.Likes, &project.At, &project.Status); err != nil {
 		return nil, err
 	}
 	project.Author, err = getAuthor(ctx, authorID, db)
@@ -1305,7 +1306,7 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) (pro
 
 func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdomain.Project) error {
 	var projectId uuid.UUID
-	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, info.Info.Location.City, info.Info.Location.Street, info.Info.Location.House).Scan(&projectId); err != nil {
+	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, info.Info.Location.City, info.Info.Location.Latitude, info.Info.Location.Longitude).Scan(&projectId); err != nil {
 		return err
 	}
 	if len(info.Info.Photos) > 0 {
@@ -2560,9 +2561,32 @@ func (r *RanksRepository) Create(ctx context.Context, name string, color int, de
 	}
 	return nil
 }
+
+func (r *RanksRepository) IsExists(ctx context.Context, rank string) (bool, error) {
+	if rank == "" {
+		return false, apperrors.InvalidArguments.AddErrDetails("param is incorrect")
+	}
+	var exists bool
+	if err := r.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM ranks WHERE name = $1)", rank).Scan(&exists); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return exists, nil
+}
+
 func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, data any) error {
 	if rank == "" || target == "" || data == nil {
 		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
+	}
+	exists, err := r.IsExists(ctx, rank)
+	if err != nil {
+		logger.Debug("failed to check is exists: " + err.Error(), "")
+		return apperrors.ServerError
+	}
+	if !exists {
+		return apperrors.RecordNotFound.AddErrDetails("rank is not exists")
 	}
 
 	type colInfo struct {
@@ -2573,12 +2597,31 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 		"description": {col: "description", kind: "string"},
 		"name":        {col: "name", kind: "string"},
 		"color":       {col: "color", kind: "int"},
-		"priority":    {col: "priority", kind: "int"},
 	}
 
 	info, ok := cols[target]
 	if !ok {
 		return apperrors.InvalidArguments.AddErrDetails("unknown target")
+	}
+
+	if v, ok := data.(*structpb.Value); ok {
+		if v == nil {
+			return apperrors.InvalidArguments.AddErrDetails("value is empty")
+		}
+		switch k := v.Kind.(type) {
+		case *structpb.Value_StringValue:
+			data = k.StringValue
+		case *structpb.Value_NumberValue:
+			data = k.NumberValue
+		case *structpb.Value_BoolValue:
+			data = k.BoolValue
+		case *structpb.Value_NullValue:
+			return apperrors.InvalidArguments.AddErrDetails("null is not allowed")
+		case *structpb.Value_StructValue, *structpb.Value_ListValue:
+			return apperrors.InvalidArguments.AddErrDetails("object/array is not allowed")
+		default:
+			return apperrors.InvalidArguments.AddErrDetails("unsupported value kind")
+		}
 	}
 
 	var (
@@ -2593,6 +2636,7 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 			return apperrors.InvalidArguments.AddErrDetails("invalid data type for target")
 		}
 		val = s
+
 	case "int":
 		switch v := data.(type) {
 		case int:
@@ -2606,15 +2650,30 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 				return apperrors.InvalidArguments.AddErrDetails("uint overflow")
 			}
 			val = int64(v)
+		case uint32:
+			val = int64(v)
+		case uint64:
+			if v > uint64(^uint64(0)>>1) {
+				return apperrors.InvalidArguments.AddErrDetails("uint overflow")
+			}
+			val = int64(v)
+
+		case float64:
+			if v != float64(int64(v)) {
+				return apperrors.InvalidArguments.AddErrDetails("number must be an integer")
+			}
+			val = int64(v)
+
 		default:
 			return apperrors.InvalidArguments.AddErrDetails("invalid data type for target")
 		}
+
 	default:
 		return apperrors.InvalidArguments.AddErrDetails("invalid target config")
 	}
 
 	query = "UPDATE ranks SET " + info.col + " = $1 WHERE name = $2"
-	_, err := r.DB.ExecContext(ctx, query, val, rank)
+	_, err = r.DB.ExecContext(ctx, query, val, rank)
 	return err
 }
 

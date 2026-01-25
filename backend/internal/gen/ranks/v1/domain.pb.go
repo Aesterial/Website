@@ -11,6 +11,7 @@ import (
 	v11 "Aesterial/backend/internal/gen/user/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -95,9 +96,8 @@ func (x *CreateRequest) GetDescription() string {
 type PatchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	NewName       *string                `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3,oneof" json:"new_name,omitempty"`
-	Color         *string                `protobuf:"bytes,3,opt,name=color,proto3,oneof" json:"color,omitempty"`
-	Description   *string                `protobuf:"bytes,4,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	Target        string                 `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
+	Value         *structpb.Value        `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,25 +139,18 @@ func (x *PatchRequest) GetName() string {
 	return ""
 }
 
-func (x *PatchRequest) GetNewName() string {
-	if x != nil && x.NewName != nil {
-		return *x.NewName
+func (x *PatchRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
 	}
 	return ""
 }
 
-func (x *PatchRequest) GetColor() string {
-	if x != nil && x.Color != nil {
-		return *x.Color
+func (x *PatchRequest) GetValue() *structpb.Value {
+	if x != nil {
+		return x.Value
 	}
-	return ""
-}
-
-func (x *PatchRequest) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
-	}
-	return ""
+	return nil
 }
 
 type NameRequest struct {
@@ -544,22 +537,18 @@ var File_ranks_domain_proto protoreflect.FileDescriptor
 
 const file_ranks_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x12ranks/domain.proto\x12\branks.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18permissions/domain.proto\x1a\x11user/domain.proto\"\xc4\x01\n" +
+	"\x12ranks/domain.proto\x12\branks.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x18permissions/domain.proto\x1a\x11user/domain.proto\"\xc4\x01\n" +
 	"\rCreateRequest\x12B\n" +
 	"\vpermissions\x18\x01 \x01(\v2\x1b.permissions.v1.PermissionsH\x00R\vpermissions\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05color\x18\x03 \x01(\rR\x05color\x12%\n" +
 	"\vdescription\x18\x04 \x01(\tH\x01R\vdescription\x88\x01\x01B\x0e\n" +
 	"\f_permissionsB\x0e\n" +
-	"\f_description\"\xab\x01\n" +
+	"\f_description\"h\n" +
 	"\fPatchRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
-	"\bnew_name\x18\x02 \x01(\tH\x00R\anewName\x88\x01\x01\x12\x19\n" +
-	"\x05color\x18\x03 \x01(\tH\x01R\x05color\x88\x01\x01\x12%\n" +
-	"\vdescription\x18\x04 \x01(\tH\x02R\vdescription\x88\x01\x01B\v\n" +
-	"\t_new_nameB\b\n" +
-	"\x06_colorB\x0e\n" +
-	"\f_description\"!\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\x12,\n" +
+	"\x05value\x18\x03 \x01(\v2\x16.google.protobuf.ValueR\x05value\"!\n" +
 	"\vNameRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\")\n" +
 	"\rEmptyResponse\x12\x18\n" +
@@ -608,20 +597,22 @@ var file_ranks_domain_proto_goTypes = []any{
 	(*RankResponse)(nil),          // 7: ranks.v1.RankResponse
 	(*RanksResponse)(nil),         // 8: ranks.v1.RanksResponse
 	(*v1.Permissions)(nil),        // 9: permissions.v1.Permissions
-	(*v11.UserPublic)(nil),        // 10: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(*structpb.Value)(nil),        // 10: google.protobuf.Value
+	(*v11.UserPublic)(nil),        // 11: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
 }
 var file_ranks_domain_proto_depIdxs = []int32{
 	9,  // 0: ranks.v1.CreateRequest.permissions:type_name -> permissions.v1.Permissions
-	10, // 1: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
-	11, // 2: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
-	6,  // 3: ranks.v1.RankResponse.data:type_name -> ranks.v1.Rank
-	6,  // 4: ranks.v1.RanksResponse.ranks:type_name -> ranks.v1.Rank
-	5,  // [5:5] is the sub-list for method output_type
-	5,  // [5:5] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 1: ranks.v1.PatchRequest.value:type_name -> google.protobuf.Value
+	11, // 2: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
+	12, // 3: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
+	6,  // 4: ranks.v1.RankResponse.data:type_name -> ranks.v1.Rank
+	6,  // 5: ranks.v1.RanksResponse.ranks:type_name -> ranks.v1.Rank
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_ranks_domain_proto_init() }
@@ -630,7 +621,6 @@ func file_ranks_domain_proto_init() {
 		return
 	}
 	file_ranks_domain_proto_msgTypes[0].OneofWrappers = []any{}
-	file_ranks_domain_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -83,6 +83,14 @@ func request_RanksService_Patch_0(ctx context.Context, marshaler runtime.Marshal
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
 	}
+	val, ok = pathParams["target"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "target")
+	}
+	protoReq.Target, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "target", err)
+	}
 	msg, err := client.Patch(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -103,6 +111,14 @@ func local_request_RanksService_Patch_0(ctx context.Context, marshaler runtime.M
 	protoReq.Name, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+	}
+	val, ok = pathParams["target"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "target")
+	}
+	protoReq.Target, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "target", err)
 	}
 	msg, err := server.Patch(ctx, &protoReq)
 	return msg, metadata, err
@@ -378,7 +394,7 @@ func RegisterRanksServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ranks.v1.RanksService/Patch", runtime.WithHTTPPathPattern("/api/ranks/{name}/patch"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ranks.v1.RanksService/Patch", runtime.WithHTTPPathPattern("/api/ranks/{name}/patch/{target}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -573,7 +589,7 @@ func RegisterRanksServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ranks.v1.RanksService/Patch", runtime.WithHTTPPathPattern("/api/ranks/{name}/patch"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ranks.v1.RanksService/Patch", runtime.WithHTTPPathPattern("/api/ranks/{name}/patch/{target}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -693,7 +709,7 @@ func RegisterRanksServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 
 var (
 	pattern_RanksService_Create_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "ranks", "create"}, ""))
-	pattern_RanksService_Patch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "patch"}, ""))
+	pattern_RanksService_Patch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "ranks", "name", "patch", "target"}, ""))
 	pattern_RanksService_Get_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "ranks", "name"}, ""))
 	pattern_RanksService_Users_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "ranks", "name", "users"}, ""))
 	pattern_RanksService_List_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "ranks", "list"}, ""))

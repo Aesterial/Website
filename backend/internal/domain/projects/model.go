@@ -14,9 +14,9 @@ import (
 )
 
 type projectLocation struct {
-	City   string
-	Street string
-	House  string
+	City      string
+	Latitude  float64
+	Longitude float64
 }
 
 type ProjectCategory string
@@ -48,8 +48,8 @@ func (p projectInfo) ToProto() *projpb.ProjectInfo {
 		Category:    p.Category.ToProto(),
 		Location: &projpb.ProjectLocation{
 			City:   p.Location.City,
-			Street: p.Location.Street,
-			House:  p.Location.House,
+			Latitude: p.Location.Latitude,
+			Longitude: p.Location.Longitude,
 		},
 	}
 }
@@ -70,7 +70,7 @@ func (p ProjectVoteStatus) String() string {
 }
 
 func (p ProjectVoteStatus) ToProto() projpb.ProjectVoteStatus {
-	logger.Debug("Project vote status: " + p.String(), "")
+	logger.Debug("Project vote status: "+p.String(), "")
 	switch p {
 	case OnModeration:
 		return projpb.ProjectVoteStatus_INMODERATION

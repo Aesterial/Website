@@ -89,55 +89,17 @@ func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*ra
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksEdit); err != nil {
 		return nil, err
 	}
+
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
-	changed := false
-	if req.NewName != nil {
-		newName := strings.TrimSpace(req.GetNewName())
-		if newName == "" {
-			return nil, apperrors.RequiredDataMissing.AddErrDetails("rank new name is empty")
-		}
-		if err := s.ranks.Edit(ctx, name, "name", newName); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
-			}
-			return nil, apperrors.Wrap(err)
-		}
-		name = newName
-		changed = true
+
+	if err := s.ranks.Edit(ctx, name, req.GetTarget(), req.GetValue()); err != nil {
+		logger.Debug("error on edit ranks: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
 	}
-	if req.Description != nil {
-		description := strings.TrimSpace(req.GetDescription())
-		if description == "" {
-			return nil, apperrors.RequiredDataMissing.AddErrDetails("rank description is empty")
-		}
-		if err := s.ranks.Edit(ctx, name, "description", description); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
-			}
-			return nil, apperrors.Wrap(err)
-		}
-		changed = true
-	}
-	if req.Color != nil {
-		//color, err := parseRankColor(req.GetColor())
-		//if err != nil {
-		//	return nil, status.Error(codes.InvalidArgument, err.Error())
-		//}
-		color := req.GetColor()
-		if err := s.ranks.Edit(ctx, name, "color", color); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
-			}
-			return nil, apperrors.Wrap(err)
-		}
-		changed = true
-	}
-	if !changed {
-		return nil, apperrors.InvalidArguments.AddErrDetails("nothing to update")
-	}
+
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Updated rank", "ranks.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &rankpb.EmptyResponse{Tracing: traceID}, nil

@@ -3,6 +3,7 @@ syntax = "proto3";
 package ranks.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 import "permissions/domain.proto";
 import "user/domain.proto";
 
@@ -17,9 +18,8 @@ message CreateRequest {
 
 message PatchRequest {
   string name = 1;
-  optional string new_name = 2;
-  optional string color = 3;
-  optional string description = 4;
+  string target = 2;
+  google.protobuf.Value value = 3;
 }
 
 message NameRequest {
@@ -31,9 +31,9 @@ message EmptyResponse {
 }
 
 message PermsPatchRequest {
-    string name = 1;
-    string perm = 2;
-    bool state = 3;
+  string name = 1;
+  string perm = 2;
+  bool state = 3;
 }
 
 message UsersResponse {

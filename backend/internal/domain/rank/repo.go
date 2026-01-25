@@ -14,4 +14,5 @@ type Repository interface {
 	UsersWithRank(ctx context.Context, name string) ([]*uint, error)
 	Perms(ctx context.Context, rank string) (*permissions.Permissions, error)
 	ChangePerms(ctx context.Context, rank string, perm permissions.Permission, state bool) error
+	IsExists(ctx context.Context, rank string) (bool, error)
 }

@@ -73,8 +73,8 @@ func toGenProject(p *projects.Project) *projpb.Project {
 			Category:    cat(),
 			Location: &projpb.ProjectLocation{
 				City:   p.Info.Location.City,
-				Street: p.Info.Location.Street,
-				House:  p.Info.Location.House,
+				Longitude: p.Info.Location.Longitude,
+				Latitude:  p.Info.Location.Latitude,
 			},
 		},
 	}

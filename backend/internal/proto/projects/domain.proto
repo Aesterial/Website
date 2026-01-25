@@ -51,8 +51,8 @@ enum ProjectVoteStatus {
 
 message ProjectLocation {
   string city = 1;
-  string street = 2;
-  string house = 3;
+  double latitude = 2;
+  double longitude = 3;
 }
 
 message ProjectInfo {
