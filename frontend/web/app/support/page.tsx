@@ -156,7 +156,6 @@ const copyByLanguage = {
   },
 } as const;
 
-
 type SupportCopy = (typeof copyByLanguage)["RU"];
 
 const categoryKeyById = {
@@ -166,10 +165,8 @@ const categoryKeyById = {
   other: "other",
 } as const;
 
-const getCategoryLabel = (
-  copy: SupportCopy,
-  id: SupportCategoryId,
-): string => copy.categories[categoryKeyById[id]];
+const getCategoryLabel = (copy: SupportCopy, id: SupportCategoryId): string =>
+  copy.categories[categoryKeyById[id]];
 
 const DEFAULT_CATEGORY: SupportCategoryId = "account_access";
 
@@ -208,6 +205,7 @@ export default function SupportPage() {
 
   const canManageSupport = hasAdminAccess;
   const canViewHistory = Boolean(user);
+  const isGuest = !user;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -216,7 +214,9 @@ export default function SupportPage() {
     }
     const nextErrors: SupportFormErrors = {};
 
-    if (!formData.email.trim()) {
+    const resolvedEmail = formData.email.trim() || user?.email?.trim() || "";
+
+    if (!resolvedEmail) {
       nextErrors.email = copy.errorEmail;
     }
     if (!formData.subject.trim()) {
@@ -239,8 +239,12 @@ export default function SupportPage() {
       const message = formData.message.trim();
       const brief = [subject, message].filter(Boolean).join("\n\n");
       const id = await createTicket({
-        name: formData.name.trim() || undefined,
-        email: formData.email.trim(),
+        name:
+          formData.name.trim() ||
+          user?.displayName ||
+          user?.username ||
+          undefined,
+        email: resolvedEmail,
         topic: getCategoryLabel(copy, formData.category),
         brief,
       });
@@ -276,41 +280,51 @@ export default function SupportPage() {
               transition={{ duration: 0.4, delay: 0.05 }}
             >
               <div className="grid gap-5">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <User className="inline h-4 w-4 mr-2" />
-                    {copy.nameLabel}
-                  </label>
-                  <input
-                    value={formData.name}
-                    onChange={(event) =>
-                      setFormData({ ...formData, name: event.target.value })
-                    }
-                    placeholder={copy.namePlaceholder}
-                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                  />
-                </div>
+                {isGuest ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        <User className="inline h-4 w-4 mr-2" />
+                        {copy.nameLabel}
+                      </label>
+                      <input
+                        value={formData.name}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            name: event.target.value,
+                          })
+                        }
+                        placeholder={copy.namePlaceholder}
+                        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <Mail className="inline h-4 w-4 mr-2" />
-                    {copy.emailLabel}
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(event) =>
-                      setFormData({ ...formData, email: event.target.value })
-                    }
-                    placeholder="name@example.com"
-                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                  />
-                  {errors.email ? (
-                    <p className="mt-2 text-xs text-destructive">
-                      {errors.email}
-                    </p>
-                  ) : null}
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        <Mail className="inline h-4 w-4 mr-2" />
+                        {copy.emailLabel}
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            email: event.target.value,
+                          })
+                        }
+                        placeholder="name@example.com"
+                        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                      />
+                      {errors.email ? (
+                        <p className="mt-2 text-xs text-destructive">
+                          {errors.email}
+                        </p>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
