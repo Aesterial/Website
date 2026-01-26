@@ -9,7 +9,7 @@ import { Header } from "@/components/header";
 import { useAuth } from "@/components/auth-provider";
 import { GradientButton } from "@/components/gradient-button";
 import { MapLibreMap } from "@/components/maplibre-map";
-import { Upload, X, MapPin, Camera, FileText } from "lucide-react";
+import { Upload, X, MapPin, Camera, FileText, ListFilter } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import { cities, type City } from "@/components/header";
 import { createProject, uploadProjectPhotos } from "@/lib/api";
@@ -19,6 +19,14 @@ type SelectedImage = {
   file: File;
   preview: string;
 };
+
+type SuggestCategoryId =
+  | "improvement"
+  | "roadsidewalks"
+  | "lighting"
+  | "playgrounds"
+  | "parks"
+  | "other";
 
 const createImageId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -40,6 +48,7 @@ const getStoredCity = () => {
 
 export default function SuggestPage() {
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<SuggestCategoryId>("improvement");
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [mapSelection, setMapSelection] = useState<[number, number] | null>(
@@ -52,6 +61,14 @@ export default function SuggestPage() {
   const imagesRef = useRef<SelectedImage[]>([]);
   const { status } = useAuth();
   const { t } = useLanguage();
+  const categoryOptions = [
+    { id: "improvement", label: t("landscaping") },
+    { id: "roadsidewalks", label: t("roadsAndSidewalks") },
+    { id: "lighting", label: t("lighting") },
+    { id: "playgrounds", label: t("playgrounds") },
+    { id: "parks", label: t("parksAndSquares") },
+    { id: "other", label: t("other") },
+  ] as const;
 
   useEffect(() => {
     setSelectedCity(getStoredCity());
@@ -126,7 +143,7 @@ export default function SuggestPage() {
       const { id } = await createProject({
         title,
         description: trimmedDescription,
-        category: "other",
+        category,
         location: {
           city,
           latitude: mapSelection[1],
@@ -246,6 +263,26 @@ export default function SuggestPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     {t("projectCityHint")}
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <ListFilter className="w-4 h-4 inline mr-2" />
+                    {t("category")}
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(event) =>
+                      setCategory(event.target.value as SuggestCategoryId)
+                    }
+                    className="w-full bg-card border border-border rounded-2xl py-3 px-5 text-sm font-semibold text-foreground/90 focus:outline-none sm:py-4"
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
