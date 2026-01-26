@@ -3,7 +3,6 @@ package grpcserver
 import (
 	projectsapp "Aesterial/backend/internal/app/projects"
 	storageapp "Aesterial/backend/internal/app/storage"
-	"Aesterial/backend/internal/domain/user"
 	storagepb "Aesterial/backend/internal/gen/storage/v1"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -113,10 +112,7 @@ func (s *StorageService) registerProjectPhoto(ctx context.Context, key string, c
 	if s.projects == nil {
 		return apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
-	return s.projects.AddProjectPhoto(ctx, projectID, &user.Avatar{
-		Key:         key,
-		ContentType: contentType,
-	})
+	return s.projects.AddProjectPhoto(ctx, projectID, key, contentType, 0)
 }
 
 func parseProjectPhotoKey(key string) (uuid.UUID, bool) {

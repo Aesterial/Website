@@ -2,7 +2,6 @@ package projects
 
 import (
 	"Aesterial/backend/internal/domain/projects"
-	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -49,22 +48,19 @@ func (s *Service) CreateProject(ctx context.Context, project projects.Project) (
 	return id, nil
 }
 
-func (s *Service) AddProjectPhoto(ctx context.Context, projectID uuid.UUID, photo *user.Avatar) error {
+func (s *Service) AddProjectPhoto(ctx context.Context, projectID uuid.UUID, key string, contentType string, sizeBytes int) error {
 	if s == nil || s.repo == nil {
 		return apperrors.NotConfigured
 	}
 	if projectID == uuid.Nil {
 		return apperrors.RequiredDataMissing.AddErrDetails("project id is empty")
 	}
-	if photo == nil {
-		return apperrors.RequiredDataMissing.AddErrDetails("photo is empty")
-	}
-	key := strings.TrimSpace(photo.Key)
+	key = strings.TrimSpace(key)
 	if key == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("photo key is empty")
 	}
-	contentType := strings.TrimSpace(photo.ContentType)
-	if err := s.repo.AddProjectPhoto(ctx, projectID, key, contentType, photo.SizeBytes); err != nil {
+	contentType = strings.TrimSpace(contentType)
+	if err := s.repo.AddProjectPhoto(ctx, projectID, key, contentType, sizeBytes); err != nil {
 		logger.Debug("error appeared: "+err.Error(), "projects.add_project_photo")
 		return apperrors.Wrap(err)
 	}
