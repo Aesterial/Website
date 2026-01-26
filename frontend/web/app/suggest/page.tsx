@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Header } from "@/components/header";
@@ -11,55 +11,162 @@ import { GradientButton } from "@/components/gradient-button";
 import { MapLibreMap } from "@/components/maplibre-map";
 import { Upload, X, MapPin, Camera, FileText } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
+import { cities, type City } from "@/components/header";
+import { createProject, uploadProjectPhotos } from "@/lib/api";
+
+type SelectedImage = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
+const createImageId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const getStoredCity = () => {
+  if (typeof window === "undefined") {
+    return cities[0];
+  }
+  const savedCity = localStorage.getItem("city");
+  if (savedCity && cities.includes(savedCity as City)) {
+    return savedCity as City;
+  }
+  return cities[0];
+};
 
 export default function SuggestPage() {
-  const [formData, setFormData] = useState({
-    address: "",
-    description: "",
-    category: "",
-  });
-  const [images, setImages] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<SelectedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [mapSelection, setMapSelection] = useState<[number, number] | null>(
     null,
   );
+  const [selectedCity, setSelectedCity] = useState<City>(cities[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const imagesRef = useRef<SelectedImage[]>([]);
   const { status } = useAuth();
   const { t } = useLanguage();
 
-  const categories = [
-    { key: "landscaping", label: t("landscaping") },
-    { key: "roadsAndSidewalks", label: t("roadsAndSidewalks") },
-    { key: "lighting", label: t("lighting") },
-    { key: "playgrounds", label: t("playgrounds") },
-    { key: "parksAndSquares", label: t("parksAndSquares") },
-    { key: "other", label: t("other") },
-  ];
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    files.forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            setImages((prev) => [...prev, e.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+  useEffect(() => {
+    setSelectedCity(getStoredCity());
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((image) => URL.revokeObjectURL(image.preview));
+    };
+  }, []);
+
+  const addImages = useCallback((files: File[]) => {
+    const next = files
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => ({
+        id: createImageId(),
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+    if (next.length === 0) {
+      return;
+    }
+    setImages((prev) => [...prev, ...next]);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      addImages(Array.from(e.dataTransfer.files));
+    },
+    [addImages],
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[~] Submitting:", { ...formData, images });
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    const trimmedDescription = description.trim();
+    if (!trimmedDescription) {
+      setSubmitError(t("projectSubmitErrorDescription"));
+      return;
+    }
+    if (!mapSelection) {
+      setSubmitError(t("projectSubmitErrorCoordinates"));
+      return;
+    }
+    if (images.length === 0) {
+      setSubmitError(t("projectSubmitErrorPhotos"));
+      return;
+    }
+
+    const city = getStoredCity();
+    setSelectedCity(city);
+    if (!city) {
+      setSubmitError(t("projectSubmitErrorCity"));
+      return;
+    }
+
+    const title =
+      trimmedDescription.split(/\n|\r/)[0]?.slice(0, 80).trim() ||
+      `${t("projectTitleFallback")} ${city}`;
+
+    setIsSubmitting(true);
+    try {
+      const { id } = await createProject({
+        title,
+        description: trimmedDescription,
+        category: "other",
+        location: {
+          city,
+          latitude: mapSelection[1],
+          longitude: mapSelection[0],
+        },
+      });
+
+      if (!id) {
+        throw new Error(t("projectSubmitErrorMissingId"));
+      }
+
+      await uploadProjectPhotos(
+        id,
+        images.map((image) => image.file),
+      );
+
+      setDescription("");
+      setMapSelection(null);
+      setImages((current) => {
+        current.forEach((image) => URL.revokeObjectURL(image.preview));
+        return [];
+      });
+      setSubmitSuccess(t("projectSubmitSuccess"));
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : t("projectSubmitErrorGeneric"),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const target = prev[index];
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   if (status === "loading") {
@@ -128,43 +235,17 @@ export default function SuggestPage() {
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     <MapPin className="w-4 h-4 inline mr-2" />
-                    {t("address")}
+                    {t("projectCityLabel")}
                   </label>
                   <input
                     type="text"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    placeholder={t("enterAddressOrSelectOnMap")}
-                    className="w-full bg-card border border-border rounded-2xl py-3 px-5 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 sm:py-4"
+                    value={selectedCity}
+                    readOnly
+                    className="w-full bg-card border border-border rounded-2xl py-3 px-5 text-sm font-semibold text-foreground/90 focus:outline-none sm:py-4"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    {t("category")}
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((cat) => (
-                      <motion.button
-                        key={cat.key}
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, category: cat.key })
-                        }
-                        className={`px-3 py-2 rounded-xl text-xs font-medium transition-all duration-300 sm:px-4 sm:text-sm ${
-                          formData.category === cat.key
-                            ? "bg-foreground text-background"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        {cat.label}
-                      </motion.button>
-                    ))}
-                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t("projectCityHint")}
+                  </p>
                 </div>
 
                 <div>
@@ -173,10 +254,8 @@ export default function SuggestPage() {
                     {t("description")}
                   </label>
                   <textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     placeholder={t("describeYourIdea")}
                     rows={5}
                     className="w-full bg-card border border-border rounded-2xl py-3 px-5 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 resize-none sm:py-4"
@@ -213,19 +292,8 @@ export default function SuggestPage() {
                           multiple
                           className="hidden"
                           onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            files.forEach((file) => {
-                              const reader = new FileReader();
-                              reader.onload = (e) => {
-                                if (e.target?.result) {
-                                  setImages((prev) => [
-                                    ...prev,
-                                    e.target!.result as string,
-                                  ]);
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            });
+                            addImages(Array.from(e.target.files || []));
+                            e.currentTarget.value = "";
                           }}
                         />
                       </label>
@@ -240,14 +308,14 @@ export default function SuggestPage() {
                     >
                       {images.map((img, index) => (
                         <motion.div
-                          key={index}
+                          key={img.id}
                           className="relative w-20 h-20 rounded-xl overflow-hidden group sm:w-24 sm:h-24"
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.8 }}
                         >
                           <img
-                            src={img || "/placeholder.svg"}
+                            src={img.preview || "/placeholder.svg"}
                             alt=""
                             className="w-full h-full object-cover"
                           />
@@ -302,12 +370,25 @@ export default function SuggestPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <GradientButton
-                type="submit"
-                className="w-full justify-center px-10 sm:w-auto sm:px-12"
-              >
-                {t("submitIdea")}
-              </GradientButton>
+              <div className="w-full space-y-3 sm:w-auto sm:min-w-[280px]">
+                <GradientButton
+                  type="submit"
+                  className="w-full justify-center px-10 sm:px-12"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? t("projectSubmitSending") : t("submitIdea")}
+                </GradientButton>
+                {submitError ? (
+                  <p className="text-sm text-destructive text-center">
+                    {submitError}
+                  </p>
+                ) : null}
+                {submitSuccess ? (
+                  <p className="text-sm text-foreground text-center">
+                    {submitSuccess}
+                  </p>
+                ) : null}
+              </div>
             </motion.div>
           </form>
         </div>

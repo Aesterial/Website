@@ -310,6 +310,71 @@ export const translations: Translations = {
     EN: "Submit idea",
     KZ: "Идеяны жіберу",
   },
+  projectCityLabel: {
+    RU: "Выбранный город",
+    EN: "Selected city",
+    KZ: "Таңдалған қала",
+  },
+  projectCityHint: {
+    RU: "Изменить город можно в верхнем меню.",
+    EN: "Change the city from the header menu.",
+    KZ: "Қаланы жоғарғы мәзірден өзгерте аласыз.",
+  },
+  projectTitleFallback: {
+    RU: "Проект",
+    EN: "Project",
+    KZ: "Жоба",
+  },
+  projectSubmitSending: {
+    RU: "Отправляем…",
+    EN: "Sending…",
+    KZ: "Жіберілуде…",
+  },
+  projectSubmitSuccess: {
+    RU: "Проект создан и отправлен на модерацию.",
+    EN: "Project created and sent for moderation.",
+    KZ: "Жоба құрылып, модерацияға жіберілді.",
+  },
+  projectSubmitErrorDescription: {
+    RU: "Добавьте описание проекта.",
+    EN: "Add a project description.",
+    KZ: "Жобаның сипаттамасын қосыңыз.",
+  },
+  projectSubmitErrorCoordinates: {
+    RU: "Отметьте место на карте.",
+    EN: "Mark the location on the map.",
+    KZ: "Картадан орынды белгілеңіз.",
+  },
+  projectSubmitErrorPhotos: {
+    RU: "Добавьте хотя бы одну фотографию.",
+    EN: "Add at least one photo.",
+    KZ: "Кемінде бір фото қосыңыз.",
+  },
+  projectSubmitErrorCity: {
+    RU: "Сначала выберите город.",
+    EN: "Select a city first.",
+    KZ: "Алдымен қаланы таңдаңыз.",
+  },
+  projectSubmitErrorMissingId: {
+    RU: "Не удалось получить id проекта.",
+    EN: "Project id is missing.",
+    KZ: "Жоба id алынбады.",
+  },
+  projectSubmitErrorGeneric: {
+    RU: "Не удалось создать проект.",
+    EN: "Failed to create the project.",
+    KZ: "Жобаны құру сәтсіз аяқталды.",
+  },
+  locationResolving: {
+    RU: "Определяем адрес…",
+    EN: "Resolving location…",
+    KZ: "Мекенжай анықталуда…",
+  },
+  openIn2Gis: {
+    RU: "Открыть в 2GIS",
+    EN: "Open in 2GIS",
+    KZ: "2GIS-та ашу",
+  },
   enterAddressOrSelectOnMap: {
     RU: "Введите адрес или выберите на карте",
     EN: "Enter address or select on map",

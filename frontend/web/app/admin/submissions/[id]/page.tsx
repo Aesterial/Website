@@ -48,6 +48,8 @@ import {
   type Submission,
   type SubmissionStatus,
 } from "../data";
+import { build2GisLink, formatCoordinates } from "@/lib/location";
+import { useReverseGeocode } from "@/hooks/use-reverse-geocode";
 
 const statusBadgeStyles: Record<SubmissionStatus, string> = {
   pending: "bg-amber-500/10 text-amber-700",
@@ -171,6 +173,8 @@ export default function SubmissionDetailPage({
     setCurrentStatus(submission?.status ?? null);
     setCurrentDeclineReason(submission?.declineReason ?? "");
   }, [submission]);
+  const { label: resolvedLocation, loading: resolvedLocationLoading } =
+    useReverseGeocode(submission?.coordinates ?? null);
 
   if (isLoading) {
     return (
@@ -222,6 +226,11 @@ export default function SubmissionDetailPage({
     activeStatus === "declined" && Boolean(declineReasonValue);
   const isApproving = actionLoading === "approve";
   const isDeclining = actionLoading === "decline";
+  const locationLabel =
+    resolvedLocation ||
+    (submission.coordinates
+      ? formatCoordinates(submission.coordinates)
+      : submission.location);
 
   const handleApprove = async () => {
     if (activeStatus === "approved") {
@@ -435,7 +444,22 @@ export default function SubmissionDetailPage({
                 <span className="text-muted-foreground">
                   {t("adminSubmissionsInfoLocation")}:
                 </span>
-                <span className="font-semibold">{submission.location}</span>
+                <span className="font-semibold">{locationLabel}</span>
+                {resolvedLocationLoading ? (
+                  <span className="text-xs text-muted-foreground">
+                    {t("locationResolving")}
+                  </span>
+                ) : null}
+                {submission.coordinates ? (
+                  <a
+                    href={build2GisLink(submission.coordinates)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center rounded-full border border-border/70 px-3 py-1 text-xs font-semibold text-foreground transition-colors duration-300 hover:bg-foreground hover:text-background"
+                  >
+                    {t("openIn2Gis")}
+                  </a>
+                ) : null}
               </div>
               <div className="text-xs text-muted-foreground">
                 {t("adminSubmissionsInfoCity")}: {submission.city}

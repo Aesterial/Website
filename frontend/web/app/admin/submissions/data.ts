@@ -4,6 +4,7 @@ import type {
   ApiProjectInfo,
   ApiSubmissionTarget,
 } from "@/lib/api";
+import { formatCoordinates, resolveCoordinates } from "@/lib/location";
 
 export type SubmissionStatus = "approved" | "declined" | "pending";
 
@@ -17,6 +18,7 @@ export type Submission = {
   submittedAt: string;
   location: string;
   city: string;
+  coordinates?: [number, number] | null;
   source: string;
   category: string;
   summary: string;
@@ -174,13 +176,16 @@ export const mapSubmissionTarget = (
   const category = options.resolveCategoryLabel(info?.category);
 
   const location = info?.location ?? null;
+  const coordinates = resolveCoordinates(location);
   const locationParts = [
     location?.street?.trim(),
     location?.house?.trim(),
   ].filter((part): part is string => Boolean(part));
   const locationLabel = locationParts.length
     ? locationParts.join(" ")
-    : UNKNOWN_LABEL;
+    : coordinates
+      ? formatCoordinates(coordinates)
+      : UNKNOWN_LABEL;
   const city = location?.city?.trim() || UNKNOWN_LABEL;
 
   const photos = Array.isArray(info?.photos) ? info?.photos : [];
@@ -209,6 +214,7 @@ export const mapSubmissionTarget = (
     submittedAt: createdAt,
     location: locationLabel,
     city,
+    coordinates,
     source: UNKNOWN_LABEL,
     category,
     summary: toSummary(description),

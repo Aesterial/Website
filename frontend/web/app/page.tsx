@@ -15,10 +15,16 @@ import { GradientButton } from "@/components/gradient-button";
 import { MapLibreMap, type MapMarker } from "@/components/maplibre-map";
 import { useLanguage } from "@/components/language-provider";
 import { fetchTopProjects, type ApiProject } from "@/lib/api";
+import {
+  build2GisLink,
+  formatCoordinates,
+  resolveCoordinates,
+} from "@/lib/location";
 import { ArrowRight, MapPin, Users, Lightbulb } from "lucide-react";
 import type { Variants } from "framer-motion";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/components/auth-provider";
+import { useReverseGeocode } from "@/hooks/use-reverse-geocode";
 
 const art = String.raw`⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⣿⠛⠻⢷⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠈⠛⠷⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -128,56 +134,6 @@ const COORDINATE_JITTER_RANGE = 0.04;
 const normalizeLocation = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
 
-const parseCoordinate = (value: unknown) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const normalized = value.replace(",", ".").trim();
-    if (!normalized) {
-      return null;
-    }
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
-const resolveCoordinates = (
-  location?: Record<string, unknown> | null,
-): [number, number] | null => {
-  if (!location) {
-    return null;
-  }
-  const lat = parseCoordinate(
-    location.lat ?? location.latitude ?? location.y ?? location.latDeg,
-  );
-  const lng = parseCoordinate(
-    location.lng ?? location.lon ?? location.longitude ?? location.x,
-  );
-  if (lat != null && lng != null) {
-    return [lng, lat];
-  }
-
-  const coords = location.coordinates ?? location.coord ?? location.location;
-  if (Array.isArray(coords) && coords.length >= 2) {
-    const first = parseCoordinate(coords[0]);
-    const second = parseCoordinate(coords[1]);
-    if (first != null && second != null) {
-      const isLatFirst = Math.abs(first) <= 90 && Math.abs(second) <= 180;
-      const isLngFirst = Math.abs(first) <= 180 && Math.abs(second) <= 90;
-      if (isLngFirst) {
-        return [first, second];
-      }
-      if (isLatFirst) {
-        return [second, first];
-      }
-    }
-  }
-
-  return null;
-};
-
 const hashSeed = (value: string) => {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
@@ -238,8 +194,13 @@ export default function HomePage() {
     null,
   );
   const [selectedProjectLoading, setSelectedProjectLoading] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] = useState<
+    [number, number] | null
+  >(null);
   const [selectedCity, setSelectedCity] = useState<string>(cities[0] ?? "");
   const projectDetailsCacheRef = useRef(new Map<string, ApiProject>());
+  const { label: resolvedLocation, loading: resolvedLocationLoading } =
+    useReverseGeocode(selectedCoordinates);
   const { t } = useLanguage();
   const { status } = useAuth();
   const currentYear = new Date().getFullYear();
@@ -264,6 +225,7 @@ export default function HomePage() {
     setPopularLoading(true);
     setMapLoading(true);
     setSelectedProject(null);
+    setSelectedCoordinates(null);
     projectDetailsCacheRef.current.clear();
 
     const loadTopProjects = async () => {
@@ -296,7 +258,8 @@ export default function HomePage() {
             | undefined;
 
           const coordinates =
-            resolveCoordinates(location) ?? applyCoordinateJitter(center, id);
+            resolveCoordinates(location ?? null) ??
+            applyCoordinateJitter(center, id);
 
           const marker: MapMarker = {
             id,
@@ -375,12 +338,22 @@ export default function HomePage() {
       return null;
     }
     const info = getProjectInfo(selectedProject);
+    const coordsLabel = selectedCoordinates
+      ? formatCoordinates(selectedCoordinates)
+      : "";
     return {
-      title: info?.title?.trim() || t("ideas"),
+      title: info?.title?.trim() || getPopularAddress(selectedProject),
       description: info?.description?.trim() || t("mapProjectNoDescription"),
-      address: getPopularAddress(selectedProject),
+      address:
+        resolvedLocation || coordsLabel || getPopularAddress(selectedProject),
     };
-  }, [selectedProject, t]);
+  }, [resolvedLocation, selectedCoordinates, selectedProject, t]);
+
+  useEffect(() => {
+    const info = getProjectInfo(selectedProject);
+    const coords = resolveCoordinates(info?.location ?? null);
+    setSelectedCoordinates(coords);
+  }, [selectedProject]);
 
   const hasMapMarkers = mapMarkers.length > 0;
 
@@ -451,9 +424,24 @@ export default function HomePage() {
                       <p className="text-xs text-muted-foreground">
                         {selectedProjectSummary.address}
                       </p>
+                      {resolvedLocationLoading && selectedCoordinates ? (
+                        <p className="text-xs text-muted-foreground">
+                          {t("locationResolving")}
+                        </p>
+                      ) : null}
                       <p className="text-sm text-muted-foreground">
                         {selectedProjectSummary.description}
                       </p>
+                      {selectedCoordinates ? (
+                        <a
+                          href={build2GisLink(selectedCoordinates)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center rounded-full border border-border/70 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors duration-300 hover:bg-foreground hover:text-background"
+                        >
+                          {t("openIn2Gis")}
+                        </a>
+                      ) : null}
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-muted-foreground">

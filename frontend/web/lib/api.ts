@@ -111,6 +111,11 @@ export type ApiProjectLocation = {
   city?: string;
   street?: string;
   house?: string;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+  coordinates?: [number, number] | [string, string];
 };
 
 export type ApiProjectInfo = {
@@ -951,11 +956,16 @@ export type CreateProjectPayload = {
 
 export async function createProject(
   payload: CreateProjectPayload,
-): Promise<void> {
-  await apiRequest("/api/projects/create", {
+): Promise<{ id?: string; tracing?: string }> {
+  const response = await apiRequest<unknown>("/api/projects/create", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  const id = pickProjectId(response);
+  const record = toTicketRecord(response);
+  const tracing =
+    typeof record?.tracing === "string" ? record.tracing.trim() : undefined;
+  return { id: id ?? undefined, tracing };
 }
 
 export async function changeProjectTitle(
@@ -1129,6 +1139,94 @@ export async function createTicket(
     throw new Error("Ticket id is missing.");
   }
   return id;
+}
+
+const pickProjectId = (payload: unknown): string | null => {
+  if (typeof payload === "string" && payload.trim()) {
+    return payload.trim();
+  }
+  if (typeof payload === "number" && Number.isFinite(payload)) {
+    return String(payload);
+  }
+  const record = toTicketRecord(payload);
+  if (!record) {
+    return null;
+  }
+  const candidates = ["id", "projectId", "project_id", "projectID"];
+  for (const key of candidates) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  const nested = toTicketRecord(record.data ?? record.project ?? record.info);
+  if (!nested) {
+    return null;
+  }
+  for (const key of candidates) {
+    const value = nested[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return null;
+};
+
+const buildProjectPhotoKey = (projectId: string, photoId: string) =>
+  `photos/${projectId}/${photoId}`;
+
+const createPhotoId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+export async function uploadProjectPhotos(
+  projectId: string,
+  files: File[],
+): Promise<ApiAvatar[]> {
+  const trimmedId = projectId.trim();
+  if (!trimmedId) {
+    throw new Error("Project id is required.");
+  }
+  const images = files.filter((file) => file.type.startsWith("image/"));
+  if (images.length === 0) {
+    return [];
+  }
+
+  const uploads = images.map(async (file) => {
+    const contentType = file.type || "application/octet-stream";
+    const key = buildProjectPhotoKey(trimmedId, createPhotoId());
+    const presignResponse = await apiRequest<PresignResponse>(
+      `/api/storage/presign/put?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(contentType)}`,
+      {
+        method: "GET",
+      },
+    );
+    const presignUrl = presignResponse?.presign?.trim();
+    if (!presignUrl) {
+      throw new Error("Photo upload URL is missing.");
+    }
+    const uploadResponse = await fetch(presignUrl, {
+      method: "PUT",
+      body: file,
+      credentials: "omit",
+      headers: contentType ? { "Content-Type": contentType } : undefined,
+    });
+    if (!uploadResponse.ok) {
+      throw new Error(`Photo upload failed (${uploadResponse.status}).`);
+    }
+    return { key, contentType };
+  });
+
+  return Promise.all(uploads);
 }
 
 export async function fetchTicketInfo(
