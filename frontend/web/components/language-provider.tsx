@@ -1633,6 +1633,16 @@ export const translations: Translations = {
     EN: "Inactive users",
     KZ: "\u0411\u0435\u043b\u0441\u0435\u043d\u0434\u0456 \u0435\u043c\u0435\u0441 \u043f\u0430\u0439\u0434\u0430\u043b\u0430\u043d\u0443\u0448\u044b\u043b\u0430\u0440",
   },
+  adminStatsActiveUsersShort: {
+    RU: "\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435",
+    EN: "Active",
+    KZ: "\u0411\u0435\u043b\u0441\u0435\u043d\u0434\u0456",
+  },
+  adminStatsOfflineUsersShort: {
+    RU: "\u041d\u0435\u0430\u043a\u0442\u0438\u0432\u043d\u044b\u0435",
+    EN: "Inactive",
+    KZ: "\u0411\u0435\u043b\u0441\u0435\u043d\u0434\u0456 \u0435\u043c\u0435\u0441",
+  },
   adminStatsNewIdeas: {
     RU: "\u041d\u043e\u0432\u044b\u0435 \u0438\u0434\u0435\u0438",
     EN: "New ideas",
