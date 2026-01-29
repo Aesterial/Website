@@ -2214,21 +2214,37 @@ func (t *TicketsRepository) Accepted(ctx context.Context, id uuid.UUID) (bool, e
 }
 
 func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) error {
-	accepted, err := t.Accepted(ctx, id)
-	if err != nil {
-		return err
-	}
-	if accepted {
-		logger.Debug("ticket already accepted", "")
-		return apperrors.Conflict.AddErrDetails("ticket already accepted")
-	}
-	logger.Debug("ticket not accepted", "")
 	if who == 0 {
 		return apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
-	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET acceptor = $1, accepted = $2, status = $3 WHERE id = $4", who, time.Now(), tickets.InProcessStatus.String(), id); err != nil {
+	status := tickets.InProcessStatus.String()
+	res, err := t.DB.ExecContext(
+		ctx,
+		"UPDATE tickets SET acceptor = $1, accepted = $2, status = $3 WHERE id = $4 AND status <> $3",
+		who,
+		time.Now(),
+		status,
+		id,
+	)
+	if err != nil {
 		return err
 	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		return nil
+	}
+	var acceptor sql.NullInt64
+	if err := t.DB.QueryRowContext(ctx, "SELECT acceptor FROM tickets WHERE id = $1", id).Scan(&acceptor); err != nil {
+		return err
+	}
+	if acceptor.Valid && uint(acceptor.Int64) == who {
+		return nil
+	}
+	logger.Debug("ticket already accepted", "")
+	return apperrors.Conflict.AddErrDetails("ticket already accepted")
 	return nil
 }
 

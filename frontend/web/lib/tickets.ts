@@ -1,4 +1,4 @@
-﻿import type { ApiTicket, ApiTicketMessage } from "@/lib/api";
+﻿import type { ApiAvatar, ApiTicket, ApiTicketMessage } from "@/lib/api";
 
 export type TicketStatus = "new" | "in_progress" | "closed";
 
@@ -31,6 +31,7 @@ export type TicketMessage = {
   authorRole?: string;
   authorId?: string | number;
   isStaff?: boolean;
+  avatar?: ApiAvatar | null;
 };
 
 type RecordValue = Record<string, unknown>;
@@ -42,6 +43,36 @@ const toRecord = (value: unknown): RecordValue | null =>
 
 const toStringValue = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
+
+const toAvatar = (value: unknown): ApiAvatar | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const payload = value as {
+    contentType?: unknown;
+    content_type?: unknown;
+    data?: unknown;
+    url?: unknown;
+    key?: unknown;
+  };
+  const contentType =
+    (typeof payload.contentType === "string" && payload.contentType.trim()) ||
+    (typeof payload.content_type === "string" && payload.content_type.trim()) ||
+    undefined;
+  const data =
+    typeof payload.data === "string" ? payload.data.trim() : undefined;
+  const url = typeof payload.url === "string" ? payload.url.trim() : undefined;
+  const key = typeof payload.key === "string" ? payload.key.trim() : undefined;
+  if (!contentType && !data && !url && !key) {
+    return null;
+  }
+  return {
+    ...(contentType ? { contentType } : {}),
+    ...(data ? { data } : {}),
+    ...(url ? { url } : {}),
+    ...(key ? { key } : {}),
+  };
+};
 
 const toNumberValue = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -376,6 +407,10 @@ const mapTicketMessage = (
     "owner",
   ]);
   const authorSettings = pickRecord(authorRecord, ["settings", "profile"]);
+  const avatar =
+    toAvatar(authorSettings?.avatar) ??
+    toAvatar(authorRecord?.avatar) ??
+    toAvatar(record.avatar);
   const authorName =
     pickString(record, [
       "authorName",
@@ -430,6 +465,7 @@ const mapTicketMessage = (
     authorRole: authorRole || undefined,
     authorId,
     isStaff,
+    avatar,
   };
 };
 

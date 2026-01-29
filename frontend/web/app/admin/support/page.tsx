@@ -31,6 +31,7 @@ import {
   fetchTicketInfo,
   fetchTicketMessages,
   fetchTickets,
+  ApiError,
 } from "@/lib/api";
 import {
   mapTicket,
@@ -39,7 +40,7 @@ import {
   type TicketMessage,
   type TicketStatus,
 } from "@/lib/tickets";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,6 +103,8 @@ const areMessagesEqual = (prev: TicketMessage[], next: TicketMessage[]) => {
   for (let index = 0; index < prev.length; index += 1) {
     const a = prev[index];
     const b = next[index];
+    const avatarA = a.avatar;
+    const avatarB = b.avatar;
     if (
       a.id !== b.id ||
       a.message !== b.message ||
@@ -109,7 +112,11 @@ const areMessagesEqual = (prev: TicketMessage[], next: TicketMessage[]) => {
       a.authorId !== b.authorId ||
       a.authorName !== b.authorName ||
       a.authorRole !== b.authorRole ||
-      a.isStaff !== b.isStaff
+      a.isStaff !== b.isStaff ||
+      avatarA?.url !== avatarB?.url ||
+      avatarA?.contentType !== avatarB?.contentType ||
+      avatarA?.data !== avatarB?.data ||
+      avatarA?.key !== avatarB?.key
     ) {
       return false;
     }
@@ -494,7 +501,15 @@ export default function AdminSupportPage() {
         loadDetails(selectedTicket.id, undefined, { silent: true }),
       ]);
     } catch (err) {
-      setError("Не удалось принять обращение.");
+      if (err instanceof ApiError && err.status === 409) {
+        setNotice("Обращение уже принято другим администратором.");
+        await Promise.all([
+          loadTickets(undefined, { silent: true }),
+          loadDetails(selectedTicket.id, undefined, { silent: true }),
+        ]);
+      } else {
+        setError("Не удалось принять обращение.");
+      }
     } finally {
       setAccepting(false);
     }
@@ -579,6 +594,21 @@ export default function AdminSupportPage() {
       return parts[0].slice(0, 2).toUpperCase();
     }
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
+
+  const resolveAvatarSrc = (
+    avatar?: { url?: string; contentType?: string; data?: string } | null,
+  ) => {
+    if (!avatar) {
+      return "";
+    }
+    if (avatar.url) {
+      return avatar.url;
+    }
+    if (avatar.contentType && avatar.data) {
+      return `data:${avatar.contentType};base64,${avatar.data}`;
+    }
+    return "";
   };
 
   const selectedStatus = selectedTicket?.status ?? "new";
@@ -714,6 +744,7 @@ export default function AdminSupportPage() {
                 const authorId =
                   message.authorId != null ? String(message.authorId) : "";
                 const canLinkAuthor = Boolean(authorId) && !message.isStaff;
+                const avatarSrc = resolveAvatarSrc(message.avatar);
                 const bubbleClass = isMine
                   ? "bg-foreground text-background"
                   : message.isStaff
@@ -744,6 +775,9 @@ export default function AdminSupportPage() {
                   >
                     {!isMine ? (
                       <Avatar className="h-9 w-9">
+                        {avatarSrc ? (
+                          <AvatarImage src={avatarSrc} alt={authorLabel} />
+                        ) : null}
                         <AvatarFallback
                           className={cn(
                             "text-xs font-semibold",
@@ -799,6 +833,9 @@ export default function AdminSupportPage() {
                     </div>
                     {isMine ? (
                       <Avatar className="h-9 w-9">
+                        {avatarSrc ? (
+                          <AvatarImage src={avatarSrc} alt={authorLabel} />
+                        ) : null}
                         <AvatarFallback
                           className={cn(
                             "text-xs font-semibold",

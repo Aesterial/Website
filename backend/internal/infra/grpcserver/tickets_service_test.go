@@ -9,6 +9,7 @@ import (
 	tickpb "Aesterial/backend/internal/gen/tickets/v1"
 	grpcserver "Aesterial/backend/internal/infra/grpcserver"
 	apperrors "Aesterial/backend/internal/shared/errors"
+
 	"github.com/google/uuid"
 )
 
@@ -64,7 +65,7 @@ func (t *ticketsRepoStub) Close(context.Context, uuid.UUID, ticketsdomain.Ticket
 func TestTicketsServiceCreateSuccess(t *testing.T) {
 	token := "token-1"
 	repo := &ticketsRepoStub{createData: &ticketsdomain.TicketCreationData{ID: uuid.New(), Token: &token}}
-	svc := grpcserver.NewTicketsService(ticketsapp.New(repo), nil, nil)
+	svc := grpcserver.NewTicketsService(ticketsapp.New(repo), nil, nil, nil, nil)
 
 	resp, err := svc.Create(context.Background(), &tickpb.CreateRequest{Name: "Bob", Email: "bob@example.com", Topic: "other", Brief: "help"})
 	if err != nil {
@@ -77,7 +78,7 @@ func TestTicketsServiceCreateSuccess(t *testing.T) {
 
 func TestTicketsServiceMessageCreateRequiresToken(t *testing.T) {
 	repo := &ticketsRepoStub{}
-	svc := grpcserver.NewTicketsService(ticketsapp.New(repo), nil, nil)
+	svc := grpcserver.NewTicketsService(ticketsapp.New(repo), nil, nil, nil, nil)
 
 	_, err := svc.MessageCreate(context.Background(), &tickpb.TicketMessageCreate{Id: uuid.New().String()})
 	assertAppError(t, err, apperrors.RequiredDataMissing)

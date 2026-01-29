@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/auth-provider";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/components/language-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   closeTicket,
   createTicketMessage,
@@ -458,6 +458,21 @@ export default function SupportTicketPage() {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   };
 
+  const resolveAvatarSrc = (
+    avatar?: { url?: string; contentType?: string; data?: string } | null,
+  ) => {
+    if (!avatar) {
+      return "";
+    }
+    if (avatar.url) {
+      return avatar.url;
+    }
+    if (avatar.contentType && avatar.data) {
+      return `data:${avatar.contentType};base64,${avatar.data}`;
+    }
+    return "";
+  };
+
   const currentUserId = user?.uid;
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -572,6 +587,7 @@ export default function SupportTicketPage() {
                 const authorId =
                   message.authorId != null ? String(message.authorId) : "";
                 const canLinkAuthor = Boolean(authorId) && !message.isStaff;
+                const avatarSrc = resolveAvatarSrc(message.avatar);
                 const bubbleClass = isMine
                   ? "bg-foreground text-background"
                   : message.isStaff
@@ -602,6 +618,9 @@ export default function SupportTicketPage() {
                   >
                     {!isMine ? (
                       <Avatar className="h-9 w-9">
+                        {avatarSrc ? (
+                          <AvatarImage src={avatarSrc} alt={authorLabel} />
+                        ) : null}
                         <AvatarFallback
                           className={cn(
                             "text-xs font-semibold",
@@ -657,6 +676,9 @@ export default function SupportTicketPage() {
                     </div>
                     {isMine ? (
                       <Avatar className="h-9 w-9">
+                        {avatarSrc ? (
+                          <AvatarImage src={avatarSrc} alt={authorLabel} />
+                        ) : null}
                         <AvatarFallback
                           className={cn(
                             "text-xs font-semibold",

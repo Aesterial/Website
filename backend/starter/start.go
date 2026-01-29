@@ -160,7 +160,7 @@ func main() {
 	storageServer := grpcserver.NewStorageService(storageService, projectsService)
 	submissionServer := grpcserver.NewSubmissionsService(submissionService, sessionsService, userInfoService, storageService)
 	maintenanceServer := grpcserver.NewMaintenanceService(maintenanceService, sessionsService, userInfoService)
-	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, userInfoService, mailerService)
+	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, userInfoService, mailerService, storageService)
 	ranksServer := grpcserver.NewRanksService(ranksService, sessionsService, userInfoService, storageService)
 	healthServer := grpcserver.NewHealthService()
 

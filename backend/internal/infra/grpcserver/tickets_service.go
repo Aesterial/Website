@@ -4,10 +4,12 @@ import (
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
 	"Aesterial/backend/internal/app/mailer"
+	storageapp "Aesterial/backend/internal/app/storage"
 	"Aesterial/backend/internal/app/tickets"
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	ticketsdomain "Aesterial/backend/internal/domain/tickets"
 	tickpb "Aesterial/backend/internal/gen/tickets/v1"
+	userpb "Aesterial/backend/internal/gen/user/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -21,14 +23,15 @@ import (
 
 type TicketsService struct {
 	tickpb.UnimplementedTicketsServiceServer
-	auth *Authenticator
-	serv *tickets.Service
-	us *userapp.Service
-	mailer *mailer.Service
+	auth    *Authenticator
+	serv    *tickets.Service
+	us      *userapp.Service
+	mailer  *mailer.Service
+	storage *storageapp.Service
 }
 
-func NewTicketsService(s *tickets.Service, sess *sessionsapp.Service, us *userapp.Service, m *mailer.Service) *TicketsService {
-	return &TicketsService{serv: s, us: us, auth: NewAuthenticator(sess, us), mailer: m}
+func NewTicketsService(s *tickets.Service, sess *sessionsapp.Service, us *userapp.Service, m *mailer.Service, storage *storageapp.Service) *TicketsService {
+	return &TicketsService{serv: s, us: us, auth: NewAuthenticator(sess, us), mailer: m, storage: storage}
 }
 
 func (t *TicketsService) hasAccess(ctx context.Context, id uuid.UUID, token *string) (bool, error) {
@@ -52,10 +55,40 @@ func (t *TicketsService) hasAccess(ctx context.Context, id uuid.UUID, token *str
 	}
 	access, err := t.serv.IsReqValid(ctx, id, r)
 	if err != nil {
-		logger.Debug("failed to check is req valid: " + err.Error(), "")
+		logger.Debug("failed to check is req valid: "+err.Error(), "")
 		return false, apperrors.Wrap(err)
 	}
 	return access, nil
+}
+
+func (t *TicketsService) hydrateMessageAuthors(ctx context.Context, list []*tickpb.TicketMessage) {
+	if len(list) == 0 {
+		return
+	}
+	cache := make(map[uint32]*userpb.UserPublic)
+	for _, message := range list {
+		if message == nil || message.Author == nil {
+			continue
+		}
+		uid := message.Author.UserID
+		if uid == 0 || t == nil || t.us == nil {
+			applyPresignedUserAvatarURL(ctx, t.storage, message.Author)
+			continue
+		}
+		if cached, ok := cache[uid]; ok {
+			message.Author = cached
+			continue
+		}
+		user, err := t.us.GetByID(ctx, uint(uid))
+		if err != nil || user == nil {
+			applyPresignedUserAvatarURL(ctx, t.storage, message.Author)
+			continue
+		}
+		public := user.ToPublic()
+		applyPresignedUserAvatarURL(ctx, t.storage, public)
+		cache[uid] = public
+		message.Author = public
+	}
 }
 
 func (t *TicketsService) Create(ctx context.Context, req *tickpb.CreateRequest) (*tickpb.CreateResponse, error) {
@@ -144,7 +177,9 @@ func (t *TicketsService) Messages(ctx context.Context, req *tickpb.TicketInfoReq
 	if err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &tickpb.TicketMessagesResponse{List: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+	protoList := list.ToProto()
+	t.hydrateMessageAuthors(ctx, protoList)
+	return &tickpb.TicketMessagesResponse{List: protoList, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMessageCreate) (*tickpb.EmptyResponse, error) {
@@ -198,14 +233,14 @@ func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMe
 	if dataReq.Staff {
 		ticket, err := t.serv.Info(ctx, id)
 		if err != nil {
-			logger.Debug("failed to receive ticket information: " + err.Error(), "")
+			logger.Debug("failed to receive ticket information: "+err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		var email string
 		if ticket.Creator.Authorized {
 			em, err := t.us.GetEmail(ctx, *ticket.Creator.UID)
 			if err != nil {
-				logger.Debug("Failed to get user email: " + err.Error(), "")
+				logger.Debug("Failed to get user email: "+err.Error(), "")
 				return nil, apperrors.Wrap(err)
 			}
 			email = em.Address
@@ -214,7 +249,7 @@ func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMe
 		}
 		sender, err := t.us.GetUsername(ctx, *dataReq.UID)
 		if err != nil {
-			logger.Debug("failed to get username: " + err.Error(), "")
+			logger.Debug("failed to get username: "+err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		t.mailer.SendTicketMessage(ctx, email, id.String(), sender, req.Content)
@@ -293,6 +328,7 @@ func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInf
 	logger.Info("Accepted ticket", "tickets.accept.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &tickpb.EmptyResponse{Tracing: traceID}, nil
 }
+
 // Только для не авторизованных пользователей
 func (t *TicketsService) IsValid(ctx context.Context, req *tickpb.IsValidRequest) (*tickpb.IsValidResponse, error) {
 	if t == nil || t.serv == nil {
