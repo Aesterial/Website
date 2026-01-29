@@ -193,7 +193,6 @@ export default function HomePage() {
   const [selectedProject, setSelectedProject] = useState<ApiProject | null>(
     null,
   );
-  const [selectedProjectLoading, setSelectedProjectLoading] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<
     [number, number] | null
   >(null);
@@ -276,10 +275,18 @@ export default function HomePage() {
         });
 
         setMapMarkers(markers);
+        projects.forEach((project) => {
+          const id = project.id?.toString();
+          if (id) {
+            projectDetailsCacheRef.current.set(id, project);
+          }
+        });
+        setSelectedProject(projects[0] ?? null);
       } catch {
         if (!controller.signal.aborted) {
           setPopularIdeas([]);
           setMapMarkers([]);
+          setSelectedProject(null);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -294,43 +301,9 @@ export default function HomePage() {
     return () => controller.abort();
   }, [selectedCity]);
 
-  const projectDetailsRequestRef = useRef(0);
-
-  const handleMarkerClick = async (marker: MapMarker) => {
-    const cached = projectDetailsCacheRef.current.get(marker.id);
-    if (cached) {
-      setSelectedProject(cached);
-      return;
-    }
-
-    const requestId = projectDetailsRequestRef.current + 1;
-    projectDetailsRequestRef.current = requestId;
-    setSelectedProjectLoading(true);
-
-    try {
-      const projects = await fetchTopProjects({
-        limit: MAP_PROJECTS_LIMIT,
-        city: selectedCity,
-      });
-      if (projectDetailsRequestRef.current !== requestId) {
-        return;
-      }
-      const match =
-        projects.find((project) => project.id?.toString() === marker.id) ??
-        null;
-      if (match) {
-        projectDetailsCacheRef.current.set(marker.id, match);
-      }
-      setSelectedProject(match);
-    } catch {
-      if (projectDetailsRequestRef.current === requestId) {
-        setSelectedProject(null);
-      }
-    } finally {
-      if (projectDetailsRequestRef.current === requestId) {
-        setSelectedProjectLoading(false);
-      }
-    }
+  const handleMarkerClick = (marker: MapMarker) => {
+    const cached = projectDetailsCacheRef.current.get(marker.id) ?? null;
+    setSelectedProject(cached);
   };
 
   const selectedProjectSummary = useMemo(() => {
@@ -363,7 +336,7 @@ export default function HomePage() {
 
       <section className="pt-24 pb-16 px-4 sm:pt-28 sm:pb-20 sm:px-6 lg:pt-32">
         <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-10 items-center lg:gap-16">
+          <div className="grid lg:grid-cols-2 gap-10 items-start lg:gap-16">
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -411,10 +384,6 @@ export default function HomePage() {
                   {mapLoading ? (
                     <p className="mt-2 text-sm text-muted-foreground">
                       {t("mapProjectsLoading")}
-                    </p>
-                  ) : selectedProjectLoading ? (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {t("mapProjectLoading")}
                     </p>
                   ) : selectedProjectSummary ? (
                     <div className="mt-3 space-y-2">

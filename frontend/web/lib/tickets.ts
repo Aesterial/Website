@@ -199,6 +199,7 @@ const staffRoles = new Set([
   "moderator",
   "support",
   "operator",
+  "system",
 ]);
 
 const isStaffRole = (value: string | undefined): boolean => {

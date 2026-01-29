@@ -51,6 +51,7 @@ import {
   handleBannedUser,
   unbanUser,
   type BanInfo,
+  type ApiAvatar,
 } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/api-base";
 import {
@@ -81,7 +82,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Area,
@@ -111,9 +112,24 @@ const renderNoData = (heightClass: string) => (
   </div>
 );
 
+const resolveAvatarSrc = (
+  avatar?: { url?: string; contentType?: string; data?: string } | null,
+) => {
+  if (!avatar) {
+    return "";
+  }
+  if (avatar.url) {
+    return avatar.url;
+  }
+  if (avatar.contentType && avatar.data) {
+    return `data:${avatar.contentType};base64,${avatar.data}`;
+  }
+  return "";
+};
+
 const ADMIN_CACHE_TTL_MS = 5 * 60 * 1000;
 const ADMIN_STATS_CACHE_PREFIX = "admin.stats.v1";
-const ADMIN_USERS_CACHE_KEY = "admin.users.v1";
+const ADMIN_USERS_CACHE_KEY = "admin.users.v2";
 
 const readAdminCache = <T,>(key: string): T | null => {
   if (typeof window === "undefined") {
@@ -181,6 +197,7 @@ type User = {
   status: UserStatus;
   lastActive: string;
   reports: number;
+  avatar?: ApiAvatar | null;
 };
 
 type SidebarItem = {
@@ -429,6 +446,7 @@ export default function AdminPage() {
 
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
+  const avatarSrc = resolveAvatarSrc(user?.avatar);
 
   const languageOptions = [
     { code: "RU" as const, label: "RU" },
@@ -1171,6 +1189,7 @@ export default function AdminPage() {
               status: isBanned ? "banned" : "active",
               lastActive: formatUserDate(item.joined),
               reports: 0,
+              avatar: item.avatar ?? null,
             };
           });
           setUsers(mapped);
@@ -1573,6 +1592,14 @@ export default function AdminPage() {
                               className="flex items-center gap-3 rounded-full border border-border/60 bg-background/90 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
                             >
                               <Avatar className="h-9 w-9">
+                                {avatarSrc ? (
+                                  <AvatarImage
+                                    src={avatarSrc}
+                                    alt={
+                                      displayName || user?.username || "admin"
+                                    }
+                                  />
+                                ) : null}
                                 <AvatarFallback className="text-xs font-semibold">
                                   {initials}
                                 </AvatarFallback>
@@ -1670,6 +1697,7 @@ export default function AdminPage() {
                               ? t("actionUnblock")
                               : t("actionBlock");
                           const initials = getUserInitials(user.name);
+                          const avatarSrc = resolveAvatarSrc(user.avatar);
 
                           return (
                             <div
@@ -1679,6 +1707,12 @@ export default function AdminPage() {
                               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex items-start gap-3 min-w-0">
                                   <Avatar className="h-10 w-10">
+                                    {avatarSrc ? (
+                                      <AvatarImage
+                                        src={avatarSrc}
+                                        alt={user.name}
+                                      />
+                                    ) : null}
                                     <AvatarFallback className="text-xs font-semibold">
                                       {initials}
                                     </AvatarFallback>

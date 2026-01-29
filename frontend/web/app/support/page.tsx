@@ -15,7 +15,7 @@ import { Header } from "@/components/header";
 import { GradientButton } from "@/components/gradient-button";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
-import { createTicket } from "@/lib/api";
+import { createTicket, createTicketMessage } from "@/lib/api";
 
 type SupportCategoryId =
   | "account_access"
@@ -236,9 +236,9 @@ export default function SupportPage() {
     setIsSubmitting(true);
     try {
       const subject = formData.subject.trim();
-      const message = formData.message.trim();
-      const brief = [subject, message].filter(Boolean).join("\n\n");
-      const id = await createTicket({
+      const content = formData.message.trim();
+      const brief = [subject, content].filter(Boolean).join("\n\n");
+      const { id, token } = await createTicket({
         name:
           formData.name.trim() ||
           user?.displayName ||
@@ -248,6 +248,16 @@ export default function SupportPage() {
         topic: getCategoryLabel(copy, formData.category),
         brief,
       });
+      if (token && typeof window !== "undefined") {
+        window.sessionStorage.setItem(`support.ticket.token.${id}`, token);
+      }
+      if (content) {
+        try {
+          await createTicketMessage(id, content, token ? { token } : undefined);
+        } catch {
+          // Ignore message errors to avoid blocking ticket creation.
+        }
+      }
       router.push(`/support/${encodeURIComponent(id)}`);
     } catch (error) {
       setSubmitError(copy.submitError);

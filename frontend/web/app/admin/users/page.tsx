@@ -23,6 +23,7 @@ import {
   fetchUsers,
   unbanUser,
   type BanInfo,
+  type ApiAvatar,
 } from "@/lib/api";
 import {
   DropdownMenu,
@@ -39,7 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -74,6 +75,7 @@ type User = {
   status: UserStatus;
   lastActive: string;
   reports: number;
+  avatar?: ApiAvatar | null;
 };
 
 type StatusFilter = "all" | UserStatus;
@@ -104,6 +106,21 @@ const getUserInitials = (value: string) => {
     return parts[0].slice(0, 2).toUpperCase();
   }
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+};
+
+const resolveAvatarSrc = (
+  avatar?: { url?: string; contentType?: string; data?: string } | null,
+) => {
+  if (!avatar) {
+    return "";
+  }
+  if (avatar.url) {
+    return avatar.url;
+  }
+  if (avatar.contentType && avatar.data) {
+    return `data:${avatar.contentType};base64,${avatar.data}`;
+  }
+  return "";
 };
 
 const isBanActive = (banInfo: BanInfo | null) => {
@@ -150,6 +167,7 @@ export default function AdminUsersPage() {
   const usersLoadGuardRef = useRef(false);
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
+  const avatarSrc = resolveAvatarSrc(user?.avatar);
   const statusLabels: Record<StatusFilter, string> = {
     all: t("statusAll"),
     active: t("statusActive"),
@@ -247,6 +265,7 @@ export default function AdminUsersPage() {
             status: isBanned ? "banned" : "active",
             lastActive: formatUserDate(item.joined),
             reports: 0,
+            avatar: item.avatar ?? null,
           };
         });
         setUsers(mapped);
@@ -548,6 +567,12 @@ export default function AdminUsersPage() {
                   className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
                 >
                   <Avatar className="h-9 w-9">
+                    {avatarSrc ? (
+                      <AvatarImage
+                        src={avatarSrc}
+                        alt={displayName || user?.username || "admin"}
+                      />
+                    ) : null}
                     <AvatarFallback className="text-xs font-semibold">
                       {initials}
                     </AvatarFallback>
@@ -708,6 +733,7 @@ export default function AdminUsersPage() {
                     ? t("actionUnblock")
                     : t("actionBlock");
                 const initials = getUserInitials(user.name);
+                const rowAvatarSrc = resolveAvatarSrc(user.avatar);
 
                 return (
                   <div
@@ -717,6 +743,9 @@ export default function AdminUsersPage() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="flex items-start gap-3 min-w-0">
                         <Avatar className="h-10 w-10">
+                          {rowAvatarSrc ? (
+                            <AvatarImage src={rowAvatarSrc} alt={user.name} />
+                          ) : null}
                           <AvatarFallback className="text-xs font-semibold">
                             {initials}
                           </AvatarFallback>

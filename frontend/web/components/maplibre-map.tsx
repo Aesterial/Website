@@ -11,7 +11,7 @@ import OSM from "ol/source/OSM";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import { fromLonLat, toLonLat } from "ol/proj";
-import { Circle as CircleStyle, Fill, Stroke, Style } from "ol/style";
+import { Fill, Stroke, Style, Text, RegularShape } from "ol/style";
 import { defaults as defaultControls } from "ol/control";
 import "ol/ol.css";
 
@@ -33,13 +33,50 @@ type MapLibreMapProps = {
 
 const DEFAULT_CENTER: [number, number] = [86.0877, 55.3541];
 
-const markerStyle = new Style({
-  image: new CircleStyle({
-    radius: 6,
-    fill: new Fill({ color: "#111827" }),
-    stroke: new Stroke({ color: "#ffffff", width: 2 }),
-  }),
-});
+const markerStyleCache = new Map<string, Style>();
+
+const formatMarkerTitle = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (trimmed.length <= 28) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, 26).trimEnd()}…`;
+};
+
+const getMarkerStyle = (title: string) => {
+  const label = formatMarkerTitle(title);
+  const cacheKey = label || "__default";
+  const cached = markerStyleCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const style = new Style({
+    image: new RegularShape({
+      points: 3,
+      radius: 10,
+      rotation: Math.PI / 2,
+      fill: new Fill({ color: "#111827" }),
+      stroke: new Stroke({ color: "#ffffff", width: 2 }),
+    }),
+    text: label
+      ? new Text({
+          text: label,
+          font: "600 12px system-ui, -apple-system, 'Segoe UI', sans-serif",
+          offsetY: -18,
+          textAlign: "center",
+          textBaseline: "bottom",
+          fill: new Fill({ color: "#111827" }),
+          backgroundFill: new Fill({ color: "rgba(255, 255, 255, 0.92)" }),
+          padding: [2, 6, 2, 6],
+        })
+      : undefined,
+  });
+  markerStyleCache.set(cacheKey, style);
+  return style;
+};
 
 export function MapLibreMap({
   center = DEFAULT_CENTER,
@@ -75,7 +112,6 @@ export function MapLibreMap({
     const markerSource = new VectorSource();
     const markerLayer = new VectorLayer({
       source: markerSource,
-      style: markerStyle,
     });
 
     const map = new Map({
@@ -166,6 +202,7 @@ export function MapLibreMap({
         geometry: new Point(fromLonLat(markerData.coordinates)),
       });
       feature.set("marker", markerData);
+      feature.setStyle(getMarkerStyle(markerData.title));
       source.addFeature(feature);
     });
   }, [markers]);

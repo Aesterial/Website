@@ -30,7 +30,7 @@ import { useAuth } from "./auth-provider";
 import { useLanguage } from "./language-provider";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +79,17 @@ const getInitials = (value: string) => {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
+const resolveAvatarSrc = (
+  avatar?: { url?: string; contentType?: string; data?: string } | null,
+) => {
+  if (!avatar) return "";
+  if (avatar.url) return avatar.url;
+  if (avatar.contentType && avatar.data) {
+    return `data:${avatar.contentType};base64,${avatar.data}`;
+  }
+  return "";
+};
+
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
@@ -100,6 +111,7 @@ export function Header() {
 
   const displayName = user?.displayName || user?.username || "";
   const avatarLabel = getInitials(displayName || user?.username || "User");
+  const avatarSrc = resolveAvatarSrc(user?.avatar);
 
   const handleLogout = async () => {
     await logout();
@@ -597,6 +609,12 @@ export function Header() {
                     aria-label="Account menu"
                   >
                     <Avatar className="h-8 w-8 shrink-0">
+                      {avatarSrc ? (
+                        <AvatarImage
+                          src={avatarSrc}
+                          alt={displayName || user.username}
+                        />
+                      ) : null}
                       <AvatarFallback className="text-xs font-semibold">
                         {avatarLabel}
                       </AvatarFallback>

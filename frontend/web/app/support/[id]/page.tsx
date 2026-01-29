@@ -187,7 +187,6 @@ const copyByLanguage = {
   },
 } as const;
 
-
 const resolveLocale = (language: string) =>
   language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
 
@@ -246,6 +245,18 @@ export default function SupportTicketPage() {
 
   const ticketId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const isDialogView = searchParams?.get("dialog") === "1";
+  const ticketToken = useMemo(() => {
+    if (!ticketId || typeof window === "undefined") {
+      return undefined;
+    }
+    const storedKey = `support.ticket.token.${ticketId}`;
+    const paramToken = searchParams?.get("token")?.trim();
+    if (paramToken) {
+      window.sessionStorage.setItem(storedKey, paramToken);
+      return paramToken;
+    }
+    return window.sessionStorage.getItem(storedKey) ?? undefined;
+  }, [searchParams, ticketId]);
 
   const copy = useMemo(
     () => copyByLanguage[language] ?? copyByLanguage.RU,
@@ -287,8 +298,8 @@ export default function SupportTicketPage() {
       }
       try {
         const [info, list] = await Promise.all([
-          fetchTicketInfo(ticketId, { signal }),
-          fetchTicketMessages(ticketId, { signal }),
+          fetchTicketInfo(ticketId, { signal, token: ticketToken }),
+          fetchTicketMessages(ticketId, { signal, token: ticketToken }),
         ]);
         if (signal?.aborted) {
           return;
@@ -312,7 +323,7 @@ export default function SupportTicketPage() {
         }
       }
     },
-    [ticketId, copy],
+    [ticketId, copy, ticketToken],
   );
 
   useEffect(() => {
@@ -386,7 +397,11 @@ export default function SupportTicketPage() {
     setSending(true);
     setError(null);
     try {
-      await createTicketMessage(ticketId, trimmed);
+      await createTicketMessage(
+        ticketId,
+        trimmed,
+        ticketToken ? { token: ticketToken } : undefined,
+      );
       setMessageText("");
       await loadTicket(undefined, { silent: true });
     } catch (err) {

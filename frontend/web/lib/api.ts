@@ -252,6 +252,7 @@ export type UserListItem = {
   userID: number;
   username: string;
   displayName?: string;
+  avatar?: ApiAvatar | null;
   banned: boolean;
   rank?: ApiRank | null;
   joined?: string;
@@ -610,6 +611,7 @@ function toUserListItem(payload: ApiUserPublic): UserListItem | null {
   const settings = payload.settings ?? undefined;
   const displayName =
     settings?.display_name ?? settings?.displayName ?? undefined;
+  const avatar = toAvatar(settings?.avatar) ?? null;
   const joined = payload.joined ?? payload.joinedAt;
   const banned = payload.banned ?? false;
 
@@ -617,6 +619,7 @@ function toUserListItem(payload: ApiUserPublic): UserListItem | null {
     userID,
     username,
     displayName,
+    avatar,
     banned,
     rank: payload.rank ?? undefined,
     joined,
@@ -1277,9 +1280,39 @@ const pickTicketId = (payload: unknown): string | null => {
   return null;
 };
 
+type TicketCreateResult = {
+  id: string;
+  token?: string;
+};
+
+const pickTicketToken = (payload: unknown): string | null => {
+  const record = toTicketRecord(payload);
+  if (!record) {
+    return null;
+  }
+  const candidates = ["token", "requestorToken", "requestor_token"];
+  for (const key of candidates) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  const nested = toTicketRecord(record.data ?? record.ticket ?? record.info);
+  if (!nested) {
+    return null;
+  }
+  for (const key of candidates) {
+    const value = nested[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return null;
+};
+
 export async function createTicket(
   payload: CreateTicketPayload,
-): Promise<string> {
+): Promise<TicketCreateResult> {
   const topic = payload.topic.trim();
   const brief = payload.brief.trim();
   if (!topic) {
@@ -1306,7 +1339,8 @@ export async function createTicket(
   if (!id) {
     throw new Error("Ticket id is missing.");
   }
-  return id;
+  const token = pickTicketToken(response) ?? undefined;
+  return { id, token };
 }
 
 const pickProjectId = (payload: unknown): string | null => {
@@ -1399,13 +1433,19 @@ export async function uploadProjectPhotos(
 
 export async function fetchTicketInfo(
   id: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; token?: string },
 ): Promise<ApiTicket | null> {
   const encoded = encodeURIComponent(id);
-  const payload = await apiRequest<unknown>(`/api/tickets/${encoded}/info`, {
-    method: "GET",
-    signal: options?.signal,
-  });
+  const query = options?.token
+    ? `?token=${encodeURIComponent(options.token)}`
+    : "";
+  const payload = await apiRequest<unknown>(
+    `/api/tickets/${encoded}/info${query}`,
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
   const record = toTicketRecord(payload);
   if (!record) {
     return null;
@@ -1417,11 +1457,14 @@ export async function fetchTicketInfo(
 
 export async function fetchTicketMessages(
   id: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; token?: string },
 ): Promise<ApiTicketMessage[]> {
   const encoded = encodeURIComponent(id);
+  const query = options?.token
+    ? `?token=${encodeURIComponent(options.token)}`
+    : "";
   const payload = await apiRequest<unknown>(
-    `/api/tickets/${encoded}/messages/list`,
+    `/api/tickets/${encoded}/messages/list${query}`,
     {
       method: "GET",
       signal: options?.signal,
@@ -1457,15 +1500,20 @@ export async function fetchTicketMessages(
 export async function createTicketMessage(
   id: string,
   message: string,
+  options?: { token?: string },
 ): Promise<void> {
   const trimmed = message.trim();
   if (!trimmed) {
     throw new Error("Ticket message is required.");
   }
   const encoded = encodeURIComponent(id);
+  const body: Record<string, unknown> = { content: trimmed };
+  if (options?.token) {
+    body.token = options.token;
+  }
   await apiRequest(`/api/tickets/${encoded}/messages/create`, {
     method: "POST",
-    body: JSON.stringify({ content: trimmed }),
+    body: JSON.stringify(body),
   });
 }
 

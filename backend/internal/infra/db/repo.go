@@ -2133,6 +2133,8 @@ func (m *MaintenanceRepository) GetList(ctx context.Context) (maintenance.Inform
 
 var _ tickets.Repository = (*TicketsRepository)(nil)
 
+const defaultTicketSystemMessage = "Ticket created. We'll respond soon."
+
 func (t *TicketsRepository) Create(ctx context.Context, data tickets.TicketCreationRequestor, topic tickets.TicketTopic, brief string) (*tickets.TicketCreationData, error) {
 	if topic == "" || !topic.Valid() {
 		logger.Debug(fmt.Sprintf("topic: %s, brief: %s", topic.String(), brief), "")
@@ -2168,6 +2170,15 @@ func (t *TicketsRepository) Create(ctx context.Context, data tickets.TicketCreat
 			return nil, err
 		}
 		data.Token = &token
+	}
+	if _, err := t.DB.ExecContext(
+		ctx,
+		"INSERT INTO ticket_messages (ticket, author_type, content) VALUES ($1, $2, $3)",
+		id,
+		tickets.AuthorSystem.String(),
+		defaultTicketSystemMessage,
+	); err != nil {
+		logger.Debug("failed to create system ticket message: "+err.Error(), "")
 	}
 	return &tickets.TicketCreationData{ID: id, Token: data.Token}, nil
 }
@@ -2384,7 +2395,7 @@ func (t *TicketsRepository) parseMessage(scanner scanner) (*tickets.TicketMessag
 
 func (t *TicketsRepository) Messages(ctx context.Context, id uuid.UUID) (tickets.TicketMessages, error) {
 	var messages tickets.TicketMessages
-	rows, err := t.DB.QueryContext(ctx, "SELECT m.* FROM ticket_messages m WHERE m.ticket = $1", id)
+	rows, err := t.DB.QueryContext(ctx, "SELECT m.* FROM ticket_messages m WHERE m.ticket = $1 ORDER BY m.at ASC, m.id ASC", id)
 	if err != nil {
 		return nil, err
 	}
@@ -2619,7 +2630,7 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 	}
 	exists, err := r.IsExists(ctx, rank)
 	if err != nil {
-		logger.Debug("failed to check is exists: " + err.Error(), "")
+		logger.Debug("failed to check is exists: "+err.Error(), "")
 		return apperrors.ServerError
 	}
 	if !exists {
