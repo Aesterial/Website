@@ -37,4 +37,14 @@ type Repository interface {
 	Perms(ctx context.Context, uid uint) (*permissions.Permissions, error)
 	ChangePerms(ctx context.Context, uid uint, perm permissions.Permission, state bool) error
 	SetRank(ctx context.Context, uid uint, rank string, expires *time.Time) error
+	SetCodeUsed(ctx context.Context, hash string) error
+	GetRecoveryCodes(ctx context.Context, uid uint) ([]string, error)
+	CascadeRecoveryCodes(ctx context.Context, uid uint, codes []string) error
+	AppendRecoveryCodes(ctx context.Context, uid uint, cds []string) error
+	SetConfirmed(ctx context.Context, uid uint) error
+	SetPendingTOTP(ctx context.Context, uid uint, pending string) error
+	GetPendingTOTP(ctx context.Context, uid uint) (*string, error) 
+	IsTOTPEnabled(ctx context.Context, uid uint) (bool, error)
+	ResetTOTP(ctx context.Context, uid uint) error
+	IsValidRecovery(ctx context.Context, uid uint, code string) (bool, error)
 }

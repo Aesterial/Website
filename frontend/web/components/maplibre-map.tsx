@@ -2,17 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Map from "ol/Map";
-import View from "ol/View";
-import TileLayer from "ol/layer/Tile";
-import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
-import OSM from "ol/source/OSM";
-import Feature from "ol/Feature";
-import Point from "ol/geom/Point";
-import { fromLonLat, toLonLat } from "ol/proj";
-import { Fill, Stroke, Style, Text, RegularShape } from "ol/style";
-import { defaults as defaultControls } from "ol/control";
+import type OlMap from "ol/Map";
+import type VectorSource from "ol/source/Vector";
+import type { Style as OlStyle } from "ol/style";
 import "ol/ol.css";
 
 export type MapMarker = {
@@ -33,7 +25,73 @@ type MapLibreMapProps = {
 
 const DEFAULT_CENTER: [number, number] = [86.0877, 55.3541];
 
-const markerStyleCache = new Map<string, Style>();
+type OlModules = {
+  Map: typeof import("ol/Map").default;
+  View: typeof import("ol/View").default;
+  TileLayer: typeof import("ol/layer/Tile").default;
+  VectorLayer: typeof import("ol/layer/Vector").default;
+  VectorSource: typeof import("ol/source/Vector").default;
+  OSM: typeof import("ol/source/OSM").default;
+  Feature: typeof import("ol/Feature").default;
+  Point: typeof import("ol/geom/Point").default;
+  fromLonLat: typeof import("ol/proj").fromLonLat;
+  toLonLat: typeof import("ol/proj").toLonLat;
+  Fill: typeof import("ol/style").Fill;
+  Stroke: typeof import("ol/style").Stroke;
+  Style: typeof import("ol/style").Style;
+  Text: typeof import("ol/style").Text;
+  RegularShape: typeof import("ol/style").RegularShape;
+  defaultControls: typeof import("ol/control").defaults;
+};
+
+const markerStyleCache = new Map<string, OlStyle>();
+
+const loadOlModules = async (): Promise<OlModules> => {
+  const [
+    mapModule,
+    viewModule,
+    tileLayerModule,
+    vectorLayerModule,
+    vectorSourceModule,
+    osmModule,
+    featureModule,
+    pointModule,
+    projModule,
+    styleModule,
+    controlModule,
+  ] = await Promise.all([
+    import("ol/Map"),
+    import("ol/View"),
+    import("ol/layer/Tile"),
+    import("ol/layer/Vector"),
+    import("ol/source/Vector"),
+    import("ol/source/OSM"),
+    import("ol/Feature"),
+    import("ol/geom/Point"),
+    import("ol/proj"),
+    import("ol/style"),
+    import("ol/control"),
+  ]);
+
+  return {
+    Map: mapModule.default,
+    View: viewModule.default,
+    TileLayer: tileLayerModule.default,
+    VectorLayer: vectorLayerModule.default,
+    VectorSource: vectorSourceModule.default,
+    OSM: osmModule.default,
+    Feature: featureModule.default,
+    Point: pointModule.default,
+    fromLonLat: projModule.fromLonLat,
+    toLonLat: projModule.toLonLat,
+    Fill: styleModule.Fill,
+    Stroke: styleModule.Stroke,
+    Style: styleModule.Style,
+    Text: styleModule.Text,
+    RegularShape: styleModule.RegularShape,
+    defaultControls: controlModule.defaults,
+  };
+};
 
 const formatMarkerTitle = (value: string) => {
   const trimmed = value.trim();
@@ -46,30 +104,30 @@ const formatMarkerTitle = (value: string) => {
   return `${trimmed.slice(0, 26).trimEnd()}…`;
 };
 
-const getMarkerStyle = (title: string) => {
+const getMarkerStyle = (ol: OlModules, title: string) => {
   const label = formatMarkerTitle(title);
   const cacheKey = label || "__default";
   const cached = markerStyleCache.get(cacheKey);
   if (cached) {
     return cached;
   }
-  const style = new Style({
-    image: new RegularShape({
+  const style = new ol.Style({
+    image: new ol.RegularShape({
       points: 3,
       radius: 10,
       rotation: Math.PI / 2,
-      fill: new Fill({ color: "#111827" }),
-      stroke: new Stroke({ color: "#ffffff", width: 2 }),
+      fill: new ol.Fill({ color: "#111827" }),
+      stroke: new ol.Stroke({ color: "#ffffff", width: 2 }),
     }),
     text: label
-      ? new Text({
+      ? new ol.Text({
           text: label,
           font: "600 12px system-ui, -apple-system, 'Segoe UI', sans-serif",
           offsetY: -18,
           textAlign: "center",
           textBaseline: "bottom",
-          fill: new Fill({ color: "#111827" }),
-          backgroundFill: new Fill({ color: "rgba(255, 255, 255, 0.92)" }),
+          fill: new ol.Fill({ color: "#111827" }),
+          backgroundFill: new ol.Fill({ color: "rgba(255, 255, 255, 0.92)" }),
           padding: [2, 6, 2, 6],
         })
       : undefined,
@@ -87,8 +145,9 @@ export function MapLibreMap({
   onMapClick,
 }: MapLibreMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<Map | null>(null);
+  const mapRef = useRef<OlMap | null>(null);
   const markerSourceRef = useRef<VectorSource | null>(null);
+  const [ol, setOl] = useState<OlModules | null>(null);
 
   const onMarkerClickRef = useRef(onMarkerClick);
   const onMapClickRef = useRef(onMapClick);
@@ -97,31 +156,57 @@ export function MapLibreMap({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
+    if (typeof window === "undefined") {
+      return () => {
+        active = false;
+      };
+    }
+
+    loadOlModules()
+      .then((modules) => {
+        if (active) {
+          setOl(modules);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLoadError("Map failed to load. Please try again.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     onMarkerClickRef.current = onMarkerClick;
     onMapClickRef.current = onMapClick;
   }, [onMarkerClick, onMapClick]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current || !ol) return;
 
-    const tileSource = new OSM();
+    const tileSource = new ol.OSM();
     tileSource.on("tileloaderror", () => {
       setLoadError("Map tiles failed to load. Check your connection.");
     });
 
-    const markerSource = new VectorSource();
-    const markerLayer = new VectorLayer({
+    const markerSource = new ol.VectorSource();
+    const markerLayer = new ol.VectorLayer({
       source: markerSource,
     });
 
-    const map = new Map({
+    const map = new ol.Map({
       target: mapContainerRef.current,
-      layers: [new TileLayer({ source: tileSource }), markerLayer],
-      view: new View({
-        center: fromLonLat(center),
+      layers: [new ol.TileLayer({ source: tileSource }), markerLayer],
+      view: new ol.View({
+        center: ol.fromLonLat(center),
         zoom,
       }),
-      controls: defaultControls({
+      controls: ol.defaultControls({
         attribution: false,
         rotate: false,
         zoom: true,
@@ -157,7 +242,7 @@ export function MapLibreMap({
       }
 
       if (onMapClickRef.current) {
-        const [lng, lat] = toLonLat(event.coordinate);
+        const [lng, lat] = ol.toLonLat(event.coordinate);
         onMapClickRef.current([lng, lat]);
       }
     });
@@ -177,35 +262,35 @@ export function MapLibreMap({
       markerSourceRef.current = null;
       setIsLoaded(false);
     };
-  }, []);
+  }, [center, zoom, ol]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !ol) return;
 
     const view = map.getView();
     view.animate({
-      center: fromLonLat(center),
+      center: ol.fromLonLat(center),
       zoom,
       duration: 800,
     });
-  }, [center, zoom]);
+  }, [center, zoom, ol]);
 
   useEffect(() => {
     const source = markerSourceRef.current;
-    if (!source) return;
+    if (!source || !ol) return;
 
     source.clear(true);
 
     markers.forEach((markerData) => {
-      const feature = new Feature({
-        geometry: new Point(fromLonLat(markerData.coordinates)),
+      const feature = new ol.Feature({
+        geometry: new ol.Point(ol.fromLonLat(markerData.coordinates)),
       });
       feature.set("marker", markerData);
-      feature.setStyle(getMarkerStyle(markerData.title));
+      feature.setStyle(getMarkerStyle(ol, markerData.title));
       source.addFeature(feature);
     });
-  }, [markers]);
+  }, [markers, ol]);
 
   return (
     <motion.div

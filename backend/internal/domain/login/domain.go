@@ -18,3 +18,9 @@ func (r RegisterRequire) IsEmpty() bool {
 func (a AuthorizationRequire) IsEmpty() bool {
 	return a.Usermail == "" || a.Password == ""
 }
+
+type TOTPData struct {
+	QR     string
+	URL    string
+	Secret string
+}

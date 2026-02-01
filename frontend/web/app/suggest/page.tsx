@@ -9,7 +9,16 @@ import { Header } from "@/components/header";
 import { useAuth } from "@/components/auth-provider";
 import { GradientButton } from "@/components/gradient-button";
 import { MapLibreMap } from "@/components/maplibre-map";
-import { Upload, X, MapPin, Camera, FileText, ListFilter } from "lucide-react";
+import {
+  Upload,
+  X,
+  MapPin,
+  Camera,
+  FileText,
+  ListFilter,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import { cities, type City } from "@/components/header";
 import { createProject, uploadProjectPhotos } from "@/lib/api";
@@ -49,6 +58,7 @@ const getStoredCity = () => {
 export default function SuggestPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<SuggestCategoryId>("improvement");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [mapSelection, setMapSelection] = useState<[number, number] | null>(
@@ -59,6 +69,8 @@ export default function SuggestPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const imagesRef = useRef<SelectedImage[]>([]);
+  const categoryDropdownRef = useRef<HTMLDivElement | null>(null);
+  const categoryListRef = useRef<HTMLUListElement | null>(null);
   const { status } = useAuth();
   const { t } = useLanguage();
   const categoryOptions = [
@@ -69,6 +81,9 @@ export default function SuggestPage() {
     { id: "parks", label: t("parksAndSquares") },
     { id: "other", label: t("other") },
   ] as const;
+  const selectedCategoryLabel =
+    categoryOptions.find((option) => option.id === category)?.label ??
+    t("category");
 
   useEffect(() => {
     setSelectedCity(getStoredCity());
@@ -83,6 +98,57 @@ export default function SuggestPage() {
       imagesRef.current.forEach((image) => URL.revokeObjectURL(image.preview));
     };
   }, []);
+
+  useEffect(() => {
+    if (!isCategoryOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!categoryDropdownRef.current?.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCategoryOpen]);
+
+  useEffect(() => {
+    if (!isCategoryOpen) {
+      return;
+    }
+
+    const list = categoryListRef.current;
+    if (!list) {
+      return;
+    }
+
+    const escapeValue =
+      typeof CSS !== "undefined" && typeof CSS.escape === "function"
+        ? CSS.escape
+        : (value: string) => value.replace(/"/g, '\\"');
+    const selected = list.querySelector(
+      `[data-value="${escapeValue(category)}"]`,
+    ) as HTMLElement | null;
+
+    if (selected) {
+      requestAnimationFrame(() => {
+        selected.scrollIntoView({ block: "nearest" });
+      });
+    }
+  }, [isCategoryOpen, category]);
 
   const addImages = useCallback((files: File[]) => {
     const next = files
@@ -270,19 +336,64 @@ export default function SuggestPage() {
                     <ListFilter className="w-4 h-4 inline mr-2" />
                     {t("category")}
                   </label>
-                  <select
-                    value={category}
-                    onChange={(event) =>
-                      setCategory(event.target.value as SuggestCategoryId)
-                    }
-                    className="w-full bg-card border border-border rounded-2xl py-3 px-5 text-sm font-semibold text-foreground/90 focus:outline-none sm:py-4"
-                  >
-                    {categoryOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative" ref={categoryDropdownRef}>
+                    <ListFilter className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <button
+                      type="button"
+                      aria-haspopup="listbox"
+                      aria-expanded={isCategoryOpen}
+                      onClick={() => setIsCategoryOpen((prev) => !prev)}
+                      className="w-full rounded-2xl border border-border/60 bg-card px-10 py-3 text-left text-sm font-semibold text-foreground/90 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-foreground/20 sm:py-4"
+                    >
+                      {selectedCategoryLabel}
+                    </button>
+                    <ChevronDown
+                      className={`pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform ${
+                        isCategoryOpen ? "rotate-180" : "rotate-0"
+                      }`}
+                    />
+                    <ul
+                      ref={categoryListRef}
+                      role="listbox"
+                      aria-hidden={!isCategoryOpen}
+                      className={`absolute left-0 right-0 z-20 mt-2 max-h-60 origin-top overflow-auto rounded-2xl border border-border/60 bg-card/95 p-1 shadow-[0_18px_40px_-32px_rgba(0,0,0,0.55)] backdrop-blur transition duration-150 ease-out ${
+                        isCategoryOpen
+                          ? "pointer-events-auto scale-100 opacity-100"
+                          : "pointer-events-none scale-95 opacity-0"
+                      }`}
+                    >
+                      {categoryOptions.map((option) => {
+                        const isSelected = category === option.id;
+                        return (
+                          <li key={option.id} role="presentation">
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              data-value={option.id}
+                              onClick={() => {
+                                setCategory(option.id);
+                                setIsCategoryOpen(false);
+                              }}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                                isSelected
+                                  ? "bg-foreground/10"
+                                  : "hover:bg-foreground/10"
+                              }`}
+                            >
+                              <span className="truncate">{option.label}</span>
+                              {isSelected ? (
+                                <Check
+                                  aria-hidden="true"
+                                  className="h-4 w-4 text-foreground"
+                                />
+                              ) : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
 
                 <div>

@@ -868,6 +868,143 @@ func (u *UserRepository) SetRank(ctx context.Context, uid uint, rank string, exp
 	return nil
 }
 
+func (u *UserRepository) IsTOTPEnabled(ctx context.Context, uid uint) (bool, error) {
+	if uid == 0 {
+		return false, apperrors.InvalidArguments
+	}
+	var enabled bool
+	if err := u.DB.QueryRowContext(ctx, "SELECT totp_enabled FROM users WHERE uid = $1", uid).Scan(&enabled); err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+func (u *UserRepository) GetPendingTOTP(ctx context.Context, uid uint) (*string, error) {
+	if uid == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	var code sql.NullString
+	if err := u.DB.QueryRowContext(ctx, "SELECT totp_pending_secret FROM users WHERE uid = $1", uid).Scan(&code); err != nil {
+		return nil, err
+	}
+	if !code.Valid {
+		return nil, apperrors.RecordNotFound
+	}
+	return &code.String, nil
+}
+
+func (u *UserRepository) SetPendingTOTP(ctx context.Context, uid uint, pending string) error {
+	if uid == 0 || pending == "" {
+		return apperrors.InvalidArguments
+	}
+	if _, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_pending_secret = $1, totp_pending_created_at = $2 WHERE uid = $3", pending, time.Now(), uid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserRepository) SetConfirmed(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments
+	}
+	if _, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_enabled = true, totp_secret = totp_pending_secret, totp_pending_secret = NULL, totp_last_step = NULL, totp_confirmed_at = now(), totp_pending_created_at = NULL WHERE uid = $1", uid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserRepository) AppendRecoveryCodes(ctx context.Context, uid uint, cds []string) error {
+	codes, err := u.GetRecoveryCodes(ctx, uid)
+	if err != nil {
+		return err
+	}
+	if err := u.CascadeRecoveryCodes(ctx, uid, codes); err != nil {
+		return err
+	}
+	for _, code := range cds {
+		if code != "" {
+			if _, err := u.DB.ExecContext(ctx, "INSERT INTO users_recovery_codes (user_id, code_hash) VALUES ($1, $2)", uid, code); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (u *UserRepository) CascadeRecoveryCodes(ctx context.Context, uid uint, codes []string) error {
+	for _, code := range codes {
+		if code != "" {
+			if _, err := u.DB.ExecContext(ctx, "DELETE FROM users_recovery_codes WHERE user_id = $1 AND code_hash = $2", uid, code); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (u *UserRepository) GetRecoveryCodes(ctx context.Context, uid uint) ([]string, error) {
+	var codes []string
+	rows, err := u.DB.QueryContext(ctx, "SELECT code_hash FROM users_recovery_codes WHERE user_id = $1", uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+		codes = append(codes, code)
+	}
+	return codes, nil
+}
+
+func (u *UserRepository) SetCodeUsed(ctx context.Context, hash string) error {
+	_, err := u.DB.ExecContext(ctx, "UPDATE users_recovery_codes SET used_at = $1 WHERE code_hash = $2", time.Now(), hash)
+	return err
+}
+
+func (u *UserRepository) ResetTOTP(ctx context.Context, uid uint) error {
+	_, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_enabled = false, totp_secret = NULL, totp_pending_secret = NULL, totp_confirmed_at = NULL, totp_last_step = NULL, totp_pending_created_at = NULL WHERE uid = $1", uid)
+	return err
+}
+
+func (u *UserRepository) IsValidRecovery(ctx context.Context, uid uint, code string) (bool, error) {
+	if uid == 0 || code == "" {
+		return false, apperrors.InvalidArguments
+	}
+
+	rows, err := u.DB.QueryContext(ctx,
+		`SELECT code_hash
+		 FROM users_recovery_codes
+		 WHERE user_id = $1`,
+		uid,
+	)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hash string
+		if err := rows.Scan(&hash); err != nil {
+			return false, err
+		}
+
+		err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(code))
+		if err == nil {
+			return true, nil 
+		}
+		if !errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return false, err 
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
 	if event.TraceID == "" {
 		event.TraceID = "-"

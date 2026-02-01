@@ -29,6 +29,9 @@ const (
 	LoginService_ResetPasswordStart_FullMethodName = "/login.v1.LoginService/ResetPasswordStart"
 	LoginService_VerifyEmail_FullMethodName        = "/login.v1.LoginService/VerifyEmail"
 	LoginService_ResetPassword_FullMethodName      = "/login.v1.LoginService/ResetPassword"
+	LoginService_SetupTOTP_FullMethodName          = "/login.v1.LoginService/SetupTOTP"
+	LoginService_ConfirmTOTP_FullMethodName        = "/login.v1.LoginService/ConfirmTOTP"
+	LoginService_Reset2FARecovery_FullMethodName   = "/login.v1.LoginService/Reset2FARecovery"
 )
 
 // LoginServiceClient is the client API for LoginService service.
@@ -44,6 +47,9 @@ type LoginServiceClient interface {
 	ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error)
+	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*ConfirmTOTPResponse, error)
+	Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type loginServiceClient struct {
@@ -144,6 +150,36 @@ func (c *loginServiceClient) ResetPassword(ctx context.Context, in *ResetPasswor
 	return out, nil
 }
 
+func (c *loginServiceClient) SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetupTOTPResponse)
+	err := c.cc.Invoke(ctx, LoginService_SetupTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *loginServiceClient) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*ConfirmTOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmTOTPResponse)
+	err := c.cc.Invoke(ctx, LoginService_ConfirmTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *loginServiceClient) Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LoginService_Reset2FARecovery_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LoginServiceServer is the server API for LoginService service.
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility.
@@ -157,6 +193,9 @@ type LoginServiceServer interface {
 	ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*EmptyResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
+	SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error)
+	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error)
+	Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
 
@@ -193,6 +232,15 @@ func (UnimplementedLoginServiceServer) VerifyEmail(context.Context, *VerifyEmail
 }
 func (UnimplementedLoginServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedLoginServiceServer) SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetupTOTP not implemented")
+}
+func (UnimplementedLoginServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmTOTP not implemented")
+}
+func (UnimplementedLoginServiceServer) Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Reset2FARecovery not implemented")
 }
 func (UnimplementedLoginServiceServer) mustEmbedUnimplementedLoginServiceServer() {}
 func (UnimplementedLoginServiceServer) testEmbeddedByValue()                      {}
@@ -377,6 +425,60 @@ func _LoginService_ResetPassword_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LoginService_SetupTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).SetupTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_SetupTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).SetupTOTP(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LoginService_ConfirmTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).ConfirmTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_ConfirmTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).ConfirmTOTP(ctx, req.(*ConfirmTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LoginService_Reset2FARecovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Reset2FARecoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).Reset2FARecovery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_Reset2FARecovery_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).Reset2FARecovery(ctx, req.(*Reset2FARecoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LoginService_ServiceDesc is the grpc.ServiceDesc for LoginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -419,6 +521,18 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetPassword",
 			Handler:    _LoginService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "SetupTOTP",
+			Handler:    _LoginService_SetupTOTP_Handler,
+		},
+		{
+			MethodName: "ConfirmTOTP",
+			Handler:    _LoginService_ConfirmTOTP_Handler,
+		},
+		{
+			MethodName: "Reset2FARecovery",
+			Handler:    _LoginService_Reset2FARecovery_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

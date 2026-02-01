@@ -90,7 +90,7 @@ func (s *Service) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, 
 	}
 	at, err := s.repo.GetUserLastActive(ctx, uid)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "users.get_user_last_active")
+		logger.Debug("error appeared: "+err.Error(), "users.get_user_last_active")
 		return nil, apperrors.Wrap(err)
 	}
 	return at, nil
@@ -386,6 +386,106 @@ func (s *Service) SetRank(ctx context.Context, id uint, rank string, expires *ti
 		return apperrors.Wrap(err)
 	}
 	return nil
+}
+
+/*
+ * 	SetCodeUsed(ctx context.Context, hash string) error
+	GetRecoveryCodes(ctx context.Context, uid uint) ([]string, error)
+	CascadeRecoveryCodes(ctx context.Context, uid uint, codes []string) error
+	AppendRecoveryCodes(ctx context.Context, uid uint, cds []string) error
+	SetConfirmed(ctx context.Context, uid uint) error
+	SetPendingTOTP(ctx context.Context, uid uint, pending string) error
+	IsTOTPEnabled(ctx context.Context, uid uint) (bool, error)
+*/
+
+func (s *Service) SetCodeUsed(ctx context.Context, hash string) error {
+	if hash == "" {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.SetCodeUsed(ctx, hash); err != nil {
+		logger.Debug("error on setting code used: "+err.Error(), "")
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) GetRecoveryCodes(ctx context.Context, uid uint) ([]string, error) {
+	if uid == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	list, err := s.repo.GetRecoveryCodes(ctx, uid)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	return list, nil
+}
+
+func (s *Service) CascadeRecoveryCodes(ctx context.Context, uid uint, codes []string) error {
+	if uid == 0 || len(codes) == 0 {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.CascadeRecoveryCodes(ctx, uid, codes); err != nil {
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) AppendRecoveryCodes(ctx context.Context, uid uint, codes []string) error {
+	if uid == 0 || len(codes) == 0 {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.AppendRecoveryCodes(ctx, uid, codes); err != nil {
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) SetConfirmed(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.SetConfirmed(ctx, uid); err != nil {
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) SetPendingTOTP(ctx context.Context, uid uint, pending string) error {
+	if uid == 0 || pending == "" {
+		return apperrors.InvalidArguments
+	}
+	if err := s.repo.SetPendingTOTP(ctx, uid, pending); err != nil {
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) GetPendingTOTP(ctx context.Context, uid uint) (*string, error) {
+	if uid == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	return s.repo.GetPendingTOTP(ctx, uid)
+}
+
+func (s *Service) IsTOTPEnabled(ctx context.Context, uid uint) (bool, error) {
+	if uid == 0 {
+		return false, apperrors.InvalidArguments
+	}
+	return s.repo.IsTOTPEnabled(ctx, uid)
+}
+
+func (s *Service) ResetTOTP(ctx context.Context, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments
+	}
+	return s.repo.ResetTOTP(ctx, uid)
+}
+
+func (s *Service) IsValidRecovery(ctx context.Context, uid uint, code string) (bool, error) {
+	if uid == 0 || code == "" {
+		return false, apperrors.InvalidArguments
+	}
+	return s.repo.IsValidRecovery(ctx, uid, code)
 }
 
 func isNotFound(err error) bool {
