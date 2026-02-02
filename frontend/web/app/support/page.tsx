@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
+  Check,
+  ChevronDown,
   HelpCircle,
   Mail,
   MessageSquare,
@@ -191,6 +193,12 @@ export default function SupportPage() {
   const [errors, setErrors] = useState<SupportFormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement | null>(null);
+  const categoryListRef = useRef<HTMLUListElement | null>(null);
+  const selectedCategoryLabel =
+    categoryOptions.find((option) => option.id === formData.category)?.label ??
+    copy.categoryLabel;
 
   useEffect(() => {
     if (!user) {
@@ -206,6 +214,57 @@ export default function SupportPage() {
   const canManageSupport = hasAdminAccess;
   const canViewHistory = Boolean(user);
   const isGuest = !user;
+
+  useEffect(() => {
+    if (!isCategoryOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!categoryDropdownRef.current?.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCategoryOpen]);
+
+  useEffect(() => {
+    if (!isCategoryOpen) {
+      return;
+    }
+
+    const list = categoryListRef.current;
+    if (!list) {
+      return;
+    }
+
+    const escapeValue =
+      typeof CSS !== "undefined" && typeof CSS.escape === "function"
+        ? CSS.escape
+        : (value: string) => value.replace(/"/g, '\\"');
+    const selected = list.querySelector(
+      `[data-value="${escapeValue(formData.category)}"]`,
+    ) as HTMLElement | null;
+
+    if (selected) {
+      requestAnimationFrame(() => {
+        selected.scrollIntoView({ block: "nearest" });
+      });
+    }
+  }, [formData.category, isCategoryOpen]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -341,22 +400,67 @@ export default function SupportPage() {
                     <HelpCircle className="inline h-4 w-4 mr-2" />
                     {copy.categoryLabel}
                   </label>
-                  <select
-                    value={formData.category}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        category: event.target.value as SupportCategoryId,
-                      })
-                    }
-                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                  >
-                    {categoryOptions.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative" ref={categoryDropdownRef}>
+                    <HelpCircle className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <button
+                      type="button"
+                      aria-haspopup="listbox"
+                      aria-expanded={isCategoryOpen}
+                      onClick={() => setIsCategoryOpen((prev) => !prev)}
+                      className="w-full rounded-2xl border border-border bg-background px-10 py-3 text-left text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                    >
+                      {selectedCategoryLabel}
+                    </button>
+                    <ChevronDown
+                      className={`pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform ${
+                        isCategoryOpen ? "rotate-180" : "rotate-0"
+                      }`}
+                    />
+                    <ul
+                      ref={categoryListRef}
+                      role="listbox"
+                      aria-hidden={!isCategoryOpen}
+                      className={`absolute left-0 right-0 z-20 mt-2 max-h-60 origin-top overflow-auto rounded-2xl border border-border/60 bg-card/95 p-1 shadow-[0_18px_40px_-32px_rgba(0,0,0,0.55)] backdrop-blur transition duration-150 ease-out ${
+                        isCategoryOpen
+                          ? "pointer-events-auto scale-100 opacity-100"
+                          : "pointer-events-none scale-95 opacity-0"
+                      }`}
+                    >
+                      {categoryOptions.map((category) => {
+                        const isSelected = formData.category === category.id;
+                        return (
+                          <li key={category.id} role="presentation">
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              data-value={category.id}
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  category: category.id as SupportCategoryId,
+                                });
+                                setIsCategoryOpen(false);
+                              }}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                                isSelected
+                                  ? "bg-foreground/10"
+                                  : "hover:bg-foreground/10"
+                              }`}
+                            >
+                              <span className="truncate">{category.label}</span>
+                              {isSelected ? (
+                                <Check
+                                  aria-hidden="true"
+                                  className="h-4 w-4 text-foreground"
+                                />
+                              ) : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
 
                 <div>

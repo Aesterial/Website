@@ -262,6 +262,77 @@ func (s *LoginService) ResetPassword(ctx context.Context, req *loginpb.ResetPass
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
+func (s *LoginService) SetupTOTP(ctx context.Context, _ *emptypb.Empty) (*loginpb.SetupTOTPResponse, error) {
+	if s.login == nil || s == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated
+	}
+	data, err := s.login.SetupTOTP(ctx, requestor.UID)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	return &loginpb.SetupTOTPResponse{Qr: data.QR, Url: data.URL, Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *LoginService) ConfirmTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRequest) (*loginpb.ConfirmTOTPResponse, error) {
+	if s == nil || s.login == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated
+	}
+	if req == nil || req.GetCode() == "" {
+		return nil, apperrors.InvalidArguments
+	}
+	done, codes, err := s.login.ConfirmTOTP(ctx, requestor.UID, req.GetCode())
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	if !done {
+		return nil, apperrors.InvalidArguments
+	}
+	return &loginpb.ConfirmTOTPResponse{Enabled: true, Recovery: codes, Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2FARecoveryRequest) (*loginpb.EmptyResponse, error) {
+	if s == nil || s.login == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		logger.Debug("failed to auth", "")
+		return nil, err
+	}
+	if requestor == nil {
+		logger.Debug("requestor is nil", "")
+		return nil, apperrors.Unauthenticated
+	}
+	if req == nil || req.GetCode() == "" {
+		logger.Debug("req is null", "")
+		return nil, apperrors.InvalidArguments
+	}
+	done, err := s.login.ResetTOTPRecovery(ctx, requestor.UID, req.GetCode())
+	if err != nil {
+		logger.Debug("failed to reset totp: " + err.Error(), "") 
+		return nil, apperrors.Wrap(err)
+	}
+	if !done {
+		logger.Debug("work of reset totp not done", "")
+		return nil, apperrors.InvalidArguments
+	}
+	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+}
+
 func (s *LoginService) issueAndStoreSession(ctx context.Context, uid uint) error {
 	if s.login.Sessions == nil || s.login.User == nil {
 		return errors.New("login dependencies are missing")

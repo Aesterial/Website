@@ -57,4 +57,22 @@ service LoginService {
       body: "*"
     };
   }
+  rpc SetupTOTP(google.protobuf.Empty) returns (SetupTOTPResponse) {
+    option (google.api.http) = {
+      post: "/api/login/2fa/setup"
+      body: "*"
+    };
+  }
+  rpc ConfirmTOTP(ConfirmTOTPRequest) returns (ConfirmTOTPResponse) {
+    option (google.api.http) = {
+      post: "/api/login/2fa/confirm"
+      body: "*"
+    };
+  }
+  rpc Reset2FARecovery(Reset2FARecoveryRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/api/login/2fa/reset/recovery"
+      body: "*"
+    };
+  }
 }

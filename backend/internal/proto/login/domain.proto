@@ -58,3 +58,23 @@ message ResetPasswordRequest {
   string password = 2;
   string token = 3;
 }
+
+message SetupTOTPResponse {
+    string qr = 1;
+    string url = 2;
+    string tracing = 3;
+}
+
+message ConfirmTOTPRequest {
+    string code = 1;
+}
+
+message ConfirmTOTPResponse {
+    bool enabled = 1;
+    repeated string recovery = 2;
+    string tracing = 3;
+}
+
+message Reset2FARecoveryRequest {
+    string code = 1;
+}

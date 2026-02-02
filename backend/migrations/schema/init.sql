@@ -317,6 +317,14 @@ create table users (
     joined timestamptz not null default now(),
 
     password varchar(255),
+    
+    -- totp fields
+    totp_enabled boolean not null default false,
+    totp_secret text,
+    totp_pending_secret text,
+    totp_confirmed_at timestamptz,
+    totp_last_step bigint,
+    totp_pending_created_at timestamptz,
 
     -- constraints for struct fields
     constraint users_email_address_nn check (((email).address) is not null),
@@ -333,6 +341,16 @@ create unique index users_username_uq on users (username);
 create unique index users_email_uq on users (lower(((email).address)));
 create index users_rank_name_idx on users (((rank).name));
 create index users_joined_idx on users (joined);
+
+-- totp recovery codes
+create table users_recovery_codes (
+    user_id bigint not null references users(uid) on delete cascade,
+    code_hash text not null,
+    used_at timestamptz,
+    created_at timestamptz not null default now()
+)
+
+create index on users_recovery_codes(user_id)
 
 -- oauth users
 create table oauth (

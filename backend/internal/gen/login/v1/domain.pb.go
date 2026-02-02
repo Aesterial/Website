@@ -593,6 +593,214 @@ func (x *ResetPasswordRequest) GetToken() string {
 	return ""
 }
 
+type SetupTOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Qr            string                 `protobuf:"bytes,1,opt,name=qr,proto3" json:"qr,omitempty"`
+	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Tracing       string                 `protobuf:"bytes,3,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetupTOTPResponse) Reset() {
+	*x = SetupTOTPResponse{}
+	mi := &file_login_domain_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetupTOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetupTOTPResponse) ProtoMessage() {}
+
+func (x *SetupTOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetupTOTPResponse.ProtoReflect.Descriptor instead.
+func (*SetupTOTPResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SetupTOTPResponse) GetQr() string {
+	if x != nil {
+		return x.Qr
+	}
+	return ""
+}
+
+func (x *SetupTOTPResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *SetupTOTPResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
+type ConfirmTOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmTOTPRequest) Reset() {
+	*x = ConfirmTOTPRequest{}
+	mi := &file_login_domain_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmTOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmTOTPRequest) ProtoMessage() {}
+
+func (x *ConfirmTOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmTOTPRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmTOTPRequest) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ConfirmTOTPRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type ConfirmTOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Recovery      []string               `protobuf:"bytes,2,rep,name=recovery,proto3" json:"recovery,omitempty"`
+	Tracing       string                 `protobuf:"bytes,3,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmTOTPResponse) Reset() {
+	*x = ConfirmTOTPResponse{}
+	mi := &file_login_domain_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmTOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmTOTPResponse) ProtoMessage() {}
+
+func (x *ConfirmTOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmTOTPResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmTOTPResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ConfirmTOTPResponse) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *ConfirmTOTPResponse) GetRecovery() []string {
+	if x != nil {
+		return x.Recovery
+	}
+	return nil
+}
+
+func (x *ConfirmTOTPResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
+type Reset2FARecoveryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Reset2FARecoveryRequest) Reset() {
+	*x = Reset2FARecoveryRequest{}
+	mi := &file_login_domain_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Reset2FARecoveryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Reset2FARecoveryRequest) ProtoMessage() {}
+
+func (x *Reset2FARecoveryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Reset2FARecoveryRequest.ProtoReflect.Descriptor instead.
+func (*Reset2FARecoveryRequest) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *Reset2FARecoveryRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
 var File_login_domain_proto protoreflect.FileDescriptor
 
 const file_login_domain_proto_rawDesc = "" +
@@ -630,7 +838,19 @@ const file_login_domain_proto_rawDesc = "" +
 	"\x14ResetPasswordRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x14\n" +
-	"\x05token\x18\x03 \x01(\tR\x05tokenB/Z-Aesterial/backend/internal/gen/login/v1;loginb\x06proto3"
+	"\x05token\x18\x03 \x01(\tR\x05token\"O\n" +
+	"\x11SetupTOTPResponse\x12\x0e\n" +
+	"\x02qr\x18\x01 \x01(\tR\x02qr\x12\x10\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x12\x18\n" +
+	"\atracing\x18\x03 \x01(\tR\atracing\"(\n" +
+	"\x12ConfirmTOTPRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"e\n" +
+	"\x13ConfirmTOTPResponse\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x1a\n" +
+	"\brecovery\x18\x02 \x03(\tR\brecovery\x12\x18\n" +
+	"\atracing\x18\x03 \x01(\tR\atracing\"-\n" +
+	"\x17Reset2FARecoveryRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04codeB/Z-Aesterial/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var (
 	file_login_domain_proto_rawDescOnce sync.Once
@@ -644,19 +864,23 @@ func file_login_domain_proto_rawDescGZIP() []byte {
 	return file_login_domain_proto_rawDescData
 }
 
-var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_login_domain_proto_goTypes = []any{
-	(*AuthRequest)(nil),          // 0: login.v1.AuthRequest
-	(*AuthResponse)(nil),         // 1: login.v1.AuthResponse
-	(*RegisterRequest)(nil),      // 2: login.v1.RegisterRequest
-	(*RegisterResponse)(nil),     // 3: login.v1.RegisterResponse
-	(*EmptyResponse)(nil),        // 4: login.v1.EmptyResponse
-	(*VKStartResponse)(nil),      // 5: login.v1.VKStartResponse
-	(*VKCallbackRequest)(nil),    // 6: login.v1.VKCallbackRequest
-	(*VKCallbackResponse)(nil),   // 7: login.v1.VKCallbackResponse
-	(*WithEmailRequest)(nil),     // 8: login.v1.WithEmailRequest
-	(*VerifyEmailRequest)(nil),   // 9: login.v1.VerifyEmailRequest
-	(*ResetPasswordRequest)(nil), // 10: login.v1.ResetPasswordRequest
+	(*AuthRequest)(nil),             // 0: login.v1.AuthRequest
+	(*AuthResponse)(nil),            // 1: login.v1.AuthResponse
+	(*RegisterRequest)(nil),         // 2: login.v1.RegisterRequest
+	(*RegisterResponse)(nil),        // 3: login.v1.RegisterResponse
+	(*EmptyResponse)(nil),           // 4: login.v1.EmptyResponse
+	(*VKStartResponse)(nil),         // 5: login.v1.VKStartResponse
+	(*VKCallbackRequest)(nil),       // 6: login.v1.VKCallbackRequest
+	(*VKCallbackResponse)(nil),      // 7: login.v1.VKCallbackResponse
+	(*WithEmailRequest)(nil),        // 8: login.v1.WithEmailRequest
+	(*VerifyEmailRequest)(nil),      // 9: login.v1.VerifyEmailRequest
+	(*ResetPasswordRequest)(nil),    // 10: login.v1.ResetPasswordRequest
+	(*SetupTOTPResponse)(nil),       // 11: login.v1.SetupTOTPResponse
+	(*ConfirmTOTPRequest)(nil),      // 12: login.v1.ConfirmTOTPRequest
+	(*ConfirmTOTPResponse)(nil),     // 13: login.v1.ConfirmTOTPResponse
+	(*Reset2FARecoveryRequest)(nil), // 14: login.v1.Reset2FARecoveryRequest
 }
 var file_login_domain_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -677,7 +901,7 @@ func file_login_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_login_domain_proto_rawDesc), len(file_login_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
