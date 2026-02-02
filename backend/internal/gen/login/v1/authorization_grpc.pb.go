@@ -32,6 +32,7 @@ const (
 	LoginService_SetupTOTP_FullMethodName          = "/login.v1.LoginService/SetupTOTP"
 	LoginService_ConfirmTOTP_FullMethodName        = "/login.v1.LoginService/ConfirmTOTP"
 	LoginService_Reset2FARecovery_FullMethodName   = "/login.v1.LoginService/Reset2FARecovery"
+	LoginService_CheckTOTP_FullMethodName          = "/login.v1.LoginService/CheckTOTP"
 )
 
 // LoginServiceClient is the client API for LoginService service.
@@ -43,13 +44,14 @@ type LoginServiceClient interface {
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	VkStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*VKStartResponse, error)
 	VkCallback(ctx context.Context, in *VKCallbackRequest, opts ...grpc.CallOption) (*VKCallbackResponse, error)
-	VerifyEmailStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error)
 	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*ConfirmTOTPResponse, error)
 	Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	CheckTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*CheckTOTPResponse, error)
 }
 
 type loginServiceClient struct {
@@ -110,7 +112,7 @@ func (c *loginServiceClient) VkCallback(ctx context.Context, in *VKCallbackReque
 	return out, nil
 }
 
-func (c *loginServiceClient) VerifyEmailStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, LoginService_VerifyEmailStart_FullMethodName, in, out, cOpts...)
@@ -180,6 +182,16 @@ func (c *loginServiceClient) Reset2FARecovery(ctx context.Context, in *Reset2FAR
 	return out, nil
 }
 
+func (c *loginServiceClient) CheckTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*CheckTOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckTOTPResponse)
+	err := c.cc.Invoke(ctx, LoginService_CheckTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LoginServiceServer is the server API for LoginService service.
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility.
@@ -189,13 +201,14 @@ type LoginServiceServer interface {
 	Logout(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	VkStart(context.Context, *emptypb.Empty) (*VKStartResponse, error)
 	VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error)
-	VerifyEmailStart(context.Context, *WithEmailRequest) (*EmptyResponse, error)
+	VerifyEmailStart(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*EmptyResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
 	SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error)
 	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error)
 	Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error)
+	CheckTOTP(context.Context, *ConfirmTOTPRequest) (*CheckTOTPResponse, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
 
@@ -221,7 +234,7 @@ func (UnimplementedLoginServiceServer) VkStart(context.Context, *emptypb.Empty) 
 func (UnimplementedLoginServiceServer) VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VkCallback not implemented")
 }
-func (UnimplementedLoginServiceServer) VerifyEmailStart(context.Context, *WithEmailRequest) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) VerifyEmailStart(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyEmailStart not implemented")
 }
 func (UnimplementedLoginServiceServer) ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error) {
@@ -241,6 +254,9 @@ func (UnimplementedLoginServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTP
 }
 func (UnimplementedLoginServiceServer) Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Reset2FARecovery not implemented")
+}
+func (UnimplementedLoginServiceServer) CheckTOTP(context.Context, *ConfirmTOTPRequest) (*CheckTOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckTOTP not implemented")
 }
 func (UnimplementedLoginServiceServer) mustEmbedUnimplementedLoginServiceServer() {}
 func (UnimplementedLoginServiceServer) testEmbeddedByValue()                      {}
@@ -354,7 +370,7 @@ func _LoginService_VkCallback_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _LoginService_VerifyEmailStart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WithEmailRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -366,7 +382,7 @@ func _LoginService_VerifyEmailStart_Handler(srv interface{}, ctx context.Context
 		FullMethod: LoginService_VerifyEmailStart_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LoginServiceServer).VerifyEmailStart(ctx, req.(*WithEmailRequest))
+		return srv.(LoginServiceServer).VerifyEmailStart(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -479,6 +495,24 @@ func _LoginService_Reset2FARecovery_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LoginService_CheckTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).CheckTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_CheckTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).CheckTOTP(ctx, req.(*ConfirmTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LoginService_ServiceDesc is the grpc.ServiceDesc for LoginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -533,6 +567,10 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Reset2FARecovery",
 			Handler:    _LoginService_Reset2FARecovery_Handler,
+		},
+		{
+			MethodName: "CheckTOTP",
+			Handler:    _LoginService_CheckTOTP_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

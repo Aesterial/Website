@@ -285,14 +285,27 @@ func userAgentHash(ctx context.Context) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func clientIP(ctx context.Context) (string, bool) {
-	p, ok := peer.FromContext(ctx)
-	if !ok || p.Addr == nil {
-		return "", false
-	}
-	host, _, err := net.SplitHostPort(p.Addr.String())
-	if err == nil {
-		return host, true
-	}
-	return p.Addr.String(), true
+func clientIP(ctx context.Context) string {
+    if md, ok := metadata.FromIncomingContext(ctx); ok {
+        if xff := md.Get("x-forwarded-for"); len(xff) > 0 && xff[0] != "" {
+            parts := strings.Split(xff[0], ",")
+            ip := strings.TrimSpace(parts[0])
+            if ip != "" {
+                return ip
+            }
+        }
+        if xrip := md.Get("x-real-ip"); len(xrip) > 0 && xrip[0] != "" {
+            return strings.TrimSpace(xrip[0])
+        }
+    }
+
+    if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+        host, _, err := net.SplitHostPort(p.Addr.String())
+        if err == nil && host != "" {
+            return host
+        }
+        return p.Addr.String()
+    }
+
+    return "unknown"
 }

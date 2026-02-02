@@ -516,32 +516,9 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const settingsRecord = toRecord(settings);
   const userRecord = toRecord(user);
   const publicRecord = toRecord(publicUser);
+  const securitySettings = user.settings ?? null;
   const totpEnabled =
-    pickBoolean(settingsRecord, [
-      "totpEnabled",
-      "totp_enabled",
-      "mfaEnabled",
-      "mfa_enabled",
-      "twoFactorEnabled",
-      "two_factor_enabled",
-    ]) ??
-    pickBoolean(userRecord, [
-      "totpEnabled",
-      "totp_enabled",
-      "mfaEnabled",
-      "mfa_enabled",
-      "twoFactorEnabled",
-      "two_factor_enabled",
-    ]) ??
-    pickBoolean(publicRecord, [
-      "totpEnabled",
-      "totp_enabled",
-      "mfaEnabled",
-      "mfa_enabled",
-      "twoFactorEnabled",
-      "two_factor_enabled",
-    ]) ??
-    false;
+    securitySettings?.totpEnabled ?? false;
 
   return {
     uid,
@@ -951,7 +928,7 @@ export async function resendAuthCode(challenge: AuthChallenge): Promise<void> {
 
 export async function startTotpEnrollment(): Promise<TotpEnrollment> {
   const payload = await apiRequest<Record<string, unknown>>(
-    "/api/auth/2fa/setup",
+    "/api/login/2fa/setup",
     {
       method: "POST",
     },
@@ -1029,7 +1006,7 @@ export async function confirmTotpEnrollment(payload: {
     body.token = payload.token;
   }
   const response = await apiRequest<Record<string, unknown>>(
-    "/api/auth/2fa/confirm",
+    "/api/login/2fa/confirm",
     {
       method: "POST",
       body: JSON.stringify(body),
@@ -1057,7 +1034,7 @@ export async function disableTotp(payload?: { code?: string }): Promise<void> {
   if (payload?.code) {
     body.code = payload.code.trim();
   }
-  await apiRequest("/api/user/totp/disable", {
+  await apiRequest("/api/login/2fa/reset/recovery", {
     method: "POST",
     body: JSON.stringify(body),
   });

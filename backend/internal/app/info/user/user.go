@@ -488,6 +488,34 @@ func (s *Service) IsValidRecovery(ctx context.Context, uid uint, code string) (b
 	return s.repo.IsValidRecovery(ctx, uid, code)
 }
 
+func (s *Service) GetTOTPSecret(ctx context.Context, uid uint) (string, error) {
+	if uid == 0 {
+		return "", apperrors.InvalidArguments
+	}
+	return s.repo.GetTOTPSecret(ctx, uid)
+}
+
+func (s *Service) GetTOTPLastStep(ctx context.Context, uid uint) (*int64, error) {
+	if uid == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	return s.repo.GetTOTPLastStep(ctx, uid)
+}
+
+func (s *Service) SetTOTPLastStep(ctx context.Context, uid uint, step int64) error {
+	if uid == 0 || step == 0 {
+		return apperrors.InvalidArguments
+	}
+	return s.repo.SetTOTPLastStep(ctx, uid, step)
+}
+
+func (s *Service) IsTOTPending(ctx context.Context, uid uint) (bool, error) {
+	if uid == 0 {
+		return false, apperrors.InvalidArguments
+	}
+	return s.repo.IsTOTPending(ctx, uid)
+}
+
 func isNotFound(err error) bool {
 	if err == nil {
 		return false

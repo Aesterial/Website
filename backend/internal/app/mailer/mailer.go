@@ -126,9 +126,9 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 	if to == "" {
 		return "", apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
-	if strings.ContainsAny(to, "aesterial.xyz") {
-		return "", nil
-	}
+	// if strings.ContainsAny(to, "aesterial.xyz") {
+	// 	return "", nil
+	// }
 	if htmlBody == "" && textBody == "" {
 		return "", apperrors.RequiredDataMissing.AddErrDetails("email body is empty")
 	}
@@ -157,6 +157,7 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 	}
 	msg.WriteString("\r\n")
 	msg.WriteString(body)
+	logger.Debug("sending to: " + to, "")
 
 	if err := s.smtpSend(ctx, to, msg.Bytes()); err != nil {
 		logger.Debug("smtp send failed: "+err.Error(), "mailer.send")

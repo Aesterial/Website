@@ -47,4 +47,8 @@ type Repository interface {
 	IsTOTPEnabled(ctx context.Context, uid uint) (bool, error)
 	ResetTOTP(ctx context.Context, uid uint) error
 	IsValidRecovery(ctx context.Context, uid uint, code string) (bool, error)
+	IsTOTPending(ctx context.Context, uid uint) (bool, error)
+	GetTOTPLastStep(ctx context.Context, uid uint) (*int64, error)
+	GetTOTPSecret(ctx context.Context, uid uint) (string, error)
+	SetTOTPLastStep(ctx context.Context, uid uint, step int64) error
 }

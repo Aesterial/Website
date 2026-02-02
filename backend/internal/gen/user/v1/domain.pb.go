@@ -118,7 +118,8 @@ func (x *UserPublic) GetActiveAt() *timestamppb.Timestamp {
 type UserSelf struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Public        *UserPublic            `protobuf:"bytes,1,opt,name=public,proto3" json:"public,omitempty"`
-	Email         *UserEmail             `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Settings      *UserSettings          `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
+	Email         *UserEmail             `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,6 +157,13 @@ func (*UserSelf) Descriptor() ([]byte, []int) {
 func (x *UserSelf) GetPublic() *UserPublic {
 	if x != nil {
 		return x.Public
+	}
+	return nil
+}
+
+func (x *UserSelf) GetSettings() *UserSettings {
+	if x != nil {
+		return x.Settings
 	}
 	return nil
 }
@@ -232,6 +240,7 @@ type UserSettings struct {
 	DisplayName     *string                `protobuf:"bytes,1,opt,name=displayName,proto3,oneof" json:"displayName,omitempty"`
 	Avatar          *Avatar                `protobuf:"bytes,2,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"`
 	SessionLiveTime int32                  `protobuf:"varint,3,opt,name=sessionLiveTime,proto3" json:"sessionLiveTime,omitempty"`
+	TotpEnabled     bool                   `protobuf:"varint,4,opt,name=totp_enabled,json=totpEnabled,proto3" json:"totp_enabled,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -285,6 +294,13 @@ func (x *UserSettings) GetSessionLiveTime() int32 {
 		return x.SessionLiveTime
 	}
 	return 0
+}
+
+func (x *UserSettings) GetTotpEnabled() bool {
+	if x != nil {
+		return x.TotpEnabled
+	}
+	return false
 }
 
 type UserPublicSettings struct {
@@ -451,27 +467,27 @@ func (x *UserEmail) GetVerified() bool {
 	return false
 }
 
-type UserSessions struct {
+type RevokeSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sessions      []*Session             `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UserSessions) Reset() {
-	*x = UserSessions{}
+func (x *RevokeSessionRequest) Reset() {
+	*x = RevokeSessionRequest{}
 	mi := &file_user_domain_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UserSessions) String() string {
+func (x *RevokeSessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UserSessions) ProtoMessage() {}
+func (*RevokeSessionRequest) ProtoMessage() {}
 
-func (x *UserSessions) ProtoReflect() protoreflect.Message {
+func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_user_domain_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -483,25 +499,24 @@ func (x *UserSessions) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UserSessions.ProtoReflect.Descriptor instead.
-func (*UserSessions) Descriptor() ([]byte, []int) {
+// Deprecated: Use RevokeSessionRequest.ProtoReflect.Descriptor instead.
+func (*RevokeSessionRequest) Descriptor() ([]byte, []int) {
 	return file_user_domain_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *UserSessions) GetSessions() []*Session {
+func (x *RevokeSessionRequest) GetId() string {
 	if x != nil {
-		return x.Sessions
+		return x.Id
 	}
-	return nil
+	return ""
 }
 
 type Session struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
-	Uid           uint32                 `protobuf:"varint,2,opt,name=uid,proto3" json:"uid,omitempty"`
-	Created       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
-	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=lastSeen,proto3" json:"lastSeen,omitempty"`
-	Expires       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires,proto3" json:"expires,omitempty"`
+	Created       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
+	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=lastSeen,proto3" json:"lastSeen,omitempty"`
+	Hash          string                 `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -543,13 +558,6 @@ func (x *Session) GetUuid() string {
 	return ""
 }
 
-func (x *Session) GetUid() uint32 {
-	if x != nil {
-		return x.Uid
-	}
-	return 0
-}
-
 func (x *Session) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Created
@@ -564,11 +572,11 @@ func (x *Session) GetLastSeen() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *Session) GetExpires() *timestamppb.Timestamp {
+func (x *Session) GetHash() string {
 	if x != nil {
-		return x.Expires
+		return x.Hash
 	}
-	return nil
+	return ""
 }
 
 type OtherUserRequest struct {
@@ -1049,7 +1057,7 @@ func (x *UsersResponse) GetTracing() string {
 
 type UserSessionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *UserSessions          `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data          []*Session             `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1085,7 +1093,7 @@ func (*UserSessionsResponse) Descriptor() ([]byte, []int) {
 	return file_user_domain_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *UserSessionsResponse) GetData() *UserSessions {
+func (x *UserSessionsResponse) GetData() []*Session {
 	if x != nil {
 		return x.Data
 	}
@@ -1502,18 +1510,20 @@ const file_user_domain_proto_rawDesc = "" +
 	"\bjoinedAt\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAt\x12;\n" +
 	"\bactiveAt\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x01R\bactiveAt\x88\x01\x01B\v\n" +
 	"\t_settingsB\v\n" +
-	"\t_activeAt\"a\n" +
+	"\t_activeAt\"\x94\x01\n" +
 	"\bUserSelf\x12+\n" +
-	"\x06public\x18\x01 \x01(\v2\x13.user.v1.UserPublicR\x06public\x12(\n" +
-	"\x05email\x18\x02 \x01(\v2\x12.user.v1.UserEmailR\x05email\"Z\n" +
+	"\x06public\x18\x01 \x01(\v2\x13.user.v1.UserPublicR\x06public\x121\n" +
+	"\bsettings\x18\x02 \x01(\v2\x15.user.v1.UserSettingsR\bsettings\x12(\n" +
+	"\x05email\x18\x03 \x01(\v2\x12.user.v1.UserEmailR\x05email\"Z\n" +
 	"\x06Avatar\x12 \n" +
 	"\vcontentType\x18\x01 \x01(\tR\vcontentType\x12\x10\n" +
 	"\x03url\x18\x03 \x01(\tR\x03url\x12\x10\n" +
-	"\x03key\x18\x04 \x01(\tR\x03keyJ\x04\b\x02\x10\x03R\x04data\"\xa8\x01\n" +
+	"\x03key\x18\x04 \x01(\tR\x03keyJ\x04\b\x02\x10\x03R\x04data\"\xcb\x01\n" +
 	"\fUserSettings\x12%\n" +
 	"\vdisplayName\x18\x01 \x01(\tH\x00R\vdisplayName\x88\x01\x01\x12,\n" +
 	"\x06avatar\x18\x02 \x01(\v2\x0f.user.v1.AvatarH\x01R\x06avatar\x88\x01\x01\x12(\n" +
-	"\x0fsessionLiveTime\x18\x03 \x01(\x05R\x0fsessionLiveTimeB\x0e\n" +
+	"\x0fsessionLiveTime\x18\x03 \x01(\x05R\x0fsessionLiveTime\x12!\n" +
+	"\ftotp_enabled\x18\x04 \x01(\bR\vtotpEnabledB\x0e\n" +
 	"\f_displayNameB\t\n" +
 	"\a_avatar\"\x84\x01\n" +
 	"\x12UserPublicSettings\x12%\n" +
@@ -1529,15 +1539,14 @@ const file_user_domain_proto_rawDesc = "" +
 	"\b_expires\"A\n" +
 	"\tUserEmail\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x1a\n" +
-	"\bverified\x18\x02 \x01(\bR\bverified\"<\n" +
-	"\fUserSessions\x12,\n" +
-	"\bsessions\x18\x01 \x03(\v2\x10.user.v1.SessionR\bsessions\"\xd3\x01\n" +
+	"\bverified\x18\x02 \x01(\bR\bverified\"&\n" +
+	"\x14RevokeSessionRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x9f\x01\n" +
 	"\aSession\x12\x12\n" +
-	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x10\n" +
-	"\x03uid\x18\x02 \x01(\rR\x03uid\x124\n" +
-	"\acreated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x126\n" +
-	"\blastSeen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\x124\n" +
-	"\aexpires\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aexpires\"*\n" +
+	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x124\n" +
+	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x126\n" +
+	"\blastSeen\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\x12\x12\n" +
+	"\x04hash\x18\x04 \x01(\tR\x04hash\"*\n" +
 	"\x10OtherUserRequest\x12\x16\n" +
 	"\x06userID\x18\x01 \x01(\rR\x06userID\"^\n" +
 	"\x1aOtherUserPermsPatchRequest\x12\x16\n" +
@@ -1566,9 +1575,9 @@ const file_user_domain_proto_rawDesc = "" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"R\n" +
 	"\rUsersResponse\x12'\n" +
 	"\x04data\x18\x01 \x03(\v2\x13.user.v1.UserPublicR\x04data\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracing\"[\n" +
-	"\x14UserSessionsResponse\x12)\n" +
-	"\x04data\x18\x01 \x01(\v2\x15.user.v1.UserSessionsR\x04data\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing\"V\n" +
+	"\x14UserSessionsResponse\x12$\n" +
+	"\x04data\x18\x01 \x03(\v2\x10.user.v1.SessionR\x04data\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"Z\n" +
 	"\x10MessagesResponse\x12,\n" +
 	"\bmessages\x18\x01 \x03(\v2\x10.user.v1.MessageR\bmessages\x12\x18\n" +
@@ -1620,7 +1629,7 @@ var file_user_domain_proto_goTypes = []any{
 	(*UserPublicSettings)(nil),         // 4: user.v1.UserPublicSettings
 	(*Rank)(nil),                       // 5: user.v1.Rank
 	(*UserEmail)(nil),                  // 6: user.v1.UserEmail
-	(*UserSessions)(nil),               // 7: user.v1.UserSessions
+	(*RevokeSessionRequest)(nil),       // 7: user.v1.RevokeSessionRequest
 	(*Session)(nil),                    // 8: user.v1.Session
 	(*OtherUserRequest)(nil),           // 9: user.v1.OtherUserRequest
 	(*OtherUserPermsPatchRequest)(nil), // 10: user.v1.OtherUserPermsPatchRequest
@@ -1648,30 +1657,29 @@ var file_user_domain_proto_depIdxs = []int32{
 	26, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
 	26, // 3: user.v1.UserPublic.activeAt:type_name -> google.protobuf.Timestamp
 	0,  // 4: user.v1.UserSelf.public:type_name -> user.v1.UserPublic
-	6,  // 5: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
-	2,  // 6: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
-	2,  // 7: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
-	26, // 8: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
-	8,  // 9: user.v1.UserSessions.sessions:type_name -> user.v1.Session
+	3,  // 5: user.v1.UserSelf.settings:type_name -> user.v1.UserSettings
+	6,  // 6: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
+	2,  // 7: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
+	2,  // 8: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
+	26, // 9: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
 	26, // 10: user.v1.Session.created:type_name -> google.protobuf.Timestamp
 	26, // 11: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
-	26, // 12: user.v1.Session.expires:type_name -> google.protobuf.Timestamp
-	27, // 13: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
-	26, // 14: user.v1.Message.at:type_name -> google.protobuf.Timestamp
-	1,  // 15: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
-	0,  // 16: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
-	0,  // 17: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
-	7,  // 18: user.v1.UserSessionsResponse.data:type_name -> user.v1.UserSessions
-	13, // 19: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
-	0,  // 20: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
-	26, // 21: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
-	26, // 22: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
-	26, // 23: user.v1.SetRankRequest.expires:type_name -> google.protobuf.Timestamp
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	27, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
+	26, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
+	1,  // 14: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
+	0,  // 15: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
+	0,  // 16: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
+	8,  // 17: user.v1.UserSessionsResponse.data:type_name -> user.v1.Session
+	13, // 18: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
+	0,  // 19: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
+	26, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
+	26, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
+	26, // 22: user.v1.SetRankRequest.expires:type_name -> google.protobuf.Timestamp
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_user_domain_proto_init() }

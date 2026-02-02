@@ -801,6 +801,58 @@ func (x *Reset2FARecoveryRequest) GetCode() string {
 	return ""
 }
 
+type CheckTOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckTOTPResponse) Reset() {
+	*x = CheckTOTPResponse{}
+	mi := &file_login_domain_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckTOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckTOTPResponse) ProtoMessage() {}
+
+func (x *CheckTOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_login_domain_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckTOTPResponse.ProtoReflect.Descriptor instead.
+func (*CheckTOTPResponse) Descriptor() ([]byte, []int) {
+	return file_login_domain_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CheckTOTPResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CheckTOTPResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_login_domain_proto protoreflect.FileDescriptor
 
 const file_login_domain_proto_rawDesc = "" +
@@ -850,7 +902,10 @@ const file_login_domain_proto_rawDesc = "" +
 	"\brecovery\x18\x02 \x03(\tR\brecovery\x12\x18\n" +
 	"\atracing\x18\x03 \x01(\tR\atracing\"-\n" +
 	"\x17Reset2FARecoveryRequest\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04codeB/Z-Aesterial/backend/internal/gen/login/v1;loginb\x06proto3"
+	"\x04code\x18\x01 \x01(\tR\x04code\"G\n" +
+	"\x11CheckTOTPResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracingB/Z-Aesterial/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var (
 	file_login_domain_proto_rawDescOnce sync.Once
@@ -864,7 +919,7 @@ func file_login_domain_proto_rawDescGZIP() []byte {
 	return file_login_domain_proto_rawDescData
 }
 
-var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_login_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_login_domain_proto_goTypes = []any{
 	(*AuthRequest)(nil),             // 0: login.v1.AuthRequest
 	(*AuthResponse)(nil),            // 1: login.v1.AuthResponse
@@ -881,6 +936,7 @@ var file_login_domain_proto_goTypes = []any{
 	(*ConfirmTOTPRequest)(nil),      // 12: login.v1.ConfirmTOTPRequest
 	(*ConfirmTOTPResponse)(nil),     // 13: login.v1.ConfirmTOTPResponse
 	(*Reset2FARecoveryRequest)(nil), // 14: login.v1.Reset2FARecoveryRequest
+	(*CheckTOTPResponse)(nil),       // 15: login.v1.CheckTOTPResponse
 }
 var file_login_domain_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -901,7 +957,7 @@ func file_login_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_login_domain_proto_rawDesc), len(file_login_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

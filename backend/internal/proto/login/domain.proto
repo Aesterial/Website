@@ -78,3 +78,8 @@ message ConfirmTOTPResponse {
 message Reset2FARecoveryRequest {
     string code = 1;
 }
+
+message CheckTOTPResponse {
+    bool success = 1;
+    string tracing = 2;
+}
