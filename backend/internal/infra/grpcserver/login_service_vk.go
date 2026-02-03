@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,11 +31,12 @@ import (
 
 const (
 	vkAuthEndpoint  = "https://id.vk.com/authorize"
-	vkTokenEndpoint = "https://id.vk.com/oauth2/auth"
 	vkUsersEndpoint = "https://api.vk.com/method/users.get"
 	vkDefaultScope  = "email"
 	vkDefaultAPI    = "5.131"
 )
+
+var vkTokenEndpoint = "https://id.vk.com/oauth2/token"
 
 type vkConfig struct {
 	clientID           string
@@ -116,7 +118,6 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	code := strings.TrimSpace(req.GetCode())
 	state := strings.TrimSpace(req.GetState())
 	deviceID := strings.TrimSpace(req.GetDeviceId())
-	logger.Debug("code: " + code + " state: " + state + " deviceID: " + deviceID, "")
 	if code == "" || state == "" || deviceID == "" {
 		logger.Debug("code or state or deviceID is missing", "")
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("code, state or device_id is empty")
@@ -383,46 +384,89 @@ func buildVKAuthURL(cfg vkConfig, state string, codeChallenge string) string {
 }
 
 func exchangeVKCode(ctx context.Context, cfg vkConfig, code string, codeVerifier string, deviceID string) (*vkTokenResponse, error) {
-	u, _ := url.Parse(vkTokenEndpoint)
-	q := u.Query()
-	q.Set("client_id", cfg.clientID)
-	q.Set("client_secret", cfg.clientSecret)
-	q.Set("redirect_uri", cfg.redirectURI)
-	q.Set("code", code)
-	q.Set("code_verifier", codeVerifier)
-	q.Set("device_id", deviceID)
-	u.RawQuery = q.Encode()
+	form := url.Values{}
+	form.Set("client_id", cfg.clientID)
+	if cfg.clientSecret != "" {
+		form.Set("client_secret", cfg.clientSecret)
+	}
+	form.Set("grant_type", "authorization_code")
+	form.Set("code", code)
+	form.Set("redirect_uri", cfg.redirectURI)
+	form.Set("code_verifier", codeVerifier)
+	if strings.TrimSpace(deviceID) != "" {
+		form.Set("device_id", deviceID)
+	}
+	payload := form.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, apperrors.Wrap(err)
-	}
-	resp, err := vkHTTPClient().Do(req)
-	if err != nil {
-		return nil, apperrors.Wrap(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, apperrors.ServerError.AddErrDetails("vk token exchange failed")
-	}
-	var token vkTokenResponse
-	if err := decodeJSON(resp.Body, &token); err != nil {
-		return nil, apperrors.Wrap(err)
-	}
-	if token.AccessToken == "" {
-		msg := token.Error
-		if msg == "" {
-			msg = token.ErrorMessage
+	const maxRetries = 2
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, vkTokenEndpoint, strings.NewReader(payload))
+		if err != nil {
+			return nil, apperrors.Wrap(err)
 		}
-		if msg == "" {
-			msg = token.ErrorDesc
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := vkHTTPClient().Do(req)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil, vkNetError("vk token exchange", ctx.Err())
+			}
+			if attempt < maxRetries && isRetryableVKNetError(err) {
+				lastErr = err
+				continue
+			}
+			return nil, vkNetError("vk token exchange", err)
 		}
-		if msg == "" {
-			msg = "vk token response is empty"
+		body, readErr := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if readErr != nil {
+			if attempt < maxRetries && isRetryableVKNetError(readErr) {
+				lastErr = readErr
+				continue
+			}
+			return nil, apperrors.Wrap(readErr)
 		}
-		return nil, apperrors.InvalidArguments.AddErrDetails(msg)
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			msg := vkTokenErrorMessage(body)
+			detail := fmt.Sprintf("status %d: %s", resp.StatusCode, msg)
+			if resp.StatusCode >= 500 && attempt < maxRetries {
+				lastErr = fmt.Errorf("vk token exchange %s", detail)
+				continue
+			}
+			if resp.StatusCode >= 500 {
+				return nil, apperrors.ServerError.AddErrDetails("vk token exchange failed: " + detail)
+			}
+			return nil, apperrors.InvalidArguments.AddErrDetails("vk token exchange failed: " + detail)
+		}
+
+		var token vkTokenResponse
+		if err := json.Unmarshal(body, &token); err != nil {
+			return nil, apperrors.Wrap(err)
+		}
+		if token.AccessToken == "" {
+			msg := token.Error
+			if msg == "" {
+				msg = token.ErrorMessage
+			}
+			if msg == "" {
+				msg = token.ErrorDesc
+			}
+			if msg == "" {
+				msg = token.ErrorReason
+			}
+			if msg == "" {
+				msg = "vk token response is empty"
+			}
+			return nil, apperrors.InvalidArguments.AddErrDetails(msg)
+		}
+		return &token, nil
 	}
-	return &token, nil
+	if lastErr != nil {
+		return nil, vkNetError("vk token exchange", lastErr)
+	}
+	return nil, apperrors.ServerError.AddErrDetails("vk token exchange failed")
 }
 
 func fetchVKProfile(ctx context.Context, cfg vkConfig, accessToken string, userID int64) (vkUser, error) {
@@ -616,7 +660,6 @@ func verifyVKState(secret string, ttl time.Duration, state string) (string, erro
 	return "", status.New(codes.InvalidArgument, "invalid state format").Err()
 }
 
-
 func generatePKCEVerifier() (string, error) {
 	return randomToken(32)
 }
@@ -685,8 +728,140 @@ func decodeJSON(body io.Reader, out any) error {
 	return dec.Decode(out)
 }
 
+var vkHTTPClientInstance = &http.Client{
+	Timeout: 12 * time.Second,
+	Transport: &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ResponseHeaderTimeout: 5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
+}
+
 func vkHTTPClient() *http.Client {
-	return &http.Client{Timeout: 10 * time.Second}
+	return vkHTTPClientInstance
+}
+
+func vkTokenErrorMessage(body []byte) string {
+	var token vkTokenResponse
+	if err := json.Unmarshal(body, &token); err == nil {
+		msg := strings.TrimSpace(token.Error)
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorMessage)
+		}
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorDesc)
+		}
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorReason)
+		}
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorMessageAlt)
+		}
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorDescAlt)
+		}
+		if msg == "" {
+			msg = strings.TrimSpace(token.ErrorReasonAlt)
+		}
+		if msg != "" {
+			return msg
+		}
+	}
+	raw := strings.TrimSpace(string(body))
+	raw = redactVKSecrets(raw)
+	if raw == "" {
+		return "empty response"
+	}
+	const limit = 300
+	if len(raw) > limit {
+		return raw[:limit] + "..."
+	}
+	return raw
+}
+
+func redactVKSecrets(value string) string {
+	if value == "" {
+		return value
+	}
+	keys := []string{"client_secret", "code_verifier", "code"}
+	for _, key := range keys {
+		value = redactKeyValue(value, key)
+	}
+	return value
+}
+
+func redactKeyValue(value string, key string) string {
+	queryNeedle := key + "="
+	for {
+		idx := strings.Index(value, queryNeedle)
+		if idx == -1 {
+			break
+		}
+		start := idx + len(queryNeedle)
+		end := start
+		for end < len(value) {
+			c := value[end]
+			if c == '&' || c == ' ' || c == '\n' || c == '"' || c == '\'' {
+				break
+			}
+			end++
+		}
+		value = value[:start] + "REDACTED" + value[end:]
+	}
+
+	jsonNeedle := `"` + key + `":"`
+	for {
+		idx := strings.Index(value, jsonNeedle)
+		if idx == -1 {
+			break
+		}
+		start := idx + len(jsonNeedle)
+		end := start
+		for end < len(value) && value[end] != '"' {
+			end++
+		}
+		value = value[:start] + "REDACTED" + value[end:]
+	}
+	return value
+}
+
+func isRetryableVKNetError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	return false
+}
+
+func vkNetError(prefix string, err error) error {
+	if err == nil {
+		return apperrors.Unavailable.AddErrDetails(prefix + " failed")
+	}
+	if errors.Is(err, context.Canceled) {
+		return apperrors.Unavailable.AddErrDetails(prefix + " canceled")
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return apperrors.Unavailable.AddErrDetails(prefix + " timed out")
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return apperrors.Unavailable.AddErrDetails(prefix + " timed out")
+	}
+	return apperrors.Unavailable.AddErrDetails(prefix + " network error: " + err.Error())
 }
 
 func isRecordNotFound(err error) bool {

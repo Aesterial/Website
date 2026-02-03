@@ -1,8 +1,0 @@
-POST http://127.0.0.1:8080/api/login/register
-Content-Type: application/json
-
-{
-  "username": "admin1",
-  "email": "admin1@test.com",
-  "password": "admin1_password"
-}
