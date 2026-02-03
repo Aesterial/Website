@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -52,6 +53,9 @@ func (s *LoginService) Authorization(ctx context.Context, req *loginpb.AuthReque
 
 	uid, err := s.login.Authorization(ctx, require)
 	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return nil, apperrors.Unauthenticated
+		}
 		return nil, apperrors.Wrap(err)
 	}
 	if uid == nil {
@@ -162,17 +166,28 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) VerifyEmailStart(ctx context.Context, req *loginpb.WithEmailRequest) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
 	if s == nil || s.verification == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("verification service is not configured")
 	}
 	if s.verification.Mailer == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("mailer service is not configured")
 	}
-	email := strings.TrimSpace(req.GetEmail())
-	if email == "" {
-		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated
+	}
+	emailST, err := s.login.User.GetEmail(ctx, requestor.UID)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	if emailST == nil {
+		return nil, apperrors.RecordNotFound
+	}
+	email := emailST.Address
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("internal error")
@@ -180,18 +195,18 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, req *loginpb.WithEm
 	if banned {
 		return nil, apperrors.AccessDenied.AddErrDetails("email is banned")
 	}
-	ip, exists := clientIP(ctx)
-	if !exists {
-		return nil, apperrors.InvalidArguments.AddErrDetails("ip not found")
+	ip := clientIP(ctx)
+	if ip == "unknown" {
+		ip = "127.0.0.1"
 	}
 	token, err := s.verification.Create(ctx, email, verdomain.EmailVerification, ip, userAgentHash(ctx), 5*time.Minute)
 	if err != nil {
 		logger.Debug("Error while creating verification record: "+err.Error(), "")
-		return nil, apperrors.ServerError.AddErrDetails("failed to create verification record")
+		return nil, apperrors.Wrap(err)
 	}
 	_, err = s.verification.Mailer.SendEmailVerify(ctx, email, token)
 	if err != nil {
-		return nil, apperrors.ServerError.AddErrDetails("failed to send verification message")
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
@@ -277,6 +292,10 @@ func (s *LoginService) SetupTOTP(ctx context.Context, _ *emptypb.Empty) (*loginp
 	if err != nil {
 		return nil, apperrors.Wrap(err)
 	}
+	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
+		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
 	return &loginpb.SetupTOTPResponse{Qr: data.QR, Url: data.URL, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
@@ -296,10 +315,15 @@ func (s *LoginService) ConfirmTOTP(ctx context.Context, req *loginpb.ConfirmTOTP
 	}
 	done, codes, err := s.login.ConfirmTOTP(ctx, requestor.UID, req.GetCode())
 	if err != nil {
+		logger.Debug("received error: " + err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if !done {
 		return nil, apperrors.InvalidArguments
+	}
+	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
+		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.ConfirmTOTPResponse{Enabled: true, Recovery: codes, Tracing: TraceIDOrNew(ctx)}, nil
 }
@@ -330,7 +354,41 @@ func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2
 		logger.Debug("work of reset totp not done", "")
 		return nil, apperrors.InvalidArguments
 	}
+	if err := s.login.Sessions.ResetMFAs(ctx, requestor.UID); err != nil {
+		logger.Debug("failed to reset mfa's: " + err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *LoginService) CheckTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRequest) (*loginpb.CheckTOTPResponse, error) {
+	if s == nil || s.login == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated
+	}
+	if req == nil || req.GetCode() == "" {
+		logger.Debug("req is null", "")
+		return nil, apperrors.InvalidArguments
+	}
+	correct, err := s.login.CheckTOTP(ctx, requestor.UID, req.GetCode())
+	if err != nil {
+		logger.Debug("error on checking totp code: " + err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	if !correct {
+		return nil, apperrors.InvalidArguments
+	}
+	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
+		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &loginpb.CheckTOTPResponse{Success: true, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) issueAndStoreSession(ctx context.Context, uid uint) error {

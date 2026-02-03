@@ -55,6 +55,7 @@ type Settings struct {
 	DisplayName     *string
 	Avatar          *Avatar
 	SessionLiveTime int
+	TOTPEnabled     bool
 }
 
 type User struct {
@@ -119,6 +120,13 @@ func (u *User) ToSelf() *userpb.UserSelf {
 		self.Email = &userpb.UserEmail{
 			Address:  u.Email.Address,
 			Verified: u.Email.Verified,
+		}
+	}
+	if u.Settings != nil {
+		self.Settings = &userpb.UserSettings{
+			DisplayName: u.Settings.DisplayName,
+			SessionLiveTime: int32(u.Settings.SessionLiveTime),
+			TotpEnabled: u.Settings.TOTPEnabled,
 		}
 	}
 	return self

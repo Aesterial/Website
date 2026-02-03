@@ -86,4 +86,5 @@ var (
 	NotImplemented      = ErrorST{st: status.New(codes.Unimplemented, "not implemented"), content: "not implemented"}
 	Unavailable         = ErrorST{st: status.New(codes.Unavailable, "unavailable"), content: "service unavailable"}
 	Banned              = ErrorST{st: status.New(codes.PermissionDenied, "user is banned"), content: "user is banned"}
+	NeedVerify          = ErrorST{st: status.New(codes.PermissionDenied, "mfa required"), content: "mfa required"}
 )

@@ -403,8 +403,10 @@ func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, e
 	}
 	var email user.Email
 	if err := row.Scan(&email.Address, &email.Verified); err != nil {
+		logger.Debug("failed to receive email: "+err.Error(), "")
 		return nil, err
 	}
+	logger.Debug("received email: "+email.Address, "")
 	return &email, nil
 }
 
@@ -478,6 +480,10 @@ func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Setti
 		}
 	}
 	s.Avatar, err = u.GetAvatar(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	s.TOTPEnabled, err = u.IsTOTPEnabled(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -711,6 +717,9 @@ func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, 
 	}
 	var info user.BanInfo
 	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info.ID, &info.Executor, &info.Reason, &info.At, &info.Expires); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
+		}
 		return nil, err
 	}
 	return &info, nil
@@ -993,16 +1002,49 @@ func (u *UserRepository) IsValidRecovery(ctx context.Context, uid uint, code str
 
 		err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(code))
 		if err == nil {
-			return true, nil 
+			return true, nil
 		}
 		if !errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return false, err 
+			return false, err
 		}
 	}
 	if err := rows.Err(); err != nil {
 		return false, err
 	}
 	return false, nil
+}
+
+func (u *UserRepository) IsTOTPending(ctx context.Context, uid uint) (bool, error) {
+	var pending bool
+	err := u.DB.QueryRowContext(
+		ctx,
+		`SELECT totp_pending_secret IS NOT NULL FROM users WHERE uid = $1`,
+		uid,
+	).Scan(&pending)
+	return pending, err
+}
+
+func (u *UserRepository) GetTOTPSecret(ctx context.Context, uid uint) (string, error) {
+	var secret string
+	err := u.DB.QueryRowContext(ctx, "SELECT totp_secret FROM users WHERE uid = $1", uid).Scan(&secret)
+	return secret, err
+}
+
+func (u *UserRepository) GetTOTPLastStep(ctx context.Context, uid uint) (*int64, error) {
+	var step sql.NullInt64
+	err := u.DB.QueryRowContext(ctx, "SELECT totp_last_step FROM users WHERE uid = $1", uid).Scan(&step)
+	if err != nil {
+		return nil, err
+	}
+	if !step.Valid {
+		return nil, nil
+	}
+	return &step.Int64, nil
+}
+
+func (u *UserRepository) SetTOTPLastStep(ctx context.Context, uid uint, step int64) error {
+	_, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_last_step = $1 WHERE uid = $2", step, uid)
+	return err
 }
 
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
@@ -1153,12 +1195,33 @@ func (l *LoginRepository) Logout(ctx context.Context, sessionID uuid.UUID) error
 }
 
 func (s *SessionsRepository) IsValid(ctx context.Context, sessionID uuid.UUID) (bool, error) {
-	var expires time.Time
-	var revoked bool
-	row := s.DB.QueryRowContext(ctx, "SELECT expires, revoked FROM sessions s WHERE s.id = $1", sessionID)
-	if err := row.Scan(&expires, &revoked); err != nil {
+	var (
+		expires    time.Time
+		revoked    bool
+		needVerify bool
+	)
+
+	const q = `
+		SELECT
+			s.expires,
+			s.revoked,
+			(COALESCE(u.totp_enabled, false) AND NOT COALESCE(s.mfa_complete, false)) AS need_verify
+		FROM sessions s
+		JOIN users u ON u.uid = s.uid
+		WHERE s.id = $1
+	`
+	err := s.DB.QueryRowContext(ctx, q, sessionID).Scan(&expires, &revoked, &needVerify)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
 		return false, err
 	}
+
+	if needVerify {
+		return false, apperrors.NeedVerify
+	}
+
 	return time.Now().Before(expires) && !revoked, nil
 }
 
@@ -1170,8 +1233,8 @@ func (s *SessionsRepository) GetSession(ctx context.Context, sessionID uuid.UUID
 	return &ses, nil
 }
 
-func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) ([]*sessions.Session, error) {
-	var sess []*sessions.Session
+func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) (*sessions.Sessions, error) {
+	var sess sessions.Sessions
 	rows, err := s.DB.QueryContext(ctx, "SELECT id FROM sessions s WHERE s.uid = $1", uid)
 	if err != nil {
 		return nil, err
@@ -1195,7 +1258,7 @@ func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) ([]*sess
 		}
 		sess = append(sess, data)
 	}
-	return sess, nil
+	return &sess, nil
 }
 
 func (s *SessionsRepository) GetUID(ctx context.Context, sessionID uuid.UUID) (*uint, error) {
@@ -1209,6 +1272,16 @@ func (s *SessionsRepository) SetRevoked(ctx context.Context, sessionID uuid.UUID
 		return err
 	}
 	return nil
+}
+
+func (s *SessionsRepository) ResetMFAs(ctx context.Context, uid uint) error {
+	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET mfa_complete = false WHERE uid = $1", uid)
+	return err
+}
+
+func (s *SessionsRepository) SetMFACompleted(ctx context.Context, sessionID uuid.UUID) error {
+	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET mfa_complete = true WHERE id = $1", sessionID)
+	return err
 }
 
 func (s *SessionsRepository) AddSession(ctx context.Context, sessionID uuid.UUID, agentHash string, expires time.Time, uid uint) error {
@@ -1705,7 +1778,7 @@ func (s *StatisticsRepository) SaveStatisticsRecap(ctx context.Context) error {
 	if !ok {
 		lastActivity = &statpb.UsersActivity{}
 	}
-	if _, err := s.DB.ExecContext(ctx, "INSERT INTO statistics_recap (at, us_activity, new_ideas, vote_count) VALUES ($1, ROW($1, $2)::users_activity_t, $3, $4)", lastDay, lastActivity.Active, lastActivity.Offline, newIdeas, voteCount); err != nil {
+	if _, err := s.DB.ExecContext(ctx, "INSERT INTO statistics_recap (at, us_activity, new_ideas, vote_count) VALUES ($1, ROW($2, $3)::users_activity_t, $4, $5)", lastDay, lastActivity.Active, lastActivity.Offline, newIdeas, voteCount); err != nil {
 		return err
 	}
 	return nil

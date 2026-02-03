@@ -69,6 +69,8 @@ export default function SuggestPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const imagesRef = useRef<SelectedImage[]>([]);
+  const categoryDropdownRef = useRef<HTMLDivElement | null>(null);
+  const categoryListRef = useRef<HTMLUListElement | null>(null);
   const { status, user } = useAuth();
   const { t } = useLanguage();
   const categoryOptions = [

@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	"Aesterial/backend/internal/domain/sessions"
 	"Aesterial/backend/internal/domain/user"
 	userpb "Aesterial/backend/internal/gen/user/v1"
 	"strings"
@@ -68,24 +67,6 @@ func fromProtoAvatar(a *userpb.Avatar) *user.Avatar {
 	}
 	return avatar
 }
-
-func toProtoUserSessions(sessionsList []*sessions.Session) *userpb.UserSessions {
-	resp := &userpb.UserSessions{}
-	for _, s := range sessionsList {
-		if s == nil {
-			continue
-		}
-		resp.Sessions = append(resp.Sessions, &userpb.Session{
-			Uuid:     s.ID.String(),
-			Uid:      uint32(s.UID),
-			Created:  toProtoTimestamp(s.Created),
-			LastSeen: toProtoTimestamp(s.LastSeenAt),
-			Expires:  toProtoTimestamp(s.Expires),
-		})
-	}
-	return resp
-}
-
 func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
 	if t.IsZero() {
 		return nil

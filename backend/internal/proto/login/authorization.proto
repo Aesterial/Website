@@ -33,7 +33,7 @@ service LoginService {
   rpc VkCallback(VKCallbackRequest) returns (VKCallbackResponse) {
     option (google.api.http) = {get: "/api/login/vk/callback"};
   }
-  rpc VerifyEmailStart(WithEmailRequest) returns (EmptyResponse) {
+  rpc VerifyEmailStart(google.protobuf.Empty) returns (EmptyResponse) {
     option (google.api.http) = {
       post: "/api/login/verify-email/start"
       body: "*"
@@ -72,6 +72,12 @@ service LoginService {
   rpc Reset2FARecovery(Reset2FARecoveryRequest) returns (EmptyResponse) {
     option (google.api.http) = {
       post: "/api/login/2fa/reset/recovery"
+      body: "*"
+    };
+  }
+  rpc CheckTOTP(ConfirmTOTPRequest) returns (CheckTOTPResponse) {
+    option (google.api.http) = {
+      post: "/api/login/2fa/check"
       body: "*"
     };
   }

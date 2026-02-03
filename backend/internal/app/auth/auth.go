@@ -5,6 +5,9 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
+
+	"golang.org/x/crypto/bcrypt"
+	"errors"
 )
 
 func (s *Service) Authorization(ctx context.Context, required domain.AuthorizationRequire) (*uint, error) {
@@ -14,6 +17,9 @@ func (s *Service) Authorization(ctx context.Context, required domain.Authorizati
 	}
 	uid, err := s.repo.Authorization(ctx, required)
 	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return nil, err
+		}
 		logger.Debug("error appeared: "+err.Error(), "auth.authorization")
 		return nil, apperrors.Wrap(err)
 	}

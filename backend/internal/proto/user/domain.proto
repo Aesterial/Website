@@ -4,6 +4,7 @@ package user.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+
 option go_package = "Aesterial/backend/internal/gen/user/v1;user";
 
 message UserPublic {
@@ -18,7 +19,8 @@ message UserPublic {
 
 message UserSelf {
   UserPublic public = 1;
-  UserEmail email = 2;
+  UserSettings settings = 2;
+  UserEmail email = 3;
 }
 
 message Avatar {
@@ -33,6 +35,7 @@ message UserSettings {
   optional string displayName = 1;
   optional Avatar avatar = 2;
   int32 sessionLiveTime = 3;
+  bool totp_enabled = 4;
 }
 
 message UserPublicSettings {
@@ -51,16 +54,15 @@ message UserEmail {
   bool verified = 2;
 }
 
-message UserSessions {
-  repeated Session sessions = 1;
+message RevokeSessionRequest {
+    string id = 1;
 }
 
 message Session {
   string uuid = 1;
-  uint32 uid = 2;
-  google.protobuf.Timestamp created = 3;
-  google.protobuf.Timestamp lastSeen = 4;
-  google.protobuf.Timestamp expires = 5;
+  google.protobuf.Timestamp created = 2;
+  google.protobuf.Timestamp lastSeen = 3;
+  string hash = 4;
 }
 
 message OtherUserRequest {
@@ -110,7 +112,7 @@ message UsersResponse {
 }
 
 message UserSessionsResponse {
-  UserSessions data = 1;
+  repeated Session data = 1;
   string tracing = 2;
 }
 

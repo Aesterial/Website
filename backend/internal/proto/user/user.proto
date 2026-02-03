@@ -4,8 +4,8 @@ package user.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "user/domain.proto";
 import "permissions/domain.proto";
+import "user/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/user/v1;user";
 
@@ -13,7 +13,7 @@ service UserService {
   rpc Self(google.protobuf.Empty) returns (UserSelfResponse) {
     option (google.api.http) = {get: "/api/user"};
   }
-  rpc Other(OtherUserRequest) returns (UserPublicResponse) {   
+  rpc Other(OtherUserRequest) returns (UserPublicResponse) {
     option (google.api.http) = {get: "/api/user/{userID}"};
   }
   rpc Users(google.protobuf.Empty) returns (UsersResponse) {
@@ -21,6 +21,12 @@ service UserService {
   }
   rpc Sessions(google.protobuf.Empty) returns (UserSessionsResponse) {
     option (google.api.http) = {get: "/api/user/sessions"};
+  }
+  rpc RevokeSession(RevokeSessionRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/api/user/sessions/revoke/{id}"
+      body: "*"
+    };
   }
   rpc Ban(BanUserRequest) returns (EmptyResponse) {
     option (google.api.http) = {
@@ -74,9 +80,15 @@ service UserService {
     option (google.api.http) = {get: "/api/user/{userID}/permissions"};
   }
   rpc ChangePerms(OtherUserPermsPatchRequest) returns (EmptyResponse) {
-    option (google.api.http) = {post: "/api/user/{userID}/permissions/patch/{perm}", body: "*"};
+    option (google.api.http) = {
+      post: "/api/user/{userID}/permissions/patch/{perm}"
+      body: "*"
+    };
   }
   rpc DeleteProfile(google.protobuf.Empty) returns (google.protobuf.Empty) {
-    option (google.api.http) = {post: "/api/user/delete/profile", body: "*"};
+    option (google.api.http) = {
+      post: "/api/user/delete/profile"
+      body: "*"
+    };
   }
 }

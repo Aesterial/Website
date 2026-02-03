@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -59,6 +60,31 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 	self := u.ToSelf()
 	s.applyAvatarURL(ctx, self.GetPublic())
 	return &userpb.UserSelfResponse{Data: self, Tracing: traceID}, nil
+}
+
+func (s *UserService) RevokeSession(ctx context.Context, req *userpb.RevokeSessionRequest) (*userpb.EmptyResponse, error) {
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
+	}
+	if req == nil {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("request is empty")
+	}
+	if req.GetId() == requestor.SessionID.String() {
+		return nil, apperrors.InvalidArguments
+	}
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	err = s.sessions.SetRevoked(ctx, id)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.UserPublicResponse, error) {
@@ -105,7 +131,7 @@ func (s *UserService) Sessions(ctx context.Context, _ *emptypb.Empty) (*userpb.U
 	if requestor != nil {
 		logger.Info("Got sessions", "user.sessions.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	}
-	return &userpb.UserSessionsResponse{Data: toProtoUserSessions(list), Tracing: traceID}, nil
+	return &userpb.UserSessionsResponse{Data: list.ToProto(), Tracing: traceID}, nil
 }
 
 func (s *UserService) UpdateSelfName(ctx context.Context, req *userpb.ChangeSelfNameRequest) (*userpb.EmptyResponse, error) {

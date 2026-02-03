@@ -684,9 +684,6 @@ export default function VotingPage() {
                       <Sparkles className="h-3.5 w-3.5" />
                       Открытое голосование
                     </span>
-                    <span className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-                      Показано {sortedIdeas.length} идей
-                    </span>
                   </div>
 
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

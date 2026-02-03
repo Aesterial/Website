@@ -47,7 +47,7 @@ func (s *Service) GetSession(ctx context.Context, sessionID uuid.UUID) (*session
 	return session, nil
 }
 
-func (s *Service) GetSessions(ctx context.Context, uid uint) ([]*sessions.Session, error) {
+func (s *Service) GetSessions(ctx context.Context, uid uint) (*sessions.Sessions, error) {
 	if uid == 0 {
 		return nil, apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
@@ -110,4 +110,20 @@ func (s *Service) UpdateLastSeen(ctx context.Context, sessionID uuid.UUID) error
 		return apperrors.Wrap(err)
 	}
 	return nil
+}
+
+/*
+ * SetMFACompleted(ctx context.Context, sessionID uuid.UUID) error
+	ResetMFAs(ctx context.Context, uid uint) error
+*/
+
+func (s *Service) SetMFACompleted(ctx context.Context, sessionID uuid.UUID) error {
+	if !isValid(sessionID) {
+		return apperrors.InvalidArguments
+	}
+	return s.repo.SetMFACompleted(ctx, sessionID)
+}
+
+func (s *Service) ResetMFAs(ctx context.Context, uid uint) error {
+	return s.repo.ResetMFAs(ctx, uid)
 }

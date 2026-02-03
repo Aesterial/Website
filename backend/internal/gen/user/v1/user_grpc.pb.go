@@ -25,6 +25,7 @@ const (
 	UserService_Other_FullMethodName            = "/user.v1.UserService/Other"
 	UserService_Users_FullMethodName            = "/user.v1.UserService/Users"
 	UserService_Sessions_FullMethodName         = "/user.v1.UserService/Sessions"
+	UserService_RevokeSession_FullMethodName    = "/user.v1.UserService/RevokeSession"
 	UserService_Ban_FullMethodName              = "/user.v1.UserService/Ban"
 	UserService_Unban_FullMethodName            = "/user.v1.UserService/Unban"
 	UserService_BanInfo_FullMethodName          = "/user.v1.UserService/BanInfo"
@@ -50,6 +51,7 @@ type UserServiceClient interface {
 	Other(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*UserPublicResponse, error)
 	Users(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UsersResponse, error)
 	Sessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserSessionsResponse, error)
+	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	BanInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BanInfoResponse, error)
@@ -109,6 +111,16 @@ func (c *userServiceClient) Sessions(ctx context.Context, in *emptypb.Empty, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserSessionsResponse)
 	err := c.cc.Invoke(ctx, UserService_Sessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UserService_RevokeSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -273,6 +285,7 @@ type UserServiceServer interface {
 	Other(context.Context, *OtherUserRequest) (*UserPublicResponse, error)
 	Users(context.Context, *emptypb.Empty) (*UsersResponse, error)
 	Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error)
+	RevokeSession(context.Context, *RevokeSessionRequest) (*EmptyResponse, error)
 	Ban(context.Context, *BanUserRequest) (*EmptyResponse, error)
 	Unban(context.Context, *OtherUserRequest) (*EmptyResponse, error)
 	BanInfo(context.Context, *emptypb.Empty) (*BanInfoResponse, error)
@@ -309,6 +322,9 @@ func (UnimplementedUserServiceServer) Users(context.Context, *emptypb.Empty) (*U
 }
 func (UnimplementedUserServiceServer) Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Sessions not implemented")
+}
+func (UnimplementedUserServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
 }
 func (UnimplementedUserServiceServer) Ban(context.Context, *BanUserRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ban not implemented")
@@ -444,6 +460,24 @@ func _UserService_Sessions_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).Sessions(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RevokeSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RevokeSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RevokeSession(ctx, req.(*RevokeSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -740,6 +774,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Sessions",
 			Handler:    _UserService_Sessions_Handler,
+		},
+		{
+			MethodName: "RevokeSession",
+			Handler:    _UserService_RevokeSession_Handler,
 		},
 		{
 			MethodName: "Ban",

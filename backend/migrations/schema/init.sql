@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+﻿create extension if not exists pgcrypto;
 create extension if not exists citext;
 
 -- enums
@@ -10,7 +10,7 @@ create type submissions_state as enum ('approved', 'declined', 'waiting');
 create type picture_owner_type as enum ('user', 'project', 'unspecified');
 create type picture_rate_state as enum ('good', 'bad', 'neutral');
 create type oauth_service_enum as enum ('vk');
-create type verification_purpose as enum ('verify_email', 'reset_password');
+create type verification_purpose as enum ('verify_email', 'reset_password', 'reset_totp');
 
 create type picture_t as (
     content_type varchar(64),
@@ -518,15 +518,24 @@ begin
     return true;
 end $$;
 
--- sync user.permissions when rank name changes
+-- sync user.permissions when rank name changes / on insert
 create or replace function sync_user_permissions_from_rank()
     returns trigger
     language plpgsql
 as $$
 declare
     v_permissions_json jsonb;
+    needs_sync boolean := false;
 begin
-    if (new.rank).name is distinct from (old.rank).name then
+    if TG_OP = 'INSERT' then
+        if new.permissions is null or to_jsonb(new.permissions) = to_jsonb(permissions_empty()) then
+            needs_sync := true;
+        end if;
+    elsif TG_OP = 'UPDATE' then
+        needs_sync := (new.rank).name is distinct from (old.rank).name;
+    end if;
+
+    if needs_sync then
         select to_jsonb(r.permissions)
         into v_permissions_json
         from ranks r
@@ -542,11 +551,15 @@ begin
     return new;
 end $$;
 
+create trigger users_permissions_from_rank_insert
+    before insert on users
+    for each row
+    execute function sync_user_permissions_from_rank();
+
 create trigger users_permissions_from_rank
     before update of rank on users
     for each row
     execute function sync_user_permissions_from_rank();
-
 -- bans
 create table bans (
     id uuid primary key default pg_catalog.gen_random_uuid(),
@@ -1048,3 +1061,8 @@ do $$
               and (rank).name is distinct from 'root';
         end if;
     end $$;
+
+
+
+
+

@@ -27,12 +27,13 @@ var File_user_user_proto protoreflect.FileDescriptor
 
 const file_user_user_proto_rawDesc = "" +
 	"\n" +
-	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x11user/domain.proto\x1a\x18permissions/domain.proto2\x9b\x0f\n" +
+	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x18permissions/domain.proto\x1a\x11user/domain.proto2\x8e\x10\n" +
 	"\vUserService\x12L\n" +
 	"\x04Self\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.UserSelfResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/api/user\x12[\n" +
 	"\x05Other\x12\x19.user.v1.OtherUserRequest\x1a\x1b.user.v1.UserPublicResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/{userID}\x12O\n" +
 	"\x05Users\x12\x16.google.protobuf.Empty\x1a\x16.user.v1.UsersResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/user/list\x12]\n" +
-	"\bSessions\x12\x16.google.protobuf.Empty\x1a\x1d.user.v1.UserSessionsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/sessions\x12Y\n" +
+	"\bSessions\x12\x16.google.protobuf.Empty\x1a\x1d.user.v1.UserSessionsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/sessions\x12q\n" +
+	"\rRevokeSession\x12\x1d.user.v1.RevokeSessionRequest\x1a\x16.user.v1.EmptyResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/user/sessions/revoke/{id}\x12Y\n" +
 	"\x03Ban\x12\x17.user.v1.BanUserRequest\x1a\x16.user.v1.EmptyResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/user/{userID}/ban\x12\\\n" +
 	"\x05Unban\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a\"\x18/api/user/{userID}/unban\x12W\n" +
 	"\aBanInfo\x12\x16.google.protobuf.Empty\x1a\x18.user.v1.BanInfoResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/ban/info\x12h\n" +
@@ -52,64 +53,67 @@ const file_user_user_proto_rawDesc = "" +
 var file_user_user_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),              // 0: google.protobuf.Empty
 	(*OtherUserRequest)(nil),           // 1: user.v1.OtherUserRequest
-	(*BanUserRequest)(nil),             // 2: user.v1.BanUserRequest
-	(*ChangeSelfNameRequest)(nil),      // 3: user.v1.ChangeSelfNameRequest
-	(*Avatar)(nil),                     // 4: user.v1.Avatar
-	(*SendMessageRequest)(nil),         // 5: user.v1.SendMessageRequest
-	(*SetRankRequest)(nil),             // 6: user.v1.SetRankRequest
-	(*HasPermissionRequest)(nil),       // 7: user.v1.HasPermissionRequest
-	(*OtherUserPermsPatchRequest)(nil), // 8: user.v1.OtherUserPermsPatchRequest
-	(*UserSelfResponse)(nil),           // 9: user.v1.UserSelfResponse
-	(*UserPublicResponse)(nil),         // 10: user.v1.UserPublicResponse
-	(*UsersResponse)(nil),              // 11: user.v1.UsersResponse
-	(*UserSessionsResponse)(nil),       // 12: user.v1.UserSessionsResponse
-	(*EmptyResponse)(nil),              // 13: user.v1.EmptyResponse
-	(*BanInfoResponse)(nil),            // 14: user.v1.BanInfoResponse
-	(*MessagesResponse)(nil),           // 15: user.v1.MessagesResponse
-	(*HasPermissionResponse)(nil),      // 16: user.v1.HasPermissionResponse
-	(*v1.PermissionsResponse)(nil),     // 17: permissions.v1.PermissionsResponse
+	(*RevokeSessionRequest)(nil),       // 2: user.v1.RevokeSessionRequest
+	(*BanUserRequest)(nil),             // 3: user.v1.BanUserRequest
+	(*ChangeSelfNameRequest)(nil),      // 4: user.v1.ChangeSelfNameRequest
+	(*Avatar)(nil),                     // 5: user.v1.Avatar
+	(*SendMessageRequest)(nil),         // 6: user.v1.SendMessageRequest
+	(*SetRankRequest)(nil),             // 7: user.v1.SetRankRequest
+	(*HasPermissionRequest)(nil),       // 8: user.v1.HasPermissionRequest
+	(*OtherUserPermsPatchRequest)(nil), // 9: user.v1.OtherUserPermsPatchRequest
+	(*UserSelfResponse)(nil),           // 10: user.v1.UserSelfResponse
+	(*UserPublicResponse)(nil),         // 11: user.v1.UserPublicResponse
+	(*UsersResponse)(nil),              // 12: user.v1.UsersResponse
+	(*UserSessionsResponse)(nil),       // 13: user.v1.UserSessionsResponse
+	(*EmptyResponse)(nil),              // 14: user.v1.EmptyResponse
+	(*BanInfoResponse)(nil),            // 15: user.v1.BanInfoResponse
+	(*MessagesResponse)(nil),           // 16: user.v1.MessagesResponse
+	(*HasPermissionResponse)(nil),      // 17: user.v1.HasPermissionResponse
+	(*v1.PermissionsResponse)(nil),     // 18: permissions.v1.PermissionsResponse
 }
 var file_user_user_proto_depIdxs = []int32{
 	0,  // 0: user.v1.UserService.Self:input_type -> google.protobuf.Empty
 	1,  // 1: user.v1.UserService.Other:input_type -> user.v1.OtherUserRequest
 	0,  // 2: user.v1.UserService.Users:input_type -> google.protobuf.Empty
 	0,  // 3: user.v1.UserService.Sessions:input_type -> google.protobuf.Empty
-	2,  // 4: user.v1.UserService.Ban:input_type -> user.v1.BanUserRequest
-	1,  // 5: user.v1.UserService.Unban:input_type -> user.v1.OtherUserRequest
-	0,  // 6: user.v1.UserService.BanInfo:input_type -> google.protobuf.Empty
-	1,  // 7: user.v1.UserService.BanInfoOther:input_type -> user.v1.OtherUserRequest
-	3,  // 8: user.v1.UserService.UpdateSelfName:input_type -> user.v1.ChangeSelfNameRequest
-	4,  // 9: user.v1.UserService.UpdateSelfAvatar:input_type -> user.v1.Avatar
-	0,  // 10: user.v1.UserService.DeleteSelfAvatar:input_type -> google.protobuf.Empty
-	1,  // 11: user.v1.UserService.DeleteUserAvatar:input_type -> user.v1.OtherUserRequest
-	5,  // 12: user.v1.UserService.SendMessage:input_type -> user.v1.SendMessageRequest
-	6,  // 13: user.v1.UserService.SetRank:input_type -> user.v1.SetRankRequest
-	0,  // 14: user.v1.UserService.Messages:input_type -> google.protobuf.Empty
-	7,  // 15: user.v1.UserService.HasPermissions:input_type -> user.v1.HasPermissionRequest
-	1,  // 16: user.v1.UserService.Permissions:input_type -> user.v1.OtherUserRequest
-	8,  // 17: user.v1.UserService.ChangePerms:input_type -> user.v1.OtherUserPermsPatchRequest
-	0,  // 18: user.v1.UserService.DeleteProfile:input_type -> google.protobuf.Empty
-	9,  // 19: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
-	10, // 20: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
-	11, // 21: user.v1.UserService.Users:output_type -> user.v1.UsersResponse
-	12, // 22: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
-	13, // 23: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
-	13, // 24: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
-	14, // 25: user.v1.UserService.BanInfo:output_type -> user.v1.BanInfoResponse
-	14, // 26: user.v1.UserService.BanInfoOther:output_type -> user.v1.BanInfoResponse
-	13, // 27: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
-	13, // 28: user.v1.UserService.UpdateSelfAvatar:output_type -> user.v1.EmptyResponse
-	13, // 29: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
-	13, // 30: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
-	13, // 31: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
-	13, // 32: user.v1.UserService.SetRank:output_type -> user.v1.EmptyResponse
-	15, // 33: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
-	16, // 34: user.v1.UserService.HasPermissions:output_type -> user.v1.HasPermissionResponse
-	17, // 35: user.v1.UserService.Permissions:output_type -> permissions.v1.PermissionsResponse
-	13, // 36: user.v1.UserService.ChangePerms:output_type -> user.v1.EmptyResponse
-	0,  // 37: user.v1.UserService.DeleteProfile:output_type -> google.protobuf.Empty
-	19, // [19:38] is the sub-list for method output_type
-	0,  // [0:19] is the sub-list for method input_type
+	2,  // 4: user.v1.UserService.RevokeSession:input_type -> user.v1.RevokeSessionRequest
+	3,  // 5: user.v1.UserService.Ban:input_type -> user.v1.BanUserRequest
+	1,  // 6: user.v1.UserService.Unban:input_type -> user.v1.OtherUserRequest
+	0,  // 7: user.v1.UserService.BanInfo:input_type -> google.protobuf.Empty
+	1,  // 8: user.v1.UserService.BanInfoOther:input_type -> user.v1.OtherUserRequest
+	4,  // 9: user.v1.UserService.UpdateSelfName:input_type -> user.v1.ChangeSelfNameRequest
+	5,  // 10: user.v1.UserService.UpdateSelfAvatar:input_type -> user.v1.Avatar
+	0,  // 11: user.v1.UserService.DeleteSelfAvatar:input_type -> google.protobuf.Empty
+	1,  // 12: user.v1.UserService.DeleteUserAvatar:input_type -> user.v1.OtherUserRequest
+	6,  // 13: user.v1.UserService.SendMessage:input_type -> user.v1.SendMessageRequest
+	7,  // 14: user.v1.UserService.SetRank:input_type -> user.v1.SetRankRequest
+	0,  // 15: user.v1.UserService.Messages:input_type -> google.protobuf.Empty
+	8,  // 16: user.v1.UserService.HasPermissions:input_type -> user.v1.HasPermissionRequest
+	1,  // 17: user.v1.UserService.Permissions:input_type -> user.v1.OtherUserRequest
+	9,  // 18: user.v1.UserService.ChangePerms:input_type -> user.v1.OtherUserPermsPatchRequest
+	0,  // 19: user.v1.UserService.DeleteProfile:input_type -> google.protobuf.Empty
+	10, // 20: user.v1.UserService.Self:output_type -> user.v1.UserSelfResponse
+	11, // 21: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
+	12, // 22: user.v1.UserService.Users:output_type -> user.v1.UsersResponse
+	13, // 23: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
+	14, // 24: user.v1.UserService.RevokeSession:output_type -> user.v1.EmptyResponse
+	14, // 25: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
+	14, // 26: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
+	15, // 27: user.v1.UserService.BanInfo:output_type -> user.v1.BanInfoResponse
+	15, // 28: user.v1.UserService.BanInfoOther:output_type -> user.v1.BanInfoResponse
+	14, // 29: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
+	14, // 30: user.v1.UserService.UpdateSelfAvatar:output_type -> user.v1.EmptyResponse
+	14, // 31: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
+	14, // 32: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
+	14, // 33: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
+	14, // 34: user.v1.UserService.SetRank:output_type -> user.v1.EmptyResponse
+	16, // 35: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
+	17, // 36: user.v1.UserService.HasPermissions:output_type -> user.v1.HasPermissionResponse
+	18, // 37: user.v1.UserService.Permissions:output_type -> permissions.v1.PermissionsResponse
+	14, // 38: user.v1.UserService.ChangePerms:output_type -> user.v1.EmptyResponse
+	0,  // 39: user.v1.UserService.DeleteProfile:output_type -> google.protobuf.Empty
+	20, // [20:40] is the sub-list for method output_type
+	0,  // [0:20] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

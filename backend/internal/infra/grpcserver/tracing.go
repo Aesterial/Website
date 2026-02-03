@@ -56,7 +56,7 @@ func TraceUnaryInterceptor() grpc.UnaryServerInterceptor {
 		_ = grpc.SetHeader(ctx, metadata.Pairs(TraceHeader, traceID))
 
 		start := time.Now()
-		peerAddr := grpcPeerAddr(ctx)
+		peerAddr := clientIP(ctx)
 		logger.Info(
 			"Received request: "+peerAddr+" -> "+info.FullMethod,
 			"middleware.tracing",
