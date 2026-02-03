@@ -30,6 +30,13 @@ import { useAuth } from "./auth-provider";
 import { useLanguage } from "./language-provider";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
+import {
+  CITY_STORAGE_KEY,
+  cities,
+  emitCityChange,
+  getStoredCity,
+  type City,
+} from "@/lib/cities";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -49,28 +56,7 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 
-export const cities = [
-  "Барнаул",
-  "Бийск",
-  "Рубцовск",
-  "Котельниково",
-  "Ленинск-Кузнецкий",
-  "Полысаево",
-  "Прокопьевск",
-  "Мыски",
-  "Бородино",
-  "Назарово",
-  "Шарыпово",
-  "Ковдор",
-  "Кингисепп",
-  "Березники",
-  "Абакан",
-  "Черногорск",
-  "Рефтинский",
-  "Чегдомын",
-] as const;
-
-export type City = (typeof cities)[number];
+export { cities, type City } from "@/lib/cities";
 
 const getInitials = (value: string) => {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -140,13 +126,15 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true);
-    const savedCity = localStorage.getItem("city");
-    if (savedCity && cities.includes(savedCity as City))
-      setCity(savedCity as City);
+    setCity(getStoredCity());
   }, []);
 
   useEffect(() => {
-    if (mounted) localStorage.setItem("city", city);
+    if (!mounted) {
+      return;
+    }
+    localStorage.setItem(CITY_STORAGE_KEY, city);
+    emitCityChange(city);
   }, [city, mounted]);
 
   useEffect(() => {

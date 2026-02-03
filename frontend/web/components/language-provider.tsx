@@ -320,6 +320,16 @@ export const translations: Translations = {
     EN: "Change the city from the header menu.",
     KZ: "Қаланы жоғарғы мәзірден өзгерте аласыз.",
   },
+  projectTitleLabel: {
+    RU: "Заголовок",
+    EN: "Title",
+    KZ: "Тақырып",
+  },
+  projectTitlePlaceholder: {
+    RU: "Короткий заголовок идеи",
+    EN: "Short idea title",
+    KZ: "Идеяның қысқа тақырыбы",
+  },
   projectTitleFallback: {
     RU: "Проект",
     EN: "Project",
@@ -339,6 +349,11 @@ export const translations: Translations = {
     RU: "Добавьте описание проекта.",
     EN: "Add a project description.",
     KZ: "Жобаның сипаттамасын қосыңыз.",
+  },
+  projectSubmitErrorTitle: {
+    RU: "Добавьте заголовок проекта.",
+    EN: "Add a project title.",
+    KZ: "Жоба тақырыбын қосыңыз.",
   },
   projectSubmitErrorCoordinates: {
     RU: "Отметьте место на карте.",

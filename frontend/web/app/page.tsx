@@ -10,11 +10,19 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Header, cities } from "@/components/header";
+import { Header } from "@/components/header";
 import { GradientButton } from "@/components/gradient-button";
 import { MapLibreMap, type MapMarker } from "@/components/maplibre-map";
 import { useLanguage } from "@/components/language-provider";
 import { fetchTopProjects, type ApiProject } from "@/lib/api";
+import {
+  CITY_CHANGE_EVENT,
+  CITY_STORAGE_KEY,
+  getStoredCity,
+  resolveCity,
+  resolveCityCenter,
+  type City,
+} from "@/lib/cities";
 import {
   build2GisLink,
   formatCoordinates,
@@ -128,11 +136,7 @@ const getPopularAddress = (project?: ApiProject | null) => {
 };
 
 const MAP_PROJECTS_LIMIT = 12;
-const DEFAULT_CITY_CENTER: [number, number] = [86.0877, 55.3541];
 const COORDINATE_JITTER_RANGE = 0.04;
-
-const normalizeLocation = (value?: string | null) =>
-  value?.trim().toLowerCase() ?? "";
 
 const hashSeed = (value: string) => {
   let hash = 0;
@@ -154,14 +158,6 @@ const applyCoordinateJitter = (
   const offsetLat =
     (((hash >> 10) % 1000) / 1000 - 0.5) * COORDINATE_JITTER_RANGE;
   return [center[0] + offsetLng, center[1] + offsetLat];
-};
-
-const resolveCityCenter = (city?: string | null) => {
-  const normalized = normalizeLocation(city);
-  if (!normalized) {
-    return DEFAULT_CITY_CENTER;
-  }
-  return DEFAULT_CITY_CENTER;
 };
 
 const getProjectInfo = (project?: ApiProject | null) =>
@@ -196,7 +192,7 @@ export default function HomePage() {
   const [selectedCoordinates, setSelectedCoordinates] = useState<
     [number, number] | null
   >(null);
-  const [selectedCity, setSelectedCity] = useState<string>(cities[0] ?? "");
+  const [selectedCity, setSelectedCity] = useState<City>(getStoredCity());
   const projectDetailsCacheRef = useRef(new Map<string, ApiProject>());
   const { label: resolvedLocation, loading: resolvedLocationLoading } =
     useReverseGeocode(selectedCoordinates);
@@ -210,10 +206,45 @@ export default function HomePage() {
   const startHref = status === "authenticated" ? "/voting" : "/auth";
 
   useEffect(() => {
-    const savedCity = localStorage.getItem("city");
-    if (savedCity) {
-      setSelectedCity(savedCity);
+    setSelectedCity(getStoredCity());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return () => {};
     }
+
+    const handleCityChange = (event: Event) => {
+      const payload = event as CustomEvent<{ city?: string }>;
+      const nextCity = resolveCity(payload.detail?.city);
+      if (nextCity) {
+        setSelectedCity(nextCity);
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== CITY_STORAGE_KEY) {
+        return;
+      }
+      const nextCity = resolveCity(event.newValue);
+      if (nextCity) {
+        setSelectedCity(nextCity);
+      }
+    };
+
+    window.addEventListener(
+      CITY_CHANGE_EVENT,
+      handleCityChange as EventListener,
+    );
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(
+        CITY_CHANGE_EVENT,
+        handleCityChange as EventListener,
+      );
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   useEffect(() => {

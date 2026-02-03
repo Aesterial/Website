@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Header } from "@/components/header";
@@ -18,9 +18,17 @@ import {
   ListFilter,
   Check,
   ChevronDown,
+  Type,
 } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
-import { cities, type City } from "@/components/header";
+import {
+  CITY_CHANGE_EVENT,
+  CITY_STORAGE_KEY,
+  getStoredCity,
+  resolveCity,
+  resolveCityCenter,
+  type City,
+} from "@/lib/cities";
 import { createProject, uploadProjectPhotos } from "@/lib/api";
 
 type SelectedImage = {
@@ -44,18 +52,8 @@ const createImageId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-const getStoredCity = () => {
-  if (typeof window === "undefined") {
-    return cities[0];
-  }
-  const savedCity = localStorage.getItem("city");
-  if (savedCity && cities.includes(savedCity as City)) {
-    return savedCity as City;
-  }
-  return cities[0];
-};
-
 export default function SuggestPage() {
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<SuggestCategoryId>("improvement");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -64,7 +62,7 @@ export default function SuggestPage() {
   const [mapSelection, setMapSelection] = useState<[number, number] | null>(
     null,
   );
-  const [selectedCity, setSelectedCity] = useState<City>(cities[0]);
+  const [selectedCity, setSelectedCity] = useState<City>(getStoredCity());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -84,10 +82,56 @@ export default function SuggestPage() {
   const selectedCategoryLabel =
     categoryOptions.find((option) => option.id === category)?.label ??
     t("category");
+  const mapCenter = useMemo(
+    () => resolveCityCenter(selectedCity),
+    [selectedCity],
+  );
 
   useEffect(() => {
     setSelectedCity(getStoredCity());
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return () => {};
+    }
+
+    const handleCityChange = (event: Event) => {
+      const payload = event as CustomEvent<{ city?: string }>;
+      const nextCity = resolveCity(payload.detail?.city);
+      if (nextCity) {
+        setSelectedCity(nextCity);
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== CITY_STORAGE_KEY) {
+        return;
+      }
+      const nextCity = resolveCity(event.newValue);
+      if (nextCity) {
+        setSelectedCity(nextCity);
+      }
+    };
+
+    window.addEventListener(
+      CITY_CHANGE_EVENT,
+      handleCityChange as EventListener,
+    );
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(
+        CITY_CHANGE_EVENT,
+        handleCityChange as EventListener,
+      );
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    setMapSelection(null);
+  }, [selectedCity]);
 
   useEffect(() => {
     imagesRef.current = images;
@@ -179,6 +223,11 @@ export default function SuggestPage() {
     setSubmitError(null);
     setSubmitSuccess(null);
 
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setSubmitError(t("projectSubmitErrorTitle"));
+      return;
+    }
     const trimmedDescription = description.trim();
     if (!trimmedDescription) {
       setSubmitError(t("projectSubmitErrorDescription"));
@@ -193,21 +242,20 @@ export default function SuggestPage() {
       return;
     }
 
-    const city = getStoredCity();
-    setSelectedCity(city);
+    const city = selectedCity;
     if (!city) {
       setSubmitError(t("projectSubmitErrorCity"));
       return;
     }
 
-    const title =
-      trimmedDescription.split(/\n|\r/)[0]?.slice(0, 80).trim() ||
+    const safeTitle =
+      trimmedTitle.slice(0, 80).trim() ||
       `${t("projectTitleFallback")} ${city}`;
 
     setIsSubmitting(true);
     try {
       const { id } = await createProject({
-        title,
+        title: safeTitle,
         description: trimmedDescription,
         category,
         location: {
@@ -227,6 +275,7 @@ export default function SuggestPage() {
       );
 
       setDescription("");
+      setTitle("");
       setMapSelection(null);
       setImages((current) => {
         current.forEach((image) => URL.revokeObjectURL(image.preview));
@@ -365,6 +414,21 @@ export default function SuggestPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     {t("projectCityHint")}
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <Type className="w-4 h-4 inline mr-2" />
+                    {t("projectTitleLabel")}
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t("projectTitlePlaceholder")}
+                    maxLength={80}
+                    className="w-full bg-card border border-border rounded-2xl py-3 px-5 text-sm font-semibold text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300 sm:py-4"
+                  />
                 </div>
 
                 <div>
@@ -527,6 +591,7 @@ export default function SuggestPage() {
                 </label>
                 <MapLibreMap
                   className="min-h-[220px] sm:min-h-[300px] lg:min-h-[360px]"
+                  center={mapCenter}
                   markers={
                     mapSelection
                       ? [
