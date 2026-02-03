@@ -22,7 +22,6 @@ func NewConnection() (*sql.DB, error) {
 		return sql.Open("postgres", dsn)
 	}
 	dburl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name)
-	logger.Debug(dburl, "")
 	return sql.Open("postgres", dburl)
 }
 

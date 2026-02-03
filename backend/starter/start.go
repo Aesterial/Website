@@ -88,7 +88,6 @@ func main() {
 	logger.Debug("service starting", "service.starting")
 
 	env := config.Get()
-	logger.Debug("VK: id: " + env.VK.ClientID + " secret: " + env.VK.ClientSecret + " redirect: " + env.VK.RedirectURI, "")
 
 	dbConn, err := db.NewConnection()
 	if err != nil {

@@ -37,6 +37,7 @@ message VKStartResponse {
 message VKCallbackRequest {
   string code = 1;
   string state = 2;
+  string device_id = 3;
 }
 
 message VKCallbackResponse {

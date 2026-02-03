@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	vkAuthEndpoint  = "https://oauth.vk.com/authorize"
-	vkTokenEndpoint = "https://oauth.vk.com/access_token"
+	vkAuthEndpoint  = "https://id.vk.com/authorize"
+	vkTokenEndpoint = "https://id.vk.com/oauth2/auth"
 	vkUsersEndpoint = "https://api.vk.com/method/users.get"
 	vkDefaultScope  = "email"
 	vkDefaultAPI    = "5.131"
@@ -86,15 +86,16 @@ type vkUsersResponse struct {
 func (s *LoginService) VkStart(ctx context.Context, _ *emptypb.Empty) (*loginpb.VKStartResponse, error) {
 	cfg, err := loadVKConfig(false)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, err
 	}
-	state, err := generateVKState(cfg.stateSecret)
+	state, codeVerifier, err := generateVKState(cfg.stateSecret)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to generate state")
 	}
-	authURL := buildVKAuthURL(cfg, state)
+	codeChallenge := buildPKCEChallenge(codeVerifier)
+	authURL := buildVKAuthURL(cfg, state, codeChallenge)
 	return &loginpb.VKStartResponse{AuthUrl: authURL, State: state}, nil
 }
 
@@ -107,22 +108,24 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	}
 	cfg, err := loadVKConfig(true)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, err
 	}
 	code := strings.TrimSpace(req.GetCode())
 	state := strings.TrimSpace(req.GetState())
-	if code == "" || state == "" {
-		return nil, apperrors.RequiredDataMissing.AddErrDetails("code or state is empty")
+	deviceID := strings.TrimSpace(req.GetDeviceId())
+	if code == "" || state == "" || deviceID == "" {
+		return nil, apperrors.RequiredDataMissing.AddErrDetails("code, state or device_id is empty")
 	}
-	if err := verifyVKState(cfg.stateSecret, cfg.stateTTL, state); err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+	codeVerifier, err := verifyVKState(cfg.stateSecret, cfg.stateTTL, state)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, apperrors.InvalidArguments.AddErrDetails("invalid vk state")
 	}
 
-	tokenResp, err := exchangeVKCode(ctx, cfg, code)
+	tokenResp, err := exchangeVKCode(ctx, cfg, code, codeVerifier, deviceID)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, err
 	}
 	email := strings.TrimSpace(tokenResp.Email)
@@ -137,7 +140,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	if s.verification != nil {
 		banned, err := s.verification.IsBanned(ctx, email)
 		if err != nil {
-			logger.Debug("error appeared: " + err.Error(), "")
+			logger.Debug("error appeared: "+err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		if banned {
@@ -147,14 +150,14 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 
 	profile, err := fetchVKProfile(ctx, cfg, tokenResp.AccessToken, userID)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, err
 	}
 
 	linkedID := strconv.FormatInt(userID, 10)
 	uid, err := s.login.GetOAuthUID(ctx, logindomain.OAuthServiceVK, linkedID)
 	if err != nil && !isRecordNotFound(err) {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 
@@ -163,36 +166,36 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	if uid == nil || isRecordNotFound(err) {
 		uid, err = s.login.GetUIDByEmail(ctx, email)
 		if err != nil && !isRecordNotFound(err) {
-			logger.Debug("error appeared: " + err.Error(), "")
+			logger.Debug("error appeared: "+err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		if uid != nil && err == nil {
 			if err := s.login.LinkOAuth(ctx, logindomain.OAuthServiceVK, linkedID, *uid); err != nil {
-				logger.Debug("error appeared: " + err.Error(), "")
+				logger.Debug("error appeared: "+err.Error(), "")
 				return nil, apperrors.Wrap(err)
 			}
 		} else {
 			generatedPassword, err = generateRandomPassword(16)
 			if err != nil {
-				logger.Debug("error appeared: " + err.Error(), "")
+				logger.Debug("error appeared: "+err.Error(), "")
 				return nil, apperrors.ServerError.AddErrDetails("failed to generate password")
 			}
 			username := buildVKUsername(profile, linkedID)
 			uid, err = s.registerVKUser(ctx, username, email, generatedPassword)
 			if err != nil {
-				logger.Debug("error appeared: " + err.Error(), "")
+				logger.Debug("error appeared: "+err.Error(), "")
 				return nil, err
 			}
 			isNewUser = true
 			if err := s.login.LinkOAuth(ctx, logindomain.OAuthServiceVK, linkedID, *uid); err != nil {
-				logger.Debug("error appeared: " + err.Error(), "")
+				logger.Debug("error appeared: "+err.Error(), "")
 				return nil, apperrors.Wrap(err)
 			}
 
 			displayName := strings.TrimSpace(strings.Join([]string{profile.FirstName, profile.LastName}, " "))
 			if displayName != "" && s.login.User != nil {
 				if err := s.login.User.UpdateDisplayName(ctx, *uid, displayName); err != nil {
-					logger.Debug("error appeared: " + err.Error(), "")
+					logger.Debug("error appeared: "+err.Error(), "")
 					return nil, apperrors.Wrap(err)
 				}
 			}
@@ -221,7 +224,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	}
 
 	if err := s.issueAndStoreSession(ctx, *uid); err != nil {
-		logger.Debug("error appeared: " + err.Error(), "")
+		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to register session: " + err.Error())
 	}
 
@@ -356,7 +359,7 @@ func loadVKConfig(requireSecret bool) (vkConfig, error) {
 	}, nil
 }
 
-func buildVKAuthURL(cfg vkConfig, state string) string {
+func buildVKAuthURL(cfg vkConfig, state string, codeChallenge string) string {
 	u, _ := url.Parse(vkAuthEndpoint)
 	q := u.Query()
 	q.Set("client_id", cfg.clientID)
@@ -365,18 +368,22 @@ func buildVKAuthURL(cfg vkConfig, state string) string {
 	q.Set("scope", cfg.scope)
 	q.Set("response_type", "code")
 	q.Set("state", state)
+	q.Set("code_challenge", codeChallenge)
+	q.Set("code_challenge_method", "S256")
 	q.Set("v", cfg.apiVersion)
 	u.RawQuery = q.Encode()
 	return u.String()
 }
 
-func exchangeVKCode(ctx context.Context, cfg vkConfig, code string) (*vkTokenResponse, error) {
+func exchangeVKCode(ctx context.Context, cfg vkConfig, code string, codeVerifier string, deviceID string) (*vkTokenResponse, error) {
 	u, _ := url.Parse(vkTokenEndpoint)
 	q := u.Query()
 	q.Set("client_id", cfg.clientID)
 	q.Set("client_secret", cfg.clientSecret)
 	q.Set("redirect_uri", cfg.redirectURI)
 	q.Set("code", code)
+	q.Set("code_verifier", codeVerifier)
+	q.Set("device_id", deviceID)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -463,39 +470,56 @@ func pickVKAvatar(profile vkUser) string {
 	return ""
 }
 
-func generateVKState(secret string) (string, error) {
+func generateVKState(secret string) (string, string, error) {
 	token, err := randomToken(32)
 	if err != nil {
-		return "", err
+		return "", "", err
+	}
+	codeVerifier, err := generatePKCEVerifier()
+	if err != nil {
+		return "", "", err
 	}
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
-	data := token + "." + ts
+	data := token + "." + ts + "." + codeVerifier
 	sig := signState(secret, data)
-	return data + "." + sig, nil
+	return data + "." + sig, codeVerifier, nil
 }
 
-func verifyVKState(secret string, ttl time.Duration, state string) error {
+func verifyVKState(secret string, ttl time.Duration, state string) (string, error) {
 	parts := strings.Split(state, ".")
-	if len(parts) != 3 {
-		return errors.New("invalid state format")
+	if len(parts) != 4 {
+		return "", errors.New("invalid state format")
 	}
-	data := parts[0] + "." + parts[1]
+	data := parts[0] + "." + parts[1] + "." + parts[2]
 	expected := signState(secret, data)
-	if !hmac.Equal([]byte(expected), []byte(parts[2])) {
-		return errors.New("invalid state signature")
+	if !hmac.Equal([]byte(expected), []byte(parts[3])) {
+		return "", errors.New("invalid state signature")
 	}
 	ts, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return errors.New("invalid state timestamp")
+		return "", errors.New("invalid state timestamp")
 	}
 	now := time.Now().Unix()
 	if ts > now+300 {
-		return errors.New("state timestamp is in the future")
+		return "", errors.New("state timestamp is in the future")
 	}
 	if now-ts > int64(ttl.Seconds()) {
-		return errors.New("state expired")
+		return "", errors.New("state expired")
 	}
-	return nil
+	codeVerifier := strings.TrimSpace(parts[2])
+	if codeVerifier == "" {
+		return "", errors.New("state code verifier is empty")
+	}
+	return codeVerifier, nil
+}
+
+func generatePKCEVerifier() (string, error) {
+	return randomToken(32)
+}
+
+func buildPKCEChallenge(codeVerifier string) string {
+	sum := sha256.Sum256([]byte(codeVerifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
 func signState(secret string, data string) string {

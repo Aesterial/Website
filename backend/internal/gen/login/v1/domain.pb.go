@@ -337,6 +337,7 @@ type VKCallbackRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,3,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -381,6 +382,13 @@ func (x *VKCallbackRequest) GetCode() string {
 func (x *VKCallbackRequest) GetState() string {
 	if x != nil {
 		return x.State
+	}
+	return ""
+}
+
+func (x *VKCallbackRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
 	}
 	return ""
 }
@@ -875,10 +883,11 @@ const file_login_domain_proto_rawDesc = "" +
 	"\atracing\x18\x01 \x01(\tR\atracing\"B\n" +
 	"\x0fVKStartResponse\x12\x19\n" +
 	"\bauth_url\x18\x01 \x01(\tR\aauthUrl\x12\x14\n" +
-	"\x05state\x18\x02 \x01(\tR\x05state\"=\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"Z\n" +
 	"\x11VKCallbackRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
-	"\x05state\x18\x02 \x01(\tR\x05state\"Q\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1b\n" +
+	"\tdevice_id\x18\x03 \x01(\tR\bdeviceId\"Q\n" +
 	"\x12VKCallbackResponse\x12!\n" +
 	"\fredirect_url\x18\x01 \x01(\tR\vredirectUrl\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"(\n" +
