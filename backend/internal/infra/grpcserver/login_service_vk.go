@@ -86,10 +86,12 @@ type vkUsersResponse struct {
 func (s *LoginService) VkStart(ctx context.Context, _ *emptypb.Empty) (*loginpb.VKStartResponse, error) {
 	cfg, err := loadVKConfig(false)
 	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, err
 	}
 	state, err := generateVKState(cfg.stateSecret)
 	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to generate state")
 	}
 	authURL := buildVKAuthURL(cfg, state)
@@ -105,6 +107,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	}
 	cfg, err := loadVKConfig(true)
 	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, err
 	}
 	code := strings.TrimSpace(req.GetCode())
@@ -113,11 +116,13 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("code or state is empty")
 	}
 	if err := verifyVKState(cfg.stateSecret, cfg.stateTTL, state); err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, apperrors.InvalidArguments.AddErrDetails("invalid vk state")
 	}
 
 	tokenResp, err := exchangeVKCode(ctx, cfg, code)
 	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, err
 	}
 	email := strings.TrimSpace(tokenResp.Email)
@@ -132,6 +137,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	if s.verification != nil {
 		banned, err := s.verification.IsBanned(ctx, email)
 		if err != nil {
+			logger.Debug("error appeared: " + err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		if banned {
@@ -141,12 +147,14 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 
 	profile, err := fetchVKProfile(ctx, cfg, tokenResp.AccessToken, userID)
 	if err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, err
 	}
 
 	linkedID := strconv.FormatInt(userID, 10)
 	uid, err := s.login.GetOAuthUID(ctx, logindomain.OAuthServiceVK, linkedID)
 	if err != nil && !isRecordNotFound(err) {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 
@@ -155,30 +163,36 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	if uid == nil || isRecordNotFound(err) {
 		uid, err = s.login.GetUIDByEmail(ctx, email)
 		if err != nil && !isRecordNotFound(err) {
+			logger.Debug("error appeared: " + err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
 		if uid != nil && err == nil {
 			if err := s.login.LinkOAuth(ctx, logindomain.OAuthServiceVK, linkedID, *uid); err != nil {
+				logger.Debug("error appeared: " + err.Error(), "")
 				return nil, apperrors.Wrap(err)
 			}
 		} else {
 			generatedPassword, err = generateRandomPassword(16)
 			if err != nil {
+				logger.Debug("error appeared: " + err.Error(), "")
 				return nil, apperrors.ServerError.AddErrDetails("failed to generate password")
 			}
 			username := buildVKUsername(profile, linkedID)
 			uid, err = s.registerVKUser(ctx, username, email, generatedPassword)
 			if err != nil {
+				logger.Debug("error appeared: " + err.Error(), "")
 				return nil, err
 			}
 			isNewUser = true
 			if err := s.login.LinkOAuth(ctx, logindomain.OAuthServiceVK, linkedID, *uid); err != nil {
+				logger.Debug("error appeared: " + err.Error(), "")
 				return nil, apperrors.Wrap(err)
 			}
 
 			displayName := strings.TrimSpace(strings.Join([]string{profile.FirstName, profile.LastName}, " "))
 			if displayName != "" && s.login.User != nil {
 				if err := s.login.User.UpdateDisplayName(ctx, *uid, displayName); err != nil {
+					logger.Debug("error appeared: " + err.Error(), "")
 					return nil, apperrors.Wrap(err)
 				}
 			}
@@ -207,6 +221,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	}
 
 	if err := s.issueAndStoreSession(ctx, *uid); err != nil {
+		logger.Debug("error appeared: " + err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to register session: " + err.Error())
 	}
 
