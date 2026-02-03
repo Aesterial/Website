@@ -116,6 +116,7 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 	code := strings.TrimSpace(req.GetCode())
 	state := strings.TrimSpace(req.GetState())
 	deviceID := strings.TrimSpace(req.GetDeviceId())
+	logger.Debug("code: " + code + " state: " + state + " deviceID: " + deviceID, "")
 	if code == "" || state == "" || deviceID == "" {
 		logger.Debug("code or state or deviceID is missing", "")
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("code, state or device_id is empty")
@@ -490,7 +491,6 @@ func generateVKState(secret string) (string, string, error) {
 	sig := signState(secret, data)
 	return data + "." + sig, codeVerifier, nil
 }
-
 func verifyVKState(secret string, ttl time.Duration, state string) (string, error) {
 	state = strings.TrimSpace(state)
 	if state == "" {
@@ -532,36 +532,90 @@ func verifyVKState(secret string, ttl time.Duration, state string) (string, erro
 		return codeVerifier, nil
 	}
 
-	raw, err := base64.RawURLEncoding.DecodeString(state)
-	if err != nil || len(raw) <= sha256.Size {
-		return "", status.New(codes.InvalidArgument, "invalid state format").Err()
+	isDigits10 := func(s string) bool {
+		if len(s) != 10 {
+			return false
+		}
+		for i := 0; i < 10; i++ {
+			c := s[i]
+			if c < '0' || c > '9' {
+				return false
+			}
+		}
+		return true
 	}
-	payload := raw[:len(raw)-sha256.Size]
-	sig := raw[len(raw)-sha256.Size:]
 
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write(payload)
-	expected := mac.Sum(nil)
-	if !hmac.Equal(expected, sig) {
+	for i := 0; i+10 <= len(state); i++ {
+		tsStr := state[i : i+10]
+		if !isDigits10(tsStr) {
+			continue
+		}
+		ts, err := strconv.ParseInt(tsStr, 10, 64)
+		if err != nil {
+			continue
+		}
+		if err := validateTS(ts); err != nil {
+			continue
+		}
+
+		nonce := state[:i]
+		tail := state[i+10:]
+		if nonce == "" || tail == "" {
+			continue
+		}
+
+		for _, sigLen := range []int{43, 44, 64} {
+			if len(tail) <= sigLen {
+				continue
+			}
+			verifier := strings.TrimSpace(tail[:len(tail)-sigLen])
+			sig := tail[len(tail)-sigLen:]
+			if verifier == "" {
+				continue
+			}
+
+			data := nonce + "." + tsStr + "." + verifier
+			expected := signState(secret, data)
+			if hmac.Equal([]byte(expected), []byte(sig)) {
+				return verifier, nil
+			}
+		}
+
 		return "", status.New(codes.InvalidArgument, "invalid state signature").Err()
 	}
 
-	var p struct {
-		TS int64  `json:"ts"`
-		V  string `json:"v"`
+	raw, err := base64.RawURLEncoding.DecodeString(state)
+	if err == nil && len(raw) > sha256.Size {
+		payload := raw[:len(raw)-sha256.Size]
+		sig := raw[len(raw)-sha256.Size:]
+
+		mac := hmac.New(sha256.New, []byte(secret))
+		_, _ = mac.Write(payload)
+		expectedSig := mac.Sum(nil)
+		if !hmac.Equal(expectedSig, sig) {
+			return "", status.New(codes.InvalidArgument, "invalid state signature").Err()
+		}
+
+		var p struct {
+			TS int64  `json:"ts"`
+			V  string `json:"v"`
+		}
+		if err := json.Unmarshal(payload, &p); err != nil {
+			return "", status.New(codes.InvalidArgument, "invalid state format").Err()
+		}
+		if err := validateTS(p.TS); err != nil {
+			return "", err
+		}
+		codeVerifier := strings.TrimSpace(p.V)
+		if codeVerifier == "" {
+			return "", status.New(codes.InvalidArgument, "state code verifier is empty").Err()
+		}
+		return codeVerifier, nil
 	}
-	if err := json.Unmarshal(payload, &p); err != nil {
-		return "", status.New(codes.InvalidArgument, "invalid state format").Err()
-	}
-	if err := validateTS(p.TS); err != nil {
-		return "", err
-	}
-	codeVerifier := strings.TrimSpace(p.V)
-	if codeVerifier == "" {
-		return "", status.New(codes.InvalidArgument, "state code verifier is empty").Err()
-	}
-	return codeVerifier, nil
+
+	return "", status.New(codes.InvalidArgument, "invalid state format").Err()
 }
+
 
 func generatePKCEVerifier() (string, error) {
 	return randomToken(32)
