@@ -20,7 +20,7 @@ create type picture_t as (
 );
 
 create type project_location_t as (
-    city varchar(64), 
+    city varchar(64),
     latitude  double precision,
     longitude double precision
 );
@@ -317,7 +317,7 @@ create table users (
     joined timestamptz not null default now(),
 
     password varchar(255),
-    
+
     -- totp fields
     totp_enabled boolean not null default false,
     totp_secret text,
@@ -348,9 +348,9 @@ create table users_recovery_codes (
     code_hash text not null,
     used_at timestamptz,
     created_at timestamptz not null default now()
-)
+);
 
-create index on users_recovery_codes(user_id)
+create index on users_recovery_codes(user_id);
 
 -- oauth users
 create table oauth (
