@@ -15,4 +15,5 @@ type Repository interface {
 	Perms(ctx context.Context, rank string) (*permissions.Permissions, error)
 	ChangePerms(ctx context.Context, rank string, perm permissions.Permission, state bool) error
 	IsExists(ctx context.Context, rank string) (bool, error)
+	CanEdit(ctx context.Context, current string, target string) (bool, error)
 }

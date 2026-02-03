@@ -1057,7 +1057,7 @@ export async function startVkAuth(): Promise<{
   state?: string;
 }> {
   const payload = await apiRequest<VkStartResponse>("/api/login/vk/start", {
-    method: "GET",
+    method: "POST",
   });
   const authUrl = payload.authUrl ?? payload.auth_url ?? "";
   if (!authUrl) {
@@ -1069,14 +1069,17 @@ export async function startVkAuth(): Promise<{
 export async function completeVkAuth(
   code: string,
   state: string,
+  device_id: string,
 ): Promise<AuthResult> {
-  const params = new URLSearchParams();
-  params.set("code", code);
-  params.set("state", state);
   const payload = await apiRequest<VkCallbackResponse>(
-    `/api/login/vk/callback?${params.toString()}`,
+    `/api/login/vk/callback`,
     {
-      method: "GET",
+      method: "POST",
+      body: JSON.stringify({
+        code,
+        state,
+        device_id,
+      })
     },
   );
   const result = normalizeAuthResult(payload);

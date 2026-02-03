@@ -51,4 +51,5 @@ type Repository interface {
 	GetTOTPLastStep(ctx context.Context, uid uint) (*int64, error)
 	GetTOTPSecret(ctx context.Context, uid uint) (string, error)
 	SetTOTPLastStep(ctx context.Context, uid uint, step int64) error
+	CanEdit(ctx context.Context, user uint, target uint) (bool, error)
 }

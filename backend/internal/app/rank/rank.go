@@ -157,3 +157,10 @@ func (s *Service) ChangePerms(ctx context.Context, name string, perm permissions
 	}
 	return nil
 }
+
+func (s *Service) CanEdit(ctx context.Context, current string, target string) (bool, error) {
+	if s == nil || s.repo == nil {
+		return false, apperrors.NotConfigured
+	}
+	return s.repo.CanEdit(ctx, current, target)
+}

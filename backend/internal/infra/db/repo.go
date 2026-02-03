@@ -1047,6 +1047,24 @@ func (u *UserRepository) SetTOTPLastStep(ctx context.Context, uid uint, step int
 	return err
 }
 
+
+func (u *UserRepository) CanEdit(ctx context.Context, user uint, target uint) (bool, error) {
+	if user == 0 || target == 0 {
+		return false, apperrors.InvalidArguments
+	}
+
+	var can bool
+	err := u.DB.QueryRowContext(ctx, "SELECT COALESCE(r1.weight, 0) > COALESCE(r2.weight, 0) AS can_edit FROM users u1 JOIN users u2 ON u2.uid = $2 LEFT JOIN ranks r1 ON r1.name = (u1.rank).name LEFT JOIN ranks r2 ON r2.name = (u2.rank).name WHERE u1.uid = $1", user, target).Scan(&can)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, apperrors.RecordNotFound
+		}
+		return false, err
+	}
+
+	return can, nil
+}
+
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
 	if event.TraceID == "" {
 		event.TraceID = "-"
@@ -2455,7 +2473,6 @@ func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) 
 	}
 	logger.Debug("ticket already accepted", "")
 	return apperrors.Conflict.AddErrDetails("ticket already accepted")
-	return nil
 }
 
 type scanner interface {
@@ -2971,4 +2988,21 @@ func (r *RanksRepository) Delete(ctx context.Context, rank string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *RanksRepository) CanEdit(ctx context.Context, current string, target string) (bool, error) {
+	if current == "" || target == "" {
+		return false, apperrors.InvalidArguments
+	}
+
+	var can bool
+	err := r.DB.QueryRowContext(ctx, "SELECT COALESCE(r1.weight, 0) > COALESCE(r2.weight, 0) AS can_edit FROM (SELECT weight FROM ranks WHERE name = $1) r1 CROSS JOIN (SELECT weight FROM ranks WHERE name = $2) r2", current, target).Scan(&can)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, apperrors.RecordNotFound
+		}
+		return false, err
+	}
+
+	return can, nil
 }

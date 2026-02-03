@@ -300,9 +300,7 @@ func parseRankColor(raw string) (int, error) {
 	if trimmed == "" {
 		return 0, apperrors.InvalidArguments.AddErrDetails("rank color is empty")
 	}
-	if strings.HasPrefix(trimmed, "#") {
-		trimmed = trimmed[1:]
-	}
+	trimmed = strings.TrimPrefix(trimmed, "#")
 	base := 10
 	lowered := strings.ToLower(trimmed)
 	if strings.HasPrefix(lowered, "0x") {

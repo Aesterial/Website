@@ -26,15 +26,15 @@ var File_login_authorization_proto protoreflect.FileDescriptor
 
 const file_login_authorization_proto_rawDesc = "" +
 	"\n" +
-	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xe8\n" +
+	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xee\n" +
 	"\n" +
 	"\fLoginService\x12c\n" +
 	"\rAuthorization\x12\x15.login.v1.AuthRequest\x1a\x16.login.v1.AuthResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/login/authorization\x12a\n" +
 	"\bRegister\x12\x19.login.v1.RegisterRequest\x1a\x1a.login.v1.RegisterResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/register\x12W\n" +
-	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logout\x12Y\n" +
-	"\aVkStart\x12\x16.google.protobuf.Empty\x1a\x19.login.v1.VKStartResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/login/vk/start\x12g\n" +
+	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logout\x12\\\n" +
+	"\aVkStart\x12\x16.google.protobuf.Empty\x1a\x19.login.v1.VKStartResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/vk/start\x12j\n" +
 	"\n" +
-	"VkCallback\x12\x1b.login.v1.VKCallbackRequest\x1a\x1c.login.v1.VKCallbackResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/login/vk/callback\x12m\n" +
+	"VkCallback\x12\x1b.login.v1.VKCallbackRequest\x1a\x1c.login.v1.VKCallbackResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/vk/callback\x12m\n" +
 	"\x10VerifyEmailStart\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/verify-email/start\x12u\n" +
 	"\x12ResetPasswordStart\x12\x1a.login.v1.WithEmailRequest\x1a\x17.login.v1.EmptyResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/login/reset-password/start\x12h\n" +
 	"\vVerifyEmail\x12\x1c.login.v1.VerifyEmailRequest\x1a\x17.login.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/login/verify-email\x12n\n" +

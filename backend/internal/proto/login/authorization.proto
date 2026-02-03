@@ -28,10 +28,16 @@ service LoginService {
     };
   }
   rpc VkStart(google.protobuf.Empty) returns (VKStartResponse) {
-    option (google.api.http) = {get: "/api/login/vk/start"};
+    option (google.api.http) = {
+      post: "/api/login/vk/start"
+      body: "*"
+    };
   }
   rpc VkCallback(VKCallbackRequest) returns (VKCallbackResponse) {
-    option (google.api.http) = {get: "/api/login/vk/callback"};
+    option (google.api.http) = {
+      post: "/api/login/vk/callback"
+      body: "*"
+    };
   }
   rpc VerifyEmailStart(google.protobuf.Empty) returns (EmptyResponse) {
     option (google.api.http) = {

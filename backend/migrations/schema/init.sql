@@ -1,4 +1,4 @@
-﻿create extension if not exists pgcrypto;
+create extension if not exists pgcrypto;
 create extension if not exists citext;
 
 -- enums
@@ -383,6 +383,7 @@ create table ranks (
     name text primary key,
     color int not null default 0,
     description text not null default '',
+    weight int not null default 0,
     permissions permissions_t not null default permissions_empty(),
     added_at timestamptz not null default now()
 );

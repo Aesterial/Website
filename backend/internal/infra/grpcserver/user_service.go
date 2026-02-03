@@ -219,9 +219,16 @@ func (s *UserService) Ban(ctx context.Context, req *userpb.BanUserRequest) (*use
 		return nil, err
 	}
 	traceID := TraceIDOrNew(ctx)
+	can, err := s.info.CanEdit(ctx, requestor.UID, uint(req.GetUserID()))
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	if !can {
+		return nil, apperrors.AccessDenied
+	}
 	err = s.info.Ban(ctx, user.BanInfo{Executor: requestor.UID, Target: uint(req.UserID), Reason: req.Reason, Expire: time.Now().Add(req.Duration.AsDuration())})
 	if err != nil {
-		return &userpb.EmptyResponse{Tracing: traceID}, err
+		return &userpb.EmptyResponse{Tracing: traceID}, apperrors.Wrap(err)
 	}
 	logger.Info("Banned user", "user.ban.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &userpb.EmptyResponse{Tracing: traceID}, nil
@@ -239,6 +246,13 @@ func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (
 		return nil, err
 	}
 	traceID := TraceIDOrNew(ctx)
+	can, err := s.info.CanEdit(ctx, requestor.UID, uint(req.GetUserID()))
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	if !can {
+		return nil, apperrors.AccessDenied
+	}
 	err = s.info.UnBan(ctx, uint(req.UserID))
 	if err != nil {
 		return &userpb.EmptyResponse{Tracing: traceID}, err

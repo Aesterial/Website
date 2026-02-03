@@ -516,6 +516,13 @@ func (s *Service) IsTOTPending(ctx context.Context, uid uint) (bool, error) {
 	return s.repo.IsTOTPending(ctx, uid)
 }
 
+func (s *Service) CanEdit(ctx context.Context, user uint, target uint) (bool, error) {
+	if user == 0 || target == 0 {
+		return false, apperrors.InvalidArguments
+	}
+	return s.repo.CanEdit(ctx, user, target)
+}
+
 func isNotFound(err error) bool {
 	if err == nil {
 		return false
