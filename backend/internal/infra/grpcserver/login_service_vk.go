@@ -11,6 +11,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -128,7 +129,10 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 		return nil, apperrors.InvalidArguments.AddErrDetails("invalid vk state")
 	}
 
-	tokenResp, err := exchangeVKCode(ctx, cfg, code, codeVerifier, deviceID)
+	exchangeCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	tokenResp, err := exchangeVKCode(exchangeCtx, cfg, code, codeVerifier, deviceID)
 	if err != nil {
 		logger.Debug("error appeared: "+err.Error(), "")
 		return nil, err
@@ -400,13 +404,19 @@ func exchangeVKCode(ctx context.Context, cfg vkConfig, code string, codeVerifier
 
 	const maxRetries = 2
 	var lastErr error
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return nil, vkNetError("vk token exchange", err)
+		}
+
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, vkTokenEndpoint, strings.NewReader(payload))
 		if err != nil {
 			return nil, apperrors.Wrap(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Accept", "application/json")
+		req.Header.Set("User-Agent", "AesterialBackend/1.0")
 
 		resp, err := vkHTTPClient().Do(req)
 		if err != nil {
@@ -415,24 +425,29 @@ func exchangeVKCode(ctx context.Context, cfg vkConfig, code string, codeVerifier
 			}
 			if attempt < maxRetries && isRetryableVKNetError(err) {
 				lastErr = err
+				time.Sleep(time.Duration(attempt+1) * 300 * time.Millisecond)
 				continue
 			}
 			return nil, vkNetError("vk token exchange", err)
 		}
+
 		body, readErr := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 		if readErr != nil {
 			if attempt < maxRetries && isRetryableVKNetError(readErr) {
 				lastErr = readErr
+				time.Sleep(time.Duration(attempt+1) * 300 * time.Millisecond)
 				continue
 			}
 			return nil, apperrors.Wrap(readErr)
 		}
+
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			msg := vkTokenErrorMessage(body)
 			detail := fmt.Sprintf("status %d: %s", resp.StatusCode, msg)
 			if resp.StatusCode >= 500 && attempt < maxRetries {
 				lastErr = fmt.Errorf("vk token exchange %s", detail)
+				time.Sleep(time.Duration(attempt+1) * 400 * time.Millisecond)
 				continue
 			}
 			if resp.StatusCode >= 500 {
@@ -463,6 +478,7 @@ func exchangeVKCode(ctx context.Context, cfg vkConfig, code string, codeVerifier
 		}
 		return &token, nil
 	}
+
 	if lastErr != nil {
 		return nil, vkNetError("vk token exchange", lastErr)
 	}
@@ -533,6 +549,7 @@ func generateVKState(secret string) (string, string, error) {
 	sig := signState(secret, data)
 	return data + "." + sig, codeVerifier, nil
 }
+
 func verifyVKState(secret string, ttl time.Duration, state string) (string, error) {
 	state = strings.TrimSpace(state)
 	if state == "" {
@@ -727,16 +744,23 @@ func decodeJSON(body io.Reader, out any) error {
 }
 
 var vkHTTPClientInstance = &http.Client{
-	Timeout: 12 * time.Second,
+	Timeout: 25 * time.Second,
 	Transport: &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-		ForceAttemptHTTP2:     true,
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:       10 * time.Second,
+			KeepAlive:     30 * time.Second,
+			FallbackDelay: 200 * time.Millisecond,
+		}).DialContext,
+		ForceAttemptHTTP2:     false,
 		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   20,
 		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   5 * time.Second,
-		ResponseHeaderTimeout: 5 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 20 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
+		TLSNextProto:          map[string]func(string, *tls.Conn) http.RoundTripper{},
 	},
 }
 
