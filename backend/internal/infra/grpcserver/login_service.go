@@ -293,7 +293,7 @@ func (s *LoginService) SetupTOTP(ctx context.Context, _ *emptypb.Empty) (*loginp
 		return nil, apperrors.Wrap(err)
 	}
 	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
-		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		logger.Debug("failed to set mfa completed: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.SetupTOTPResponse{Qr: data.QR, Url: data.URL, Tracing: TraceIDOrNew(ctx)}, nil
@@ -315,14 +315,14 @@ func (s *LoginService) ConfirmTOTP(ctx context.Context, req *loginpb.ConfirmTOTP
 	}
 	done, codes, err := s.login.ConfirmTOTP(ctx, requestor.UID, req.GetCode())
 	if err != nil {
-		logger.Debug("received error: " + err.Error(), "")
+		logger.Debug("received error: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if !done {
 		return nil, apperrors.InvalidArguments
 	}
 	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
-		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		logger.Debug("failed to set mfa completed: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.ConfirmTOTPResponse{Enabled: true, Recovery: codes, Tracing: TraceIDOrNew(ctx)}, nil
@@ -347,7 +347,7 @@ func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2
 	}
 	done, err := s.login.ResetTOTPRecovery(ctx, requestor.UID, req.GetCode())
 	if err != nil {
-		logger.Debug("failed to reset totp: " + err.Error(), "") 
+		logger.Debug("failed to reset totp: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if !done {
@@ -355,7 +355,7 @@ func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2
 		return nil, apperrors.InvalidArguments
 	}
 	if err := s.login.Sessions.ResetMFAs(ctx, requestor.UID); err != nil {
-		logger.Debug("failed to reset mfa's: " + err.Error(), "")
+		logger.Debug("failed to reset mfa's: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
@@ -378,14 +378,14 @@ func (s *LoginService) CheckTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRe
 	}
 	correct, err := s.login.CheckTOTP(ctx, requestor.UID, req.GetCode())
 	if err != nil {
-		logger.Debug("error on checking totp code: " + err.Error(), "")
+		logger.Debug("error on checking totp code: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if !correct {
 		return nil, apperrors.InvalidArguments
 	}
 	if err := s.login.Sessions.SetMFACompleted(ctx, requestor.SessionID); err != nil {
-		logger.Debug("failed to set mfa completed: " + err.Error(), "")
+		logger.Debug("failed to set mfa completed: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.CheckTOTPResponse{Success: true, Tracing: TraceIDOrNew(ctx)}, nil

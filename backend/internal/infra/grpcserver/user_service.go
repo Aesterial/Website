@@ -46,7 +46,7 @@ func NewUserService(info *userinfo.Service, modifier *usermodifier.Service, sess
 func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserSelfResponse, error) {
 	requestor, err := s.auth.RequireUser(ctx, true)
 	if err != nil && !errors.Is(err, apperrors.NeedVerify) {
-		logger.Debug("failed to get info about self: " + err.Error(), "")
+		logger.Debug("failed to get info about self: "+err.Error(), "")
 		return nil, err
 	}
 	if requestor == nil {
@@ -54,7 +54,7 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 	}
 	u, err := s.info.GetSelf(ctx, requestor.SessionID)
 	if err != nil && !errors.Is(err, apperrors.NeedVerify) {
-		logger.Debug("error while getting info: " + err.Error(), "")
+		logger.Debug("error while getting info: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	traceID := TraceIDOrNew(ctx)
@@ -543,7 +543,7 @@ func (s *UserService) SetRank(ctx context.Context, req *userpb.SetRankRequest) (
 		expires = &as
 	}
 	if err := s.info.SetRank(ctx, uint(req.UserID), req.GetRank(), expires); err != nil {
-		logger.Debug("Failed to set rank: " + err.Error(), "")
+		logger.Debug("Failed to set rank: "+err.Error(), "")
 		return nil, apperrors.ServerError
 	}
 	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil

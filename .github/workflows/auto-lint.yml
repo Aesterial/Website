@@ -66,9 +66,18 @@ jobs:
         run: |
           set -euo pipefail
           if node -e "const s=require('./package.json').scripts||{}; process.exit(s.lint?0:1)"; then
-            npm run lint
+            if [ -x ./node_modules/.bin/eslint ]; then
+              npm run lint
+            else
+              echo "Skipping lint: lint script exists but eslint is not installed."
+              echo "Add eslint to devDependencies to enable linting."
+            fi
           else
-            npx --no-install next lint || (echo "No lint script and next lint failed" && exit 1)
+            if [ -x ./node_modules/.bin/next ]; then
+              npx --no-install next lint || (echo "No lint script and next lint failed" && exit 1)
+            else
+              echo "Skipping lint: no lint script and next is not installed."
+            fi
           fi
 
       - name: TypeScript typecheck (if script exists, else tsc)

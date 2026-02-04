@@ -4,10 +4,10 @@ import (
 	"Aesterial/backend/internal/app/config"
 	sessionsapp "Aesterial/backend/internal/app/info/sessions"
 	userapp "Aesterial/backend/internal/app/info/user"
-	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/domain/permissions"
 	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/shared/types"
 	"context"
 	"crypto/sha256"
@@ -68,7 +68,7 @@ func (a *Authenticator) RequireUser(ctx context.Context, nocheck ...bool) (*user
 				return nil, apperrors.NeedVerify
 			}
 		} else {
-			logger.Debug("failed to check is session valid: " + err.Error(), "auth.sessions.valid")
+			logger.Debug("failed to check is session valid: "+err.Error(), "auth.sessions.valid")
 			return nil, apperrors.Wrap(err)
 		}
 	}
@@ -114,8 +114,8 @@ func (a *Authenticator) RequireViewPermissions(ctx context.Context, uid uint) er
 		return apperrors.NotConfigured
 	}
 	ok, err := a.User.HasPerm(ctx, uid, permissions.RanksPermissionsChange)
-	if err != nil{
-		return apperrors.ServerError.AddErrDetails("Error: "+err.Error())
+	if err != nil {
+		return apperrors.ServerError.AddErrDetails("Error: " + err.Error())
 	}
 	if !ok {
 		return apperrors.AccessDenied
@@ -294,26 +294,26 @@ func userAgentHash(ctx context.Context) string {
 }
 
 func clientIP(ctx context.Context) string {
-    if md, ok := metadata.FromIncomingContext(ctx); ok {
-        if xff := md.Get("x-forwarded-for"); len(xff) > 0 && xff[0] != "" {
-            parts := strings.Split(xff[0], ",")
-            ip := strings.TrimSpace(parts[0])
-            if ip != "" {
-                return ip
-            }
-        }
-        if xrip := md.Get("x-real-ip"); len(xrip) > 0 && xrip[0] != "" {
-            return strings.TrimSpace(xrip[0])
-        }
-    }
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if xff := md.Get("x-forwarded-for"); len(xff) > 0 && xff[0] != "" {
+			parts := strings.Split(xff[0], ",")
+			ip := strings.TrimSpace(parts[0])
+			if ip != "" {
+				return ip
+			}
+		}
+		if xrip := md.Get("x-real-ip"); len(xrip) > 0 && xrip[0] != "" {
+			return strings.TrimSpace(xrip[0])
+		}
+	}
 
-    if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
-        host, _, err := net.SplitHostPort(p.Addr.String())
-        if err == nil && host != "" {
-            return host
-        }
-        return p.Addr.String()
-    }
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		host, _, err := net.SplitHostPort(p.Addr.String())
+		if err == nil && host != "" {
+			return host
+		}
+		return p.Addr.String()
+	}
 
-    return "unknown"
+	return "unknown"
 }
