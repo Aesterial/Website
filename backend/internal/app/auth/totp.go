@@ -147,12 +147,12 @@ func (s *Service) currentStep(now time.Time, period int64) int64 {
 
 func (s *Service) CheckTOTP(ctx context.Context, uid uint, code string) (bool, error) {
 	now := time.Now()
-	pending, err := s.User.IsTOTPEnabled(ctx, uid)
+	enabled, err := s.User.IsTOTPEnabled(ctx, uid)
 	if err != nil {
 		return false, err
 	}
-	if pending {
-		logger.Debug("code is pending", "")
+	if !enabled {
+		logger.Debug("totp is not enabled", "")
 		return false, apperrors.InvalidArguments
 	}
 	secret, err := s.User.GetTOTPSecret(ctx, uid)
