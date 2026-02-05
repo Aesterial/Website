@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	transactionalFrom = "support@aesterial.xyz"
+	transactionalFrom = "no-reply@aesterial.xyz"
 	replyToEmail      = "support@aesterial.xyz"
 )
 
