@@ -2612,10 +2612,18 @@ func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.
 	if by != tickets.ClosedByUser && reason == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("reason not provided")
 	}
-	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET closed = NOW(), closed_by = $1, close_reason = $2 WHERE id = $3", by.String(), reason, id); err != nil {
+	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET closed = NOW(), closed_by = $1, close_reason = $2, status = $3 WHERE id = $4", by.String(), reason, "закрыт", id); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (t *TicketsRepository) IsClosed(ctx context.Context, id uuid.UUID) (bool, error)  {
+	var closed bool
+	if err := t.DB.QueryRowContext(ctx, "SELECT status = 'закрыт' FROM tickets WHERE id = $1", id).Scan(&closed); err != nil {
+		return false, err
+	}
+	return closed, nil
 }
 
 func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.TicketDataReq) (*tickets.TicketUserData, error) {

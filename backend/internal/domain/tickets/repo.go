@@ -19,5 +19,6 @@ type Repository interface {
 	GetLatestMessage(context.Context, uuid.UUID) (*TicketMessage, error)
 	User(context.Context, uuid.UUID, TicketDataReq) (*TicketUserData, error)
 	Close(context.Context, uuid.UUID, TicketClosedBy, string) error
+	IsClosed(context.Context, uuid.UUID) (bool, error)
 	LatestAt(context.Context, uuid.UUID) (*time.Time, error)
 }

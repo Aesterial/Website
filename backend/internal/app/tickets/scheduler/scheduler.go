@@ -40,6 +40,9 @@ func Run(repo tickets.Repository, usrepo user.Repository, loc *time.Location, s 
 				now := time.Now().In(loc)
 
 				for _, t := range ts {
+					if t.Status == tickets.ClosedStatus {
+						continue
+					}
 					at, err := repo.LatestAt(ctx, t.Id)
 					if err != nil {
 						logger.Error(
