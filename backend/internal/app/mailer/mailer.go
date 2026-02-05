@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -166,18 +167,24 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 }
 
 func (s *Service) smtpSend(ctx context.Context, to string, msg []byte) error {
-	host := s.env.Mailer.Host
-	port := s.env.Mailer.Port
+	host := s.host
+	port := s.port
 
 	addr := net.JoinHostPort(host, strconv.Itoa(port))
 
 	dialer := &net.Dialer{Timeout: 10 * time.Second}
-	conn, err := tls.DialWithDialer(dialer, "tcp", addr, &tls.Config{
-		ServerName: host,
-		MinVersion: tls.VersionTLS12,
-	})
+	var conn net.Conn
+	var err error
+	if s.secure {
+		conn, err = tls.DialWithDialer(dialer, "tcp", addr, &tls.Config{
+			ServerName: host,
+			MinVersion: tls.VersionTLS12,
+		})
+	} else {
+		conn, err = dialer.DialContext(ctx, "tcp", addr)
+	}
 	if err != nil {
-		return fmt.Errorf("tls dial: %w", err)
+		return fmt.Errorf("smtp dial: %w", err)
 	}
 	defer conn.Close()
 
@@ -197,8 +204,8 @@ func (s *Service) smtpSend(ctx context.Context, to string, msg []byte) error {
 	}()
 	defer close(done)
 
-	if s.env.Mailer.User != "" {
-		auth := smtp.PlainAuth("", s.env.Mailer.User, s.env.Mailer.Pass, host)
+	if s.user != "" {
+		auth := smtp.PlainAuth("", s.user, s.pass, host)
 		if err := c.Auth(auth); err != nil {
 			return fmt.Errorf("smtp auth: %w", err)
 		}
