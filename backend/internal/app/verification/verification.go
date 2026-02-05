@@ -10,7 +10,7 @@ import (
 )
 
 type Service struct {
-	repo verification.Repository
+	repo   verification.Repository
 	Mailer *mailer.Service
 }
 
@@ -83,7 +83,7 @@ func (s *Service) EmailExists(ctx context.Context, email string) (bool, error) {
 	}
 	found, err := s.repo.EmailExists(ctx, email)
 	if err != nil {
-		logger.Debug("error appeared: " + err.Error(), "verification_email_exists")
+		logger.Debug("error appeared: "+err.Error(), "verification_email_exists")
 		return false, apperrors.Wrap(err)
 	}
 	return found, nil

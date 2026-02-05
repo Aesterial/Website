@@ -52,7 +52,7 @@ func (s *Service) generateRecoveryCodes() ([]string, []string, error) {
 		}
 
 		recovery = append(recovery, plain)
-		hashes = append(hashes, string(hash)) 
+		hashes = append(hashes, string(hash))
 	}
 
 	return recovery, hashes, nil
@@ -157,7 +157,7 @@ func (s *Service) CheckTOTP(ctx context.Context, uid uint, code string) (bool, e
 	}
 	secret, err := s.User.GetTOTPSecret(ctx, uid)
 	if err != nil {
-		logger.Debug("failed to receive totp secret: " + err.Error(), "")
+		logger.Debug("failed to receive totp secret: "+err.Error(), "")
 		return false, err
 	}
 	lastStep, err := s.User.GetTOTPLastStep(ctx, uid)
@@ -166,9 +166,9 @@ func (s *Service) CheckTOTP(ctx context.Context, uid uint, code string) (bool, e
 		return false, err
 	}
 	ok, err := totp.ValidateCustom(code, secret, now, totp.ValidateOpts{
-		Period: 30,
-		Skew: 0,
-		Digits: 6,
+		Period:    30,
+		Skew:      0,
+		Digits:    6,
 		Algorithm: otp.AlgorithmSHA1,
 	})
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *Service) ResetTOTPRecovery(ctx context.Context, uid uint, code string) 
 		}
 	}
 	if err := s.User.ResetTOTP(ctx, uid); err != nil {
-		logger.Debug("failed to reset: " + err.Error(), "")
+		logger.Debug("failed to reset: "+err.Error(), "")
 		return false, err
 	}
 	codes, err := s.User.GetRecoveryCodes(ctx, uid)

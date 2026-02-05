@@ -43,7 +43,7 @@ type Repository interface {
 	AppendRecoveryCodes(ctx context.Context, uid uint, cds []string) error
 	SetConfirmed(ctx context.Context, uid uint) error
 	SetPendingTOTP(ctx context.Context, uid uint, pending string) error
-	GetPendingTOTP(ctx context.Context, uid uint) (*string, error) 
+	GetPendingTOTP(ctx context.Context, uid uint) (*string, error)
 	IsTOTPEnabled(ctx context.Context, uid uint) (bool, error)
 	ResetTOTP(ctx context.Context, uid uint) error
 	IsValidRecovery(ctx context.Context, uid uint, code string) (bool, error)

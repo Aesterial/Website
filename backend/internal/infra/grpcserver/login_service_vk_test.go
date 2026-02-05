@@ -5,14 +5,15 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
 
 func TestExchangeVKCodeRequest(t *testing.T) {
-	prevEndpoint := vkTokenEndpoint
+	prevClient := vkHTTPClientInstance
 	t.Cleanup(func() {
-		vkTokenEndpoint = prevEndpoint
+		vkHTTPClientInstance = prevClient
 	})
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +58,16 @@ func TestExchangeVKCodeRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	vkTokenEndpoint = server.URL
+	targetURL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("parse test server url: %v", err)
+	}
+	vkHTTPClientInstance = &http.Client{
+		Transport: rewriteTransport{
+			target: targetURL,
+			base:   http.DefaultTransport,
+		},
+	}
 	cfg := vkConfig{
 		clientID:     "client-id",
 		clientSecret: "client-secret",
@@ -67,4 +77,20 @@ func TestExchangeVKCodeRequest(t *testing.T) {
 	if _, err := exchangeVKCode(context.Background(), cfg, "auth-code", "code-verifier", "device-id"); err != nil {
 		t.Fatalf("exchangeVKCode() error: %v", err)
 	}
+}
+
+type rewriteTransport struct {
+	target *url.URL
+	base   http.RoundTripper
+}
+
+func (t rewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.String() == vkTokenEndpoint {
+		clone := req.Clone(req.Context())
+		clone.URL.Scheme = t.target.Scheme
+		clone.URL.Host = t.target.Host
+		clone.Host = t.target.Host
+		return t.base.RoundTrip(clone)
+	}
+	return t.base.RoundTrip(req)
 }

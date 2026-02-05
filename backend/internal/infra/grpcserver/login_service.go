@@ -183,7 +183,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	}
 	emailST, err := s.login.User.GetEmail(ctx, requestor.UID)
 	if err != nil {
-		logger.Debug("failed to get user email: " + err.Error(), "")
+		logger.Debug("failed to get user email: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if emailST == nil {
@@ -192,7 +192,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	email := emailST.Address
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
-		logger.Debug("error on checking is banned: " + err.Error(), "")
+		logger.Debug("error on checking is banned: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("internal error")
 	}
 	if banned {
@@ -209,7 +209,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	}
 	_, err = s.verification.Mailer.SendEmailVerify(ctx, email, token)
 	if err != nil {
-		logger.Debug("error on sending email: " + err.Error(), "")
+		logger.Debug("error on sending email: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil

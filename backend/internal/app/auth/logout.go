@@ -1,9 +1,9 @@
 package login
 
 import (
-	"context"
-	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
+	"context"
 
 	"github.com/google/uuid"
 )

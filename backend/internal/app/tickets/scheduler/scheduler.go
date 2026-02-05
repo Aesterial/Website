@@ -1,11 +1,11 @@
 package scheduler
 
 import (
+	"Aesterial/backend/internal/app/mailer"
 	"Aesterial/backend/internal/domain/tickets"
 	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"
 	"Aesterial/backend/internal/shared/safe"
-	"Aesterial/backend/internal/app/mailer"
 	"context"
 	"time"
 )
@@ -40,7 +40,7 @@ func Run(repo tickets.Repository, usrepo user.Repository, loc *time.Location, s 
 				now := time.Now().In(loc)
 
 				for _, t := range ts {
-					at, err := repo.LatestAt(ctx, t.Id) 
+					at, err := repo.LatestAt(ctx, t.Id)
 					if err != nil {
 						logger.Error(
 							"Failed to get latest message time: "+err.Error(),

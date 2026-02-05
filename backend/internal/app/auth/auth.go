@@ -6,8 +6,8 @@ import (
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 
-	"golang.org/x/crypto/bcrypt"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (s *Service) Authorization(ctx context.Context, required domain.AuthorizationRequire) (*uint, error) {

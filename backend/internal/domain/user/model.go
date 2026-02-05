@@ -124,9 +124,9 @@ func (u *User) ToSelf() *userpb.UserSelf {
 	}
 	if u.Settings != nil {
 		self.Settings = &userpb.UserSettings{
-			DisplayName: u.Settings.DisplayName,
+			DisplayName:     u.Settings.DisplayName,
 			SessionLiveTime: int32(u.Settings.SessionLiveTime),
-			TotpEnabled: u.Settings.TOTPEnabled,
+			TotpEnabled:     u.Settings.TOTPEnabled,
 		}
 	}
 	return self

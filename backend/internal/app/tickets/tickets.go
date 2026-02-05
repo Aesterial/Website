@@ -1,8 +1,8 @@
 package tickets
 
 import (
-	"Aesterial/backend/internal/app/tickets/scheduler"
 	"Aesterial/backend/internal/app/mailer"
+	"Aesterial/backend/internal/app/tickets/scheduler"
 	"Aesterial/backend/internal/domain/tickets"
 	"Aesterial/backend/internal/domain/user"
 	"Aesterial/backend/internal/infra/logger"

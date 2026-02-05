@@ -110,7 +110,6 @@ func (p Permission) IsValid() bool {
 	return false
 }
 
-
 type ProjectsUpdatePermissions struct {
 	All bool `json:"all"`
 	Own bool `json:"own"`

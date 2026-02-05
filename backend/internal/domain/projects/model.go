@@ -46,8 +46,8 @@ func (p projectInfo) ToProto() *projpb.ProjectInfo {
 		Photos:      p.Photos.ToProto(),
 		Category:    p.Category.ToProto(),
 		Location: &projpb.ProjectLocation{
-			City:   p.Location.City,
-			Latitude: p.Location.Latitude,
+			City:      p.Location.City,
+			Latitude:  p.Location.Latitude,
 			Longitude: p.Location.Longitude,
 		},
 	}

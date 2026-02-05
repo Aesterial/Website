@@ -16,7 +16,7 @@ func Start(repo maintenance.Repository, ttl time.Duration) (stop func()) {
 		for range ticker.C {
 			list, err := repo.GetList(ctx)
 			if err != nil {
-				logger.Debug("failed to get list: " + err.Error(), "")
+				logger.Debug("failed to get list: "+err.Error(), "")
 				continue
 			}
 			id, can := list.CanStart(time.Now())

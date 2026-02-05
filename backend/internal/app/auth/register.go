@@ -2,8 +2,8 @@ package login
 
 import (
 	domain "Aesterial/backend/internal/domain/login"
-	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/infra/logger"
+	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 )
 

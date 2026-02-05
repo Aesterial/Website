@@ -158,7 +158,7 @@ const copyByLanguage = {
   },
 } as const;
 
-type SupportCopy = (typeof copyByLanguage)["RU"];
+type SupportCopy = (typeof copyByLanguage)[keyof typeof copyByLanguage];
 
 const categoryKeyById = {
   account_access: "accountAccess",

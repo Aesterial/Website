@@ -72,7 +72,7 @@ func toGenProject(p *projects.Project) *projpb.Project {
 			Photos:      convAvatars(),
 			Category:    cat(),
 			Location: &projpb.ProjectLocation{
-				City:   p.Info.Location.City,
+				City:      p.Info.Location.City,
 				Longitude: p.Info.Location.Longitude,
 				Latitude:  p.Info.Location.Latitude,
 			},

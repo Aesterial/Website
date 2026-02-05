@@ -14,7 +14,7 @@ type Service struct {
 }
 
 func New(r maintenance.Repository) *Service {
-	scheduler.Start(r, time.Second * 10)
+	scheduler.Start(r, time.Second*10)
 	return &Service{repo: r}
 }
 

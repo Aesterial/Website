@@ -22,6 +22,9 @@ jobs:
         with:
           go-version-file: backend/go.work
           cache: true
+          cache-dependency-path: |
+            backend/internal/go.sum
+            backend/starter/go.sum
 
       - name: gofmt (check)
         shell: bash

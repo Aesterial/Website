@@ -1047,7 +1047,6 @@ func (u *UserRepository) SetTOTPLastStep(ctx context.Context, uid uint, step int
 	return err
 }
 
-
 func (u *UserRepository) CanEdit(ctx context.Context, user uint, target uint) (bool, error) {
 	if user == 0 || target == 0 {
 		return false, apperrors.InvalidArguments
