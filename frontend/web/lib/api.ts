@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "@/lib/api-base";
+import { emitMfaRequired } from "@/lib/mfa-required";
 import { StatusCodes } from "http-status-codes";
 
 export type RegisterPayload = {
@@ -316,6 +317,12 @@ export class ApiError extends Error {
   }
 }
 
+export class MfaRequiredError extends ApiError {
+  constructor(message: string) {
+    super(StatusCodes.FORBIDDEN, message);
+  }
+}
+
 function isApiUserResponse(
   payload: ApiUser | ApiUserResponse,
 ): payload is ApiUserResponse {
@@ -463,6 +470,7 @@ const toRankListItem = (value: ApiRankListEntry): ApiRankListItem | null => {
 
 const BAN_STORAGE_KEY = "banInfo";
 const BANNED_ERROR_MATCH = "user is banned";
+const MFA_REQUIRED_MATCH = "mfa_required";
 
 function isBannedResponse(
   status: number,
@@ -480,6 +488,51 @@ function isBannedResponse(
     includesBan(data?.data) ||
     includesBan(data?.message) ||
     includesBan(message)
+  );
+}
+
+const includesMfaRequired = (value: unknown) =>
+  typeof value === "string" && value.toLowerCase().includes(MFA_REQUIRED_MATCH);
+
+const isMfaRequiredPayload = (payload: unknown): boolean => {
+  if (includesMfaRequired(payload)) {
+    return true;
+  }
+  const record = toRecord(payload);
+  if (!record) {
+    return false;
+  }
+  const required = pickBoolean(record, [
+    "mfaRequired",
+    "mfa_required",
+    "twoFactorRequired",
+    "two_factor_required",
+    "totpRequired",
+    "totp_required",
+  ]);
+  if (required) {
+    return true;
+  }
+  const text = pickString(record, ["error", "message", "status", "result"]);
+  return includesMfaRequired(text);
+};
+
+function isMfaRequiredResponse(
+  status: number,
+  data: { error?: string; data?: unknown; message?: string } | null,
+  message: string,
+): boolean {
+  if (status !== StatusCodes.FORBIDDEN && status !== StatusCodes.UNAUTHORIZED) {
+    return false;
+  }
+  if (includesMfaRequired(message)) {
+    return true;
+  }
+  return (
+    isMfaRequiredPayload(data) ||
+    isMfaRequiredPayload(data?.data) ||
+    includesMfaRequired(data?.error) ||
+    includesMfaRequired(data?.message)
   );
 }
 
@@ -517,8 +570,7 @@ function toAuthUser(payload: ApiUser | ApiUserResponse): AuthUser {
   const userRecord = toRecord(user);
   const publicRecord = toRecord(publicUser);
   const securitySettings = user.settings ?? null;
-  const totpEnabled =
-    securitySettings?.totpEnabled ?? false;
+  const totpEnabled = securitySettings?.totpEnabled ?? false;
 
   return {
     uid,
@@ -755,6 +807,10 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     if (isBannedResponse(response.status, data, message)) {
       await handleBannedUser({ signal: init?.signal });
     }
+    if (isMfaRequiredResponse(response.status, data, message)) {
+      emitMfaRequired({ reason: message });
+      throw new MfaRequiredError(message);
+    }
     throw new ApiError(response.status, message);
   }
 
@@ -923,6 +979,17 @@ export async function resendAuthCode(challenge: AuthChallenge): Promise<void> {
   await apiRequest(endpoint, {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export async function checkMfaCode(payload: { code: string }): Promise<void> {
+  const code = payload.code.trim();
+  if (!code) {
+    throw new Error("Code is required.");
+  }
+  await apiRequest("/api/login/2fa/check", {
+    method: "POST",
+    body: JSON.stringify({ code }),
   });
 }
 

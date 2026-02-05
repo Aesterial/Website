@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/components/auth-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { MaintenanceBanner } from "@/components/maintenance-banner";
+import { MfaRequiredDialog } from "@/components/mfa-required-dialog";
 import { PageLoader } from "@/components/page-loader";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,6 +40,7 @@ export default function RootLayout({
               <PageLoader />
               <MaintenanceBanner />
               <Toaster position="top-right" richColors closeButton />
+              <MfaRequiredDialog />
               {children}
             </AuthProvider>
           </LanguageProvider>

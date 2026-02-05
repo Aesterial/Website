@@ -24,6 +24,7 @@ import {
   fetchCurrentUser,
   fetchUserPermissions,
   logoutUser,
+  MfaRequiredError,
   registerUser,
   updateAvatar,
   updateDisplayName,
@@ -146,7 +147,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(current);
         setPermissions(currentPermissions);
         setStatus("authenticated");
-      } catch {
+      } catch (err) {
+        if (err instanceof MfaRequiredError) {
+          setStatus((prev) => (prev === "authenticated" ? prev : "loading"));
+          return;
+        }
         setUser(null);
         setPermissions(null);
         setStatus("anonymous");

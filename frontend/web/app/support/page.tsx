@@ -314,7 +314,7 @@ export default function SupportPage() {
         try {
           await createTicketMessage(id, content, token ? { token } : undefined);
         } catch {
-          // Ignore message errors to avoid blocking ticket creation.
+          // waynut simakov_ceo_IT technics. (на самом деле я не ловлю ошибку изза того что там какой то баг на беке и пришлось писать по ублюдски)
         }
       }
       router.push(`/support/${encodeURIComponent(id)}`);
