@@ -55,6 +55,7 @@ type Mailer struct {
 	Pass     string
 	FromName string
 	Secure   bool
+	StartTLS bool
 }
 
 type VK struct {

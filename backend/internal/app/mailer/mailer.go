@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	transactionalFrom = "no-reply@aesterial.xyz"
+	transactionalFrom = "support@aesterial.xyz"
 	replyToEmail      = "support@aesterial.xyz"
 )
 
@@ -30,6 +30,7 @@ type Config struct {
 	Pass     string
 	FromName string
 	Secure   bool
+	StartTLS bool
 }
 
 type Service struct {
@@ -39,6 +40,7 @@ type Service struct {
 	pass     string
 	fromName string
 	secure   bool
+	startTLS bool
 }
 
 func New(cfg Config) *Service {
@@ -49,6 +51,7 @@ func New(cfg Config) *Service {
 		pass:     cfg.Pass,
 		fromName: strings.TrimSpace(cfg.FromName),
 		secure:   cfg.Secure,
+		startTLS: cfg.StartTLS,
 	}
 }
 
@@ -204,6 +207,18 @@ func (s *Service) smtpSend(ctx context.Context, to string, msg []byte) error {
 	}()
 	defer close(done)
 
+	if s.startTLS {
+		if ok, _ := c.Extension("STARTTLS"); !ok {
+			return fmt.Errorf("smtp starttls: server does not support STARTTLS")
+		}
+		if err := c.StartTLS(&tls.Config{
+			ServerName: host,
+			MinVersion: tls.VersionTLS12,
+		}); err != nil {
+			return fmt.Errorf("smtp starttls: %w", err)
+		}
+	}
+
 	if s.user != "" {
 		auth := smtp.PlainAuth("", s.user, s.pass, host)
 		if err := c.Auth(auth); err != nil {
@@ -251,6 +266,9 @@ func (s *Service) validateConfig() error {
 	}
 	if !strings.EqualFold(s.user, transactionalFrom) {
 		return apperrors.NotConfigured.AddErrDetails("smtp user must be " + transactionalFrom)
+	}
+	if s.secure && s.startTLS {
+		return apperrors.NotConfigured.AddErrDetails("smtp secure and starttls cannot both be enabled")
 	}
 	return nil
 }

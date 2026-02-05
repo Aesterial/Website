@@ -135,6 +135,7 @@ func main() {
 		Pass:     env.Mailer.Pass,
 		FromName: env.Mailer.FromName,
 		Secure:   env.Mailer.Secure,
+		StartTLS: env.Mailer.StartTLS,
 	})
 	sessionsService := sessionsinfo.New(sessionsRepo)
 	userInfoService := userinfo.New(userRepo, sessionsRepo)
