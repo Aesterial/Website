@@ -29,6 +29,7 @@ const (
 	LoginService_ResetPasswordStart_FullMethodName = "/login.v1.LoginService/ResetPasswordStart"
 	LoginService_VerifyEmail_FullMethodName        = "/login.v1.LoginService/VerifyEmail"
 	LoginService_ResetPassword_FullMethodName      = "/login.v1.LoginService/ResetPassword"
+	LoginService_Check_FullMethodName              = "/login.v1.LoginService/Check"
 	LoginService_SetupTOTP_FullMethodName          = "/login.v1.LoginService/SetupTOTP"
 	LoginService_ConfirmTOTP_FullMethodName        = "/login.v1.LoginService/ConfirmTOTP"
 	LoginService_Reset2FARecovery_FullMethodName   = "/login.v1.LoginService/Reset2FARecovery"
@@ -48,6 +49,7 @@ type LoginServiceClient interface {
 	ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
 	SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error)
 	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*ConfirmTOTPResponse, error)
 	Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -152,6 +154,16 @@ func (c *loginServiceClient) ResetPassword(ctx context.Context, in *ResetPasswor
 	return out, nil
 }
 
+func (c *loginServiceClient) Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LoginService_Check_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *loginServiceClient) SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetupTOTPResponse)
@@ -205,6 +217,7 @@ type LoginServiceServer interface {
 	ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*EmptyResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
+	Check(context.Context, *emptypb.Empty) (*EmptyResponse, error)
 	SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error)
 	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error)
 	Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error)
@@ -245,6 +258,9 @@ func (UnimplementedLoginServiceServer) VerifyEmail(context.Context, *VerifyEmail
 }
 func (UnimplementedLoginServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedLoginServiceServer) Check(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedLoginServiceServer) SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetupTOTP not implemented")
@@ -441,6 +457,24 @@ func _LoginService_ResetPassword_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LoginService_Check_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).Check(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_Check_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).Check(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LoginService_SetupTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -555,6 +589,10 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetPassword",
 			Handler:    _LoginService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "Check",
+			Handler:    _LoginService_Check_Handler,
 		},
 		{
 			MethodName: "SetupTOTP",

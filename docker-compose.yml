@@ -5,6 +5,9 @@ services:
       - ./db.ca.crt:/certs/ca.crt:ro
     restart: unless-stopped
     networks: [appnet]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     expose:
       - "8080"
     environment:

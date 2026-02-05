@@ -13,6 +13,7 @@ import (
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -182,6 +183,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	}
 	emailST, err := s.login.User.GetEmail(ctx, requestor.UID)
 	if err != nil {
+		logger.Debug("failed to get user email: " + err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	if emailST == nil {
@@ -190,6 +192,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	email := emailST.Address
 	banned, err := s.verification.IsBanned(ctx, email)
 	if err != nil {
+		logger.Debug("error on checking is banned: " + err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("internal error")
 	}
 	if banned {
@@ -206,6 +209,7 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 	}
 	_, err = s.verification.Mailer.SendEmailVerify(ctx, email, token)
 	if err != nil {
+		logger.Debug("error on sending email: " + err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
@@ -389,6 +393,21 @@ func (s *LoginService) CheckTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRe
 		return nil, apperrors.Wrap(err)
 	}
 	return &loginpb.CheckTOTPResponse{Success: true, Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *LoginService) Check(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
+	if s.login == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated
+	}
+	logger.Debug("user with id: "+strconv.Itoa(int(requestor.UID))+" joined", "service.login.check")
+	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) issueAndStoreSession(ctx context.Context, uid uint) error {

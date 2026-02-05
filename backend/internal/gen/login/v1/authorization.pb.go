@@ -26,8 +26,7 @@ var File_login_authorization_proto protoreflect.FileDescriptor
 
 const file_login_authorization_proto_rawDesc = "" +
 	"\n" +
-	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xee\n" +
-	"\n" +
+	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xc2\v\n" +
 	"\fLoginService\x12c\n" +
 	"\rAuthorization\x12\x15.login.v1.AuthRequest\x1a\x16.login.v1.AuthResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/login/authorization\x12a\n" +
 	"\bRegister\x12\x19.login.v1.RegisterRequest\x1a\x1a.login.v1.RegisterResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/register\x12W\n" +
@@ -38,7 +37,8 @@ const file_login_authorization_proto_rawDesc = "" +
 	"\x10VerifyEmailStart\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/verify-email/start\x12u\n" +
 	"\x12ResetPasswordStart\x12\x1a.login.v1.WithEmailRequest\x1a\x17.login.v1.EmptyResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/login/reset-password/start\x12h\n" +
 	"\vVerifyEmail\x12\x1c.login.v1.VerifyEmailRequest\x1a\x17.login.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/login/verify-email\x12n\n" +
-	"\rResetPassword\x12\x1e.login.v1.ResetPasswordRequest\x1a\x17.login.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/login/reset-password\x12a\n" +
+	"\rResetPassword\x12\x1e.login.v1.ResetPasswordRequest\x1a\x17.login.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/login/reset-password\x12R\n" +
+	"\x05Check\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/login/check\x12a\n" +
 	"\tSetupTOTP\x12\x16.google.protobuf.Empty\x1a\x1b.login.v1.SetupTOTPResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/login/2fa/setup\x12m\n" +
 	"\vConfirmTOTP\x12\x1c.login.v1.ConfirmTOTPRequest\x1a\x1d.login.v1.ConfirmTOTPResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/2fa/confirm\x12x\n" +
 	"\x10Reset2FARecovery\x12!.login.v1.Reset2FARecoveryRequest\x1a\x17.login.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/2fa/reset/recovery\x12g\n" +
@@ -73,25 +73,27 @@ var file_login_authorization_proto_depIdxs = []int32{
 	4,  // 6: login.v1.LoginService.ResetPasswordStart:input_type -> login.v1.WithEmailRequest
 	5,  // 7: login.v1.LoginService.VerifyEmail:input_type -> login.v1.VerifyEmailRequest
 	6,  // 8: login.v1.LoginService.ResetPassword:input_type -> login.v1.ResetPasswordRequest
-	2,  // 9: login.v1.LoginService.SetupTOTP:input_type -> google.protobuf.Empty
-	7,  // 10: login.v1.LoginService.ConfirmTOTP:input_type -> login.v1.ConfirmTOTPRequest
-	8,  // 11: login.v1.LoginService.Reset2FARecovery:input_type -> login.v1.Reset2FARecoveryRequest
-	7,  // 12: login.v1.LoginService.CheckTOTP:input_type -> login.v1.ConfirmTOTPRequest
-	9,  // 13: login.v1.LoginService.Authorization:output_type -> login.v1.AuthResponse
-	10, // 14: login.v1.LoginService.Register:output_type -> login.v1.RegisterResponse
-	11, // 15: login.v1.LoginService.Logout:output_type -> login.v1.EmptyResponse
-	12, // 16: login.v1.LoginService.VkStart:output_type -> login.v1.VKStartResponse
-	13, // 17: login.v1.LoginService.VkCallback:output_type -> login.v1.VKCallbackResponse
-	11, // 18: login.v1.LoginService.VerifyEmailStart:output_type -> login.v1.EmptyResponse
-	11, // 19: login.v1.LoginService.ResetPasswordStart:output_type -> login.v1.EmptyResponse
-	11, // 20: login.v1.LoginService.VerifyEmail:output_type -> login.v1.EmptyResponse
-	11, // 21: login.v1.LoginService.ResetPassword:output_type -> login.v1.EmptyResponse
-	14, // 22: login.v1.LoginService.SetupTOTP:output_type -> login.v1.SetupTOTPResponse
-	15, // 23: login.v1.LoginService.ConfirmTOTP:output_type -> login.v1.ConfirmTOTPResponse
-	11, // 24: login.v1.LoginService.Reset2FARecovery:output_type -> login.v1.EmptyResponse
-	16, // 25: login.v1.LoginService.CheckTOTP:output_type -> login.v1.CheckTOTPResponse
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	2,  // 9: login.v1.LoginService.Check:input_type -> google.protobuf.Empty
+	2,  // 10: login.v1.LoginService.SetupTOTP:input_type -> google.protobuf.Empty
+	7,  // 11: login.v1.LoginService.ConfirmTOTP:input_type -> login.v1.ConfirmTOTPRequest
+	8,  // 12: login.v1.LoginService.Reset2FARecovery:input_type -> login.v1.Reset2FARecoveryRequest
+	7,  // 13: login.v1.LoginService.CheckTOTP:input_type -> login.v1.ConfirmTOTPRequest
+	9,  // 14: login.v1.LoginService.Authorization:output_type -> login.v1.AuthResponse
+	10, // 15: login.v1.LoginService.Register:output_type -> login.v1.RegisterResponse
+	11, // 16: login.v1.LoginService.Logout:output_type -> login.v1.EmptyResponse
+	12, // 17: login.v1.LoginService.VkStart:output_type -> login.v1.VKStartResponse
+	13, // 18: login.v1.LoginService.VkCallback:output_type -> login.v1.VKCallbackResponse
+	11, // 19: login.v1.LoginService.VerifyEmailStart:output_type -> login.v1.EmptyResponse
+	11, // 20: login.v1.LoginService.ResetPasswordStart:output_type -> login.v1.EmptyResponse
+	11, // 21: login.v1.LoginService.VerifyEmail:output_type -> login.v1.EmptyResponse
+	11, // 22: login.v1.LoginService.ResetPassword:output_type -> login.v1.EmptyResponse
+	11, // 23: login.v1.LoginService.Check:output_type -> login.v1.EmptyResponse
+	14, // 24: login.v1.LoginService.SetupTOTP:output_type -> login.v1.SetupTOTPResponse
+	15, // 25: login.v1.LoginService.ConfirmTOTP:output_type -> login.v1.ConfirmTOTPResponse
+	11, // 26: login.v1.LoginService.Reset2FARecovery:output_type -> login.v1.EmptyResponse
+	16, // 27: login.v1.LoginService.CheckTOTP:output_type -> login.v1.CheckTOTPResponse
+	14, // [14:28] is the sub-list for method output_type
+	0,  // [0:14] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

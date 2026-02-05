@@ -63,6 +63,9 @@ service LoginService {
       body: "*"
     };
   }
+  rpc Check(google.protobuf.Empty) returns (EmptyResponse) {
+    option (google.api.http) = {get: "/api/login/check"};
+  }
   rpc SetupTOTP(google.protobuf.Empty) returns (SetupTOTPResponse) {
     option (google.api.http) = {
       post: "/api/login/2fa/setup"
