@@ -491,8 +491,7 @@ func (x *WithEmailRequest) GetEmail() string {
 
 type VerifyEmailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -525,13 +524,6 @@ func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use VerifyEmailRequest.ProtoReflect.Descriptor instead.
 func (*VerifyEmailRequest) Descriptor() ([]byte, []int) {
 	return file_login_domain_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *VerifyEmailRequest) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
 }
 
 func (x *VerifyEmailRequest) GetToken() string {
@@ -892,10 +884,9 @@ const file_login_domain_proto_rawDesc = "" +
 	"\fredirect_url\x18\x01 \x01(\tR\vredirectUrl\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"(\n" +
 	"\x10WithEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\"@\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"*\n" +
 	"\x12VerifyEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\"^\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"^\n" +
 	"\x14ResetPasswordRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x14\n" +

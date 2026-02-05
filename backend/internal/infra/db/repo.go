@@ -2618,7 +2618,7 @@ func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.
 	return nil
 }
 
-func (t *TicketsRepository) IsClosed(ctx context.Context, id uuid.UUID) (bool, error)  {
+func (t *TicketsRepository) IsClosed(ctx context.Context, id uuid.UUID) (bool, error) {
 	var closed bool
 	if err := t.DB.QueryRowContext(ctx, "SELECT status = 'закрыт' FROM tickets WHERE id = $1", id).Scan(&closed); err != nil {
 		return false, err

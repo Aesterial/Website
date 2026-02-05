@@ -223,17 +223,13 @@ func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmail
 	if s == nil || s.verification == nil || s.login == nil || s.login.User == nil {
 		return nil, apperrors.NotConfigured
 	}
-	email := strings.TrimSpace(req.GetEmail())
 	token := strings.TrimSpace(req.GetToken())
-	if email == "" || token == "" {
+	if token == "" {
 		return nil, apperrors.InvalidArguments
 	}
 	record, err := s.verification.GetRecord(ctx, verdomain.EmailVerification, token)
 	if err != nil {
 		return nil, apperrors.Wrap(err)
-	}
-	if !strings.EqualFold(record.Email, email) {
-		return nil, apperrors.InvalidArguments
 	}
 	if record.UsedAt != nil {
 		return nil, apperrors.InvalidArguments
@@ -241,7 +237,7 @@ func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmail
 	if time.Now().After(record.ExpiresAt) {
 		return nil, apperrors.InvalidArguments.AddErrDetails("Token Expired")
 	}
-	if err := s.login.User.SetEmailVerifiedByAddress(ctx, email, true); err != nil {
+	if err := s.login.User.SetEmailVerifiedByAddress(ctx, record.Email, true); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
 	if _, err := s.verification.Consume(ctx, verdomain.EmailVerification, token); err != nil {

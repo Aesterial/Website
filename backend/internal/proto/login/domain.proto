@@ -50,8 +50,7 @@ message WithEmailRequest {
 }
 
 message VerifyEmailRequest {
-  string email = 1;
-  string token = 2;
+  string token = 1;
 }
 
 message ResetPasswordRequest {

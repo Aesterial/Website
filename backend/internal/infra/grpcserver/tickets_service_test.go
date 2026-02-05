@@ -68,6 +68,10 @@ func (t *ticketsRepoStub) LatestAt(context.Context, uuid.UUID) (*time.Time, erro
 	return nil, nil
 }
 
+func (t *ticketsRepoStub) IsClosed(context.Context, uuid.UUID) (bool, error) {
+	return false, nil
+}
+
 func TestTicketsServiceCreateSuccess(t *testing.T) {
 	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
 	token := "token-1"
