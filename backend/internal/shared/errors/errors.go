@@ -36,12 +36,12 @@ func (e ErrorST) AddErrDetails(dat string) ErrorST {
 	return e
 }
 
-func (e ErrorST) Is(err ErrorST) bool {
-	return e == err
+func (e ErrorST) Is(err error) bool {
+	return e.content == err.Error()
 }
 
 func (e ErrorST) IsErr(err error) bool {
-	return e.content == err.Error()
+	return e == err
 }
 
 func (e ErrorST) WithDetails(details ...proto.Message) ErrorST {
