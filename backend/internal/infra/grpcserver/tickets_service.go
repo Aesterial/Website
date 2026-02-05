@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -293,7 +294,9 @@ func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMe
 			logger.Debug("failed to get username: "+err.Error(), "")
 			return nil, apperrors.Wrap(err)
 		}
-		if _, err := t.mailer.SendTicketMessage(ctx, email, id.String(), sender, req.Content); err != nil {
+		mailCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if _, err := t.mailer.SendTicketMessage(mailCtx, email, id.String(), sender, req.Content); err != nil {
 			logger.Debug("failed to send ticket message: "+err.Error(), "")
 		}
 	}

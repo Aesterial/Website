@@ -159,7 +159,9 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 		logger.Debug("failed to create verification record: "+err.Error(), "")
 		return nil, err
 	}
-	_, err = s.verification.Mailer.SendPasswordReset(ctx, email, token)
+	mailCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err = s.verification.Mailer.SendPasswordReset(mailCtx, email, token)
 	if err != nil {
 		logger.Debug("failed to send mail message: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
@@ -207,7 +209,9 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 		logger.Debug("Error while creating verification record: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
-	_, err = s.verification.Mailer.SendEmailVerify(ctx, email, token)
+	mailCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err = s.verification.Mailer.SendEmailVerify(mailCtx, email, token)
 	if err != nil {
 		logger.Debug("error on sending email: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)

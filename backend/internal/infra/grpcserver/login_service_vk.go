@@ -235,7 +235,9 @@ func (s *LoginService) VkCallback(ctx context.Context, req *loginpb.VKCallbackRe
 		if s.verification == nil || s.verification.Mailer == nil {
 			return nil, apperrors.NotConfigured.AddErrDetails("mailer service is not configured")
 		}
-		if _, err := s.verification.Mailer.SendRegistrationPassword(ctx, email, generatedPassword); err != nil {
+		mailCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if _, err := s.verification.Mailer.SendRegistrationPassword(mailCtx, email, generatedPassword); err != nil {
 			logger.Debug("failed to send registration password: "+err.Error(), "login.vk.mailer")
 		}
 	}
