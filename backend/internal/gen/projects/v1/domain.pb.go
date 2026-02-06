@@ -33,6 +33,7 @@ const (
 	ProjectCategory_PLAYGROUNDS   ProjectCategory = 4
 	ProjectCategory_PARKS         ProjectCategory = 5
 	ProjectCategory_OTHER         ProjectCategory = 6
+	ProjectCategory_UNKNOWN       ProjectCategory = 7
 )
 
 // Enum value maps for ProjectCategory.
@@ -45,6 +46,7 @@ var (
 		4: "PLAYGROUNDS",
 		5: "PARKS",
 		6: "OTHER",
+		7: "UNKNOWN",
 	}
 	ProjectCategory_value = map[string]int32{
 		"UNSPECIFIED":   0,
@@ -54,6 +56,7 @@ var (
 		"PLAYGROUNDS":   4,
 		"PARKS":         5,
 		"OTHER":         6,
+		"UNKNOWN":       7,
 	}
 )
 
@@ -993,7 +996,7 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\n" +
 	"categories\x18\x01 \x03(\tR\n" +
 	"categories\x12\x18\n" +
-	"\atracing\x18\x02 \x01(\tR\atracing*{\n" +
+	"\atracing\x18\x02 \x01(\tR\atracing*\x88\x01\n" +
 	"\x0fProjectCategory\x12\x0f\n" +
 	"\vUNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vIMPROVEMENT\x10\x01\x12\x11\n" +
@@ -1001,7 +1004,8 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\bLIGHTING\x10\x03\x12\x0f\n" +
 	"\vPLAYGROUNDS\x10\x04\x12\t\n" +
 	"\x05PARKS\x10\x05\x12\t\n" +
-	"\x05OTHER\x10\x06*n\n" +
+	"\x05OTHER\x10\x06\x12\v\n" +
+	"\aUNKNOWN\x10\a*n\n" +
 	"\x11ProjectVoteStatus\x12\r\n" +
 	"\tPUBLISHED\x10\x00\x12\f\n" +
 	"\bPROGRESS\x10\x01\x12\x10\n" +

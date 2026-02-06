@@ -1116,6 +1116,7 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 	if require.IsEmpty() {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("some of params is empty")
 	}
+	require.Email, require.Username = strings.ToLower(require.Email), strings.ToLower(require.Username)
 	var id uint
 	err := l.DB.QueryRowContext(ctx, `
 		INSERT INTO users (username, email, password)
@@ -1134,6 +1135,7 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 	if require.IsEmpty() {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("some of params is empty")
 	}
+	require.Usermail = strings.ToLower(require.Usermail)
 	var uid uint
 	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", require.Usermail).Scan(&uid); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {

@@ -38,6 +38,7 @@ enum ProjectCategory {
   PLAYGROUNDS = 4;
   PARKS = 5;
   OTHER = 6;
+  UNKNOWN = 7;
 }
 
 enum ProjectVoteStatus {

@@ -24,10 +24,31 @@ func (p ProjectCategory) String() string {
 	return string(p)
 }
 
+const (
+	otherCategory       ProjectCategory = "другое"
+	parksCategory       ProjectCategory = "парки и скверы"
+	playgroundsCategory ProjectCategory = "детские площадки"
+	lightingCategory    ProjectCategory = "освещение"
+	roadsCategory       ProjectCategory = "дороги и тротуары"
+	improvementCategory ProjectCategory = "благоустройство"
+)
+
 func (p ProjectCategory) ToProto() projpb.ProjectCategory {
 	switch p {
-	default:
+	case parksCategory:
+		return projpb.ProjectCategory_PARKS
+	case playgroundsCategory:
+		return projpb.ProjectCategory_PLAYGROUNDS
+	case lightingCategory:
+		return projpb.ProjectCategory_LIGHTING
+	case roadsCategory:
+		return projpb.ProjectCategory_ROADSIDEWALKS
+	case improvementCategory:
+		return projpb.ProjectCategory_IMPROVEMENT
+	case otherCategory:
 		return projpb.ProjectCategory_OTHER
+	default:
+		return projpb.ProjectCategory_UNKNOWN
 	}
 }
 
