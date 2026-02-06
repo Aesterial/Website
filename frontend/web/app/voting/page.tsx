@@ -13,6 +13,7 @@ import {
   type TutorialStep,
 } from "@/components/tutorial/tutorial-provider";
 import { fetchProjects, toggleProjectLike, type ApiProject } from "@/lib/api";
+import { resolveCoordinates, type Coordinates } from "@/lib/location";
 import type { Variants } from "framer-motion";
 
 interface IdeaCard {
@@ -91,6 +92,21 @@ const toImageSrc = (
     return `data:${photo.contentType};base64,${photo.data}`;
   }
   return "";
+};
+
+const buildMapPreviewSrc = (coords: Coordinates | null) => {
+  if (!coords) {
+    return "";
+  }
+
+  const [lng, lat] = coords;
+  const params = new URLSearchParams({
+    center: `${lat.toFixed(6)},${lng.toFixed(6)}`,
+    zoom: "15",
+    size: "640x360",
+    markers: `${lat.toFixed(6)},${lng.toFixed(6)},red-pushpin`,
+  });
+  return `https://staticmap.openstreetmap.de/staticmap.php?${params.toString()}`;
 };
 
 const parseTimestamp = (value: unknown) => {
@@ -233,9 +249,9 @@ export default function VotingPage() {
           : UNKNOWN_ADDRESS_LABEL;
 
         const photos = Array.isArray(info?.photos) ? info?.photos : [];
-        const mapImage = toImageSrc(photos[0]) || "/placeholder.svg";
-        const photoImage =
-          toImageSrc(photos[1] ?? photos[0]) || "/placeholder.svg";
+        const coordinates = resolveCoordinates(location);
+        const mapImage = buildMapPreviewSrc(coordinates) || "/placeholder.svg";
+        const photoImage = toImageSrc(photos[0]) || "/placeholder.svg";
 
         const liked = Array.isArray(project.liked) ? project.liked : [];
         const userId = user?.uid;
