@@ -1715,15 +1715,15 @@ func (s *StatisticsRepository) SaveStatisticsRecap(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	usersActivity, err := s.UsersActivity(ctx, lastDay)
+	active, err := s.GetOnlineUsers(ctx, lastDay)
 	if err != nil {
 		return err
 	}
-	lastActivity, ok := usersActivity[lastDay]
-	if !ok {
-		lastActivity = &statpb.UsersActivity{}
+	offline, err := s.GetOfflineUsers(ctx, lastDay)
+	if err != nil {
+		return err
 	}
-	if _, err := s.DB.ExecContext(ctx, "INSERT INTO statistics_recap (at, us_activity, new_ideas, vote_count) VALUES ($1, ROW($2, $3)::users_activity_t, $4, $5)", lastDay, lastActivity.Active, lastActivity.Offline, newIdeas, voteCount); err != nil {
+	if _, err := s.DB.ExecContext(ctx, "INSERT INTO statistics_recap (at, us_activity, new_ideas, vote_count) VALUES ($1, ROW($2, $3)::users_activity_t, $4, $5)", lastDay, offline, active, newIdeas, voteCount); err != nil {
 		return err
 	}
 	return nil

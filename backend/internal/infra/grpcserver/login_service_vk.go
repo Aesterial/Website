@@ -360,8 +360,8 @@ func loadVKConfig(requireSecret bool) (vkConfig, error) {
 		return vkConfig{}, apperrors.NotConfigured.AddErrDetails("vk state secret is missing")
 	}
 	successRedirect := strings.TrimSpace(env.VK.SuccessRedirectURL)
-	if successRedirect == "" && strings.TrimSpace(env.Cookies.Domain) != "" {
-		successRedirect = "https://" + strings.TrimSpace(env.Cookies.Domain)
+	if successRedirect == "" && strings.TrimSpace(env.Mailer.Domain) != "" {
+		successRedirect = "https://" + strings.TrimSpace(env.Mailer.Domain)
 	}
 	if successRedirect == "" {
 		return vkConfig{}, apperrors.NotConfigured.AddErrDetails("vk success redirect url is missing")
