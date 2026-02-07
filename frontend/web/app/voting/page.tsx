@@ -176,6 +176,52 @@ const votingTutorialSteps: TutorialStep[] = [
 type CityFilter = "all" | string;
 const normalizeKey = (value: string) => value.trim().toLowerCase();
 const ALL_FILTER = "all";
+const moderationRoles = new Set([
+  "root",
+  "admin",
+  "staff",
+  "moderator",
+  "assistant",
+  "support",
+  "developer",
+  "operator",
+]);
+
+const toPermissionRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  return value as Record<string, unknown>;
+};
+
+const hasSubmissionsModerationAccess = (
+  permissions: unknown,
+  roleName?: string,
+) => {
+  const normalizedRole = roleName?.trim().toLowerCase();
+  if (normalizedRole && moderationRoles.has(normalizedRole)) {
+    return true;
+  }
+
+  const record = toPermissionRecord(permissions);
+  if (!record) {
+    return false;
+  }
+  if (record.all === true) {
+    return true;
+  }
+
+  const submissions = toPermissionRecord(record.submissions);
+  if (!submissions) {
+    return false;
+  }
+
+  return (
+    submissions.view === true ||
+    submissions.accept === true ||
+    submissions.decline === true
+  );
+};
 
 export default function VotingPage() {
   const [ideas, setIdeas] = useState<IdeaCard[]>([]);
@@ -189,9 +235,13 @@ export default function VotingPage() {
   const [sortBy, setSortBy] =
     useState<(typeof sortOptions)[number]["id"]>("popular");
   const [actionError, setActionError] = useState<string | null>(null);
-  const { user, status } = useAuth();
+  const { user, status, permissions } = useAuth();
   const { t } = useLanguage();
   const isEmailVerified = Boolean(user?.emailVerified);
+  const canOpenModerationProjects = useMemo(
+    () => hasSubmissionsModerationAccess(permissions, user?.rank?.name),
+    [permissions, user?.rank?.name],
+  );
   const categoryLabels = useMemo<Record<string, string>>(
     () => ({
       improvement: t("landscaping"),
@@ -726,6 +776,27 @@ export default function VotingPage() {
                         <p className="text-2xl font-semibold">{totalVotes}</p>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link href={`/users/${user.uid}`} className="inline-flex">
+                      <button
+                        type="button"
+                        className="rounded-full border border-border/70 bg-background/80 px-5 py-2 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-foreground hover:text-background"
+                      >
+                        Мои проекты
+                      </button>
+                    </Link>
+                    {canOpenModerationProjects ? (
+                      <Link href="/admin/submissions" className="inline-flex">
+                        <button
+                          type="button"
+                          className="rounded-full border border-foreground/30 bg-foreground/10 px-5 py-2 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-foreground hover:text-background"
+                        >
+                          Проекты на модерации 🛡️
+                        </button>
+                      </Link>
+                    ) : null}
                   </div>
                 </motion.div>
 

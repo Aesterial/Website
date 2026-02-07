@@ -63,6 +63,9 @@ export default function AccountPage() {
   const { language, setLanguage, t } = useLanguage();
   const [displayName, setDisplayName] = useState("");
   const [profileDescription, setProfileDescription] = useState("");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [draftDisplayName, setDraftDisplayName] = useState("");
+  const [draftProfileDescription, setDraftProfileDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -115,10 +118,12 @@ export default function AccountPage() {
 
   useEffect(() => {
     setDisplayName(user?.displayName ?? "");
+    setDraftDisplayName(user?.displayName ?? "");
   }, [user?.displayName]);
 
   useEffect(() => {
     setProfileDescription(user?.description ?? "");
+    setDraftProfileDescription(user?.description ?? "");
   }, [user?.description]);
 
   useEffect(() => {
@@ -202,7 +207,14 @@ export default function AccountPage() {
     }
   };
 
-  const handleSubmit = async (event: FormEvent) => {
+  const openProfileEditor = () => {
+    setDraftDisplayName(displayName);
+    setDraftProfileDescription(profileDescription);
+    setErrorMessage(null);
+    setProfileEditorOpen(true);
+  };
+
+  const handleProfileSave = async (event: FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -211,8 +223,8 @@ export default function AccountPage() {
       return;
     }
 
-    const nextName = displayName.trim();
-    const nextDescription = profileDescription.trim();
+    const nextName = draftDisplayName.trim();
+    const nextDescription = draftProfileDescription.trim();
     const currentName = (user.displayName ?? "").trim();
     const currentDescription = (user.description ?? "").trim();
     const nameChanged = nextName !== currentName;
@@ -235,6 +247,9 @@ export default function AccountPage() {
       if (descriptionChanged) {
         await updateProfileDescription(nextDescription);
       }
+      setDisplayName(nextName);
+      setProfileDescription(nextDescription);
+      setProfileEditorOpen(false);
       setSuccessMessage(t("accountProfileSaved"));
     } catch (err) {
       setErrorMessage(
@@ -245,7 +260,7 @@ export default function AccountPage() {
     }
   };
 
-  const handleResetDisplayName = async () => {
+  const handleResetDisplayName = () => {
     if (!user) {
       return;
     }
@@ -254,19 +269,7 @@ export default function AccountPage() {
       return;
     }
     setErrorMessage(null);
-    setSuccessMessage(null);
-    setIsSaving(true);
-    try {
-      await updateDisplayName(fallbackName);
-      setDisplayName(fallbackName);
-      setSuccessMessage(t("displayNameResetSuccess"));
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : t("accountProfileError"),
-      );
-    } finally {
-      setIsSaving(false);
-    }
+    setDraftDisplayName(fallbackName);
   };
 
   const handleDeleteDescription = async () => {
@@ -421,7 +424,7 @@ export default function AccountPage() {
     return null;
   }
 
-  const nameForAvatar = user.displayName || user.username || "User";
+  const nameForAvatar = displayName.trim() || user.username || "User";
   const initials = getInitials(nameForAvatar);
   const storedAvatarSrc =
     user.avatar?.url ||
@@ -431,8 +434,14 @@ export default function AccountPage() {
   const avatarSrc = avatarPreview || storedAvatarSrc;
   const canResetAvatar = Boolean(storedAvatarSrc);
   const canResetDisplayName =
-    Boolean(user.username) && displayName.trim() !== user.username;
+    Boolean(user.username) && draftDisplayName.trim() !== user.username;
   const canDeleteDescription = Boolean(profileDescription.trim());
+  const hasProfileDraftChanges =
+    draftDisplayName.trim() !== (user.displayName ?? "").trim() ||
+    draftProfileDescription.trim() !== (user.description ?? "").trim();
+  const previewName = draftDisplayName.trim() || user.username || "User";
+  const previewDescription = draftProfileDescription.trim();
+  const previewInitials = getInitials(previewName);
   const isDeleteProfileMatch = deleteProfileInput.trim() === user.username;
   const isEmailVerified = Boolean(user.emailVerified);
   const isTotpEnabled = Boolean(user.totpEnabled);
@@ -766,64 +775,180 @@ export default function AccountPage() {
             </div>
           </motion.div>
 
-          <motion.form
-            onSubmit={handleSubmit}
+          <motion.div
             className="rounded-3xl border border-border/70 bg-card/90 p-6"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.25 }}
           >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <label className="block text-sm font-medium">
-                  {t("displayNameLabel")}
-                </label>
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={() => void handleResetDisplayName()}
-                  disabled={isSaving || !canResetDisplayName}
-                >
-                  {t("displayNameReset")}
-                </button>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  Редактирование профиля
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Измените отображаемое имя и описание в отдельном окне с
+                  превью.
+                </p>
               </div>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder={t("displayNamePlaceholder")}
-                className="w-full bg-background border border-border rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
-              />
-              <label className="block text-sm font-medium">
-                {t("profileDescriptionLabel")}
-              </label>
-              <textarea
-                value={profileDescription}
-                onChange={(event) => setProfileDescription(event.target.value)}
-                placeholder={t("profileDescriptionPlaceholder")}
-                rows={4}
-                className="w-full bg-background border border-border rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
-              />
-              {errorMessage ? (
-                <p className="text-sm text-destructive">{errorMessage}</p>
-              ) : null}
-              {successMessage ? (
-                <p className="text-sm text-foreground">{successMessage}</p>
-              ) : null}
+              <GradientButton
+                type="button"
+                className="w-full justify-center sm:w-auto"
+                onClick={openProfileEditor}
+              >
+                Открыть редактор
+              </GradientButton>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-4 rounded-2xl border border-border/60 bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Текущее состояние
+              </p>
+              <p className="mt-2 text-lg font-semibold">{nameForAvatar}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {profileDescription.trim() ||
+                  t("profileDescriptionPlaceholder")}
+              </p>
+            </div>
+
+            {errorMessage ? (
+              <p className="mt-4 text-sm text-destructive">{errorMessage}</p>
+            ) : null}
+            {successMessage ? (
+              <p className="mt-4 text-sm text-foreground">{successMessage}</p>
+            ) : null}
+          </motion.div>
+        </div>
+      </main>
+
+      <Dialog
+        open={profileEditorOpen}
+        onOpenChange={(open) => {
+          setProfileEditorOpen(open);
+          if (!open) {
+            setDraftDisplayName(displayName);
+            setDraftProfileDescription(profileDescription);
+            setErrorMessage(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Редактирование профиля</DialogTitle>
+            <DialogDescription>
+              Слева заполните поля, справа проверьте как профиль увидят другие.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleProfileSave}
+            className="grid gap-6 md:grid-cols-2"
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-sm font-medium">
+                    {t("displayNameLabel")}
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={handleResetDisplayName}
+                    disabled={isSaving || !canResetDisplayName}
+                  >
+                    {t("displayNameReset")}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={draftDisplayName}
+                  onChange={(event) => setDraftDisplayName(event.target.value)}
+                  placeholder={t("displayNamePlaceholder")}
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {t("profileDescriptionLabel")}
+                </label>
+                <textarea
+                  value={draftProfileDescription}
+                  onChange={(event) =>
+                    setDraftProfileDescription(event.target.value)
+                  }
+                  placeholder={t("profileDescriptionPlaceholder")}
+                  rows={8}
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Превью профиля
+              </p>
+              <div className="mt-4 rounded-2xl border border-border/60 bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    {avatarSrc ? (
+                      <AvatarImage src={avatarSrc} alt={previewName} />
+                    ) : null}
+                    <AvatarFallback className="text-sm font-semibold">
+                      {previewInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold">
+                      {previewName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      @{user.username}
+                    </p>
+                  </div>
+                </div>
+                {user.rank?.name ? (
+                  <div className="mt-3">
+                    <span
+                      className="inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold text-foreground"
+                      style={roleGlowStyle ?? undefined}
+                    >
+                      {user.rank.name}
+                    </span>
+                  </div>
+                ) : null}
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {previewDescription || t("profileDescriptionPlaceholder")}
+                </p>
+              </div>
+            </div>
+
+            {errorMessage ? (
+              <p className="text-sm text-destructive md:col-span-2">
+                {errorMessage}
+              </p>
+            ) : null}
+
+            <DialogFooter className="md:col-span-2">
+              <button
+                type="button"
+                onClick={() => setProfileEditorOpen(false)}
+                className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background"
+                disabled={isSaving}
+              >
+                Отмена
+              </button>
               <GradientButton
                 type="submit"
-                className="w-full justify-center sm:w-auto"
-                disabled={isSaving}
+                className="px-5 py-2 text-sm"
+                disabled={isSaving || !hasProfileDraftChanges}
               >
                 {isSaving ? t("saving") : t("saveChanges")}
               </GradientButton>
-            </div>
-          </motion.form>
-        </div>
-      </main>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={totpSetupOpen}
