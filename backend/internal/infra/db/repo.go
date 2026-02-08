@@ -2732,7 +2732,7 @@ var _ rank.Repository = (*RanksRepository)(nil)
 
 func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
 	var list []*rank.Rank
-	rows, err := r.DB.QueryContext(ctx, "SELECT * FROM ranks r ORDER BY r.added_at DESC")
+	rows, err := r.DB.QueryContext(ctx, "SELECT r.name, r.color, r.description, r.weight, r.permissions, r.added_at FROM ranks r ORDER BY r.added_at DESC")
 	if err != nil {
 		return nil, err
 	}
