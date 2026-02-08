@@ -246,6 +246,7 @@ type authUserRepoStub struct {
 	getTOTPSecretFn         func(ctx context.Context, uid uint) (string, error)
 	setTOTPLastStepFn       func(ctx context.Context, uid uint, step int64) error
 	canEditFn               func(ctx context.Context, user uint, target uint) (bool, error)
+	activateRank            func(ctx context.Context, uid uint, code uuid.UUID) (string, error)
 }
 
 func (u *authUserRepoStub) GetList(ctx context.Context) ([]*userpb.UserPublic, error) {
@@ -547,4 +548,11 @@ func (u *authUserRepoStub) CanEdit(ctx context.Context, user uint, target uint) 
 		return u.canEditFn(ctx, user, target)
 	}
 	return true, nil
+}
+
+func (u *authUserRepoStub) ActivateRank(ctx context.Context, uid uint, code uuid.UUID) (string, error) {
+	if u.activateRank != nil {
+		return u.activateRank(ctx, uid, code)
+	}
+	return "", nil
 }

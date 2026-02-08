@@ -382,6 +382,10 @@ func (u *userRepoStub) CanEdit(ctx context.Context, user uint, target uint) (boo
 	return true, nil
 }
 
+func (u *userRepoStub) ActivateRank(ctx context.Context, uid uint, code uuid.UUID) (string, error) {
+	return "", nil
+}
+
 type verificationRepoStub struct{}
 
 func (v *verificationRepoStub) Create(ctx context.Context, email string, purpose verdomain.Purpose, ip string, userAgent string, ttl time.Duration) (token string, err error) {

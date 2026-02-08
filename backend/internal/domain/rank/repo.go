@@ -16,4 +16,5 @@ type Repository interface {
 	ChangePerms(ctx context.Context, rank string, perm permissions.Permission, state bool) error
 	IsExists(ctx context.Context, rank string) (bool, error)
 	CanEdit(ctx context.Context, current string, target string) (bool, error)
+	CreateActivations(ctx context.Context, list []ActivationData) error
 }

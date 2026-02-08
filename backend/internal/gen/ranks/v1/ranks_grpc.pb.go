@@ -21,14 +21,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RanksService_Create_FullMethodName     = "/ranks.v1.RanksService/Create"
-	RanksService_Patch_FullMethodName      = "/ranks.v1.RanksService/Patch"
-	RanksService_Get_FullMethodName        = "/ranks.v1.RanksService/Get"
-	RanksService_Users_FullMethodName      = "/ranks.v1.RanksService/Users"
-	RanksService_List_FullMethodName       = "/ranks.v1.RanksService/List"
-	RanksService_Delete_FullMethodName     = "/ranks.v1.RanksService/Delete"
-	RanksService_PermsPatch_FullMethodName = "/ranks.v1.RanksService/PermsPatch"
-	RanksService_Perms_FullMethodName      = "/ranks.v1.RanksService/Perms"
+	RanksService_Create_FullMethodName             = "/ranks.v1.RanksService/Create"
+	RanksService_Patch_FullMethodName              = "/ranks.v1.RanksService/Patch"
+	RanksService_Get_FullMethodName                = "/ranks.v1.RanksService/Get"
+	RanksService_Users_FullMethodName              = "/ranks.v1.RanksService/Users"
+	RanksService_List_FullMethodName               = "/ranks.v1.RanksService/List"
+	RanksService_Delete_FullMethodName             = "/ranks.v1.RanksService/Delete"
+	RanksService_PermsPatch_FullMethodName         = "/ranks.v1.RanksService/PermsPatch"
+	RanksService_Perms_FullMethodName              = "/ranks.v1.RanksService/Perms"
+	RanksService_GenerateActivation_FullMethodName = "/ranks.v1.RanksService/GenerateActivation"
 )
 
 // RanksServiceClient is the client API for RanksService service.
@@ -43,6 +44,7 @@ type RanksServiceClient interface {
 	Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
+	GenerateActivation(ctx context.Context, in *ActivationGenerateRequest, opts ...grpc.CallOption) (*ActivationGenerateResponse, error)
 }
 
 type ranksServiceClient struct {
@@ -133,6 +135,16 @@ func (c *ranksServiceClient) Perms(ctx context.Context, in *NameRequest, opts ..
 	return out, nil
 }
 
+func (c *ranksServiceClient) GenerateActivation(ctx context.Context, in *ActivationGenerateRequest, opts ...grpc.CallOption) (*ActivationGenerateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ActivationGenerateResponse)
+	err := c.cc.Invoke(ctx, RanksService_GenerateActivation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RanksServiceServer is the server API for RanksService service.
 // All implementations must embed UnimplementedRanksServiceServer
 // for forward compatibility.
@@ -145,6 +157,7 @@ type RanksServiceServer interface {
 	Delete(context.Context, *NameRequest) (*EmptyResponse, error)
 	PermsPatch(context.Context, *PermsPatchRequest) (*EmptyResponse, error)
 	Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error)
+	GenerateActivation(context.Context, *ActivationGenerateRequest) (*ActivationGenerateResponse, error)
 	mustEmbedUnimplementedRanksServiceServer()
 }
 
@@ -178,6 +191,9 @@ func (UnimplementedRanksServiceServer) PermsPatch(context.Context, *PermsPatchRe
 }
 func (UnimplementedRanksServiceServer) Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Perms not implemented")
+}
+func (UnimplementedRanksServiceServer) GenerateActivation(context.Context, *ActivationGenerateRequest) (*ActivationGenerateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GenerateActivation not implemented")
 }
 func (UnimplementedRanksServiceServer) mustEmbedUnimplementedRanksServiceServer() {}
 func (UnimplementedRanksServiceServer) testEmbeddedByValue()                      {}
@@ -344,6 +360,24 @@ func _RanksService_Perms_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RanksService_GenerateActivation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActivationGenerateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RanksServiceServer).GenerateActivation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RanksService_GenerateActivation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RanksServiceServer).GenerateActivation(ctx, req.(*ActivationGenerateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RanksService_ServiceDesc is the grpc.ServiceDesc for RanksService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -382,6 +416,10 @@ var RanksService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Perms",
 			Handler:    _RanksService_Perms_Handler,
+		},
+		{
+			MethodName: "GenerateActivation",
+			Handler:    _RanksService_GenerateActivation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

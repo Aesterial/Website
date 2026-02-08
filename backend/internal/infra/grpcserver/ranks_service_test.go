@@ -59,6 +59,10 @@ func (r *rankRepoStub) CanEdit(context.Context, string, string) (bool, error) {
 	return true, nil
 }
 
+func (r *rankRepoStub) CreateActivations(ctx context.Context, list []rank.ActivationData) error {
+	return nil
+}
+
 func TestRanksServiceCreateMissingName(t *testing.T) {
 	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
 	repo := &rankRepoStub{}

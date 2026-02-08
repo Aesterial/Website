@@ -1065,6 +1065,47 @@ func (u *UserRepository) CanEdit(ctx context.Context, user uint, target uint) (b
 	return can, nil
 }
 
+func (u *UserRepository) codeExists(ctx context.Context, code uuid.UUID) (bool, error) {
+	var exists bool
+	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM rank_activations WHERE code = $1)", code).Scan(&exists)
+	return exists, err
+}
+
+func (u *UserRepository) canActivateCode(ctx context.Context, uid uint) (bool, error) {
+	var exists bool
+	err := u.DB.QueryRowContext(ctx,
+		"SELECT EXISTS (SELECT 1 FROM rank_activations WHERE activated_by = $1)",
+		uid,
+	).Scan(&exists)
+	return !exists, err
+}
+
+func (u *UserRepository) ActivateRank(ctx context.Context, uid uint, code uuid.UUID) (string, error) {
+	var rank string
+	exists, err := u.codeExists(ctx, code)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", apperrors.RecordNotFound
+	}
+	can, err := u.canActivateCode(ctx, uid)
+	if err != nil {
+		return "", err
+	}
+	if !can {
+		return "", apperrors.Conflict
+	}
+	if err := u.DB.QueryRowContext(ctx, "UPDATE rank_activations SET activated = $1, activated_by = $2 WHERE code = $3 RETURNING rank", time.Now(), uid, code).Scan(&rank); err != nil {
+		return "", err
+	}
+	expires := time.Now().Add(7 * time.Hour * 24)
+	if err := u.SetRank(ctx, uid, rank, &expires); err != nil {
+		return "", err
+	}
+	return rank, nil
+}
+
 func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error {
 	if event.TraceID == "" {
 		event.TraceID = "-"
@@ -2699,7 +2740,7 @@ func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
 	for rows.Next() {
 		var ra rank.Rank
 		var perms any
-		if err = rows.Scan(&ra.Name, &ra.Color, &ra.Description, &perms, &ra.AddedAt, &ra.Weight); err != nil {
+		if err = rows.Scan(&ra.Name, &ra.Color, &ra.Description, &ra.Weight, &perms, &ra.AddedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &ra)
@@ -2940,4 +2981,13 @@ func (r *RanksRepository) CanEdit(ctx context.Context, current string, target st
 	}
 
 	return can, nil
+}
+
+func (r *RanksRepository) CreateActivations(ctx context.Context, list []rank.ActivationData) error {
+	for _, l := range list {
+		if _, err := r.DB.ExecContext(ctx, "INSERT INTO rank_activations (code, rank) VALUES ($1, $2)", l.Code, l.Rank); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -59,3 +59,13 @@ message RanksResponse {
   repeated Rank ranks = 2;
   string tracing = 3;
 }
+
+message ActivationGenerateRequest {
+  uint32 limit = 1;
+  uint32 weight = 2;
+}
+
+message ActivationGenerateResponse {
+  repeated string list = 1;
+  string tracing = 2;
+}

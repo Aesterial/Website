@@ -293,3 +293,29 @@ func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchReq
 	logger.Info("Updated rank permissions", "ranks.perms.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &rankpb.EmptyResponse{Tracing: traceID}, nil
 }
+
+func (s *RanksService) GenerateActivation(ctx context.Context, req *rankpb.ActivationGenerateRequest) (*rankpb.ActivationGenerateResponse, error) {
+	if s == nil || s.ranks == nil {
+		return nil, apperrors.NotConfigured
+	}
+	if req == nil {
+		return nil, apperrors.InvalidArguments
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.All); err != nil {
+		return nil, err
+	}
+	list, err := s.ranks.CreateActivations(ctx, int(req.Limit), int(req.Weight))
+	if err != nil {
+		logger.Debug("failed to create activations: "+err.Error(), "")
+		return nil, err
+	}
+	var resp []string
+	for _, l := range list {
+		resp = append(resp, l.String())
+	}
+	return &rankpb.ActivationGenerateResponse{List: resp, Tracing: TraceIDOrNew(ctx)}, nil
+}

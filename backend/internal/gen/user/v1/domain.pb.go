@@ -1495,6 +1495,102 @@ func (x *SetRankRequest) GetExpires() *timestamppb.Timestamp {
 	return nil
 }
 
+type ActivateRankRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActivateRankRequest) Reset() {
+	*x = ActivateRankRequest{}
+	mi := &file_user_domain_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActivateRankRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActivateRankRequest) ProtoMessage() {}
+
+func (x *ActivateRankRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_domain_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActivateRankRequest.ProtoReflect.Descriptor instead.
+func (*ActivateRankRequest) Descriptor() ([]byte, []int) {
+	return file_user_domain_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ActivateRankRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type ActivateRankResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rank          string                 `protobuf:"bytes,1,opt,name=rank,proto3" json:"rank,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActivateRankResponse) Reset() {
+	*x = ActivateRankResponse{}
+	mi := &file_user_domain_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActivateRankResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActivateRankResponse) ProtoMessage() {}
+
+func (x *ActivateRankResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_domain_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActivateRankResponse.ProtoReflect.Descriptor instead.
+func (*ActivateRankResponse) Descriptor() ([]byte, []int) {
+	return file_user_domain_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ActivateRankResponse) GetRank() string {
+	if x != nil {
+		return x.Rank
+	}
+	return ""
+}
+
+func (x *ActivateRankResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_user_domain_proto protoreflect.FileDescriptor
 
 const file_user_domain_proto_rawDesc = "" +
@@ -1606,7 +1702,12 @@ const file_user_domain_proto_rawDesc = "" +
 	"\x04rank\x18\x02 \x01(\tR\x04rank\x129\n" +
 	"\aexpires\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\aexpires\x88\x01\x01B\n" +
 	"\n" +
-	"\b_expiresB-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
+	"\b_expires\")\n" +
+	"\x13ActivateRankRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"D\n" +
+	"\x14ActivateRankResponse\x12\x12\n" +
+	"\x04rank\x18\x01 \x01(\tR\x04rank\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracingB-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
 
 var (
 	file_user_domain_proto_rawDescOnce sync.Once
@@ -1620,7 +1721,7 @@ func file_user_domain_proto_rawDescGZIP() []byte {
 	return file_user_domain_proto_rawDescData
 }
 
-var file_user_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_user_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_user_domain_proto_goTypes = []any{
 	(*UserPublic)(nil),                 // 0: user.v1.UserPublic
 	(*UserSelf)(nil),                   // 1: user.v1.UserSelf
@@ -1648,33 +1749,35 @@ var file_user_domain_proto_goTypes = []any{
 	(*PermissionsRequest)(nil),         // 23: user.v1.PermissionsRequest
 	(*HasPermissionResponse)(nil),      // 24: user.v1.HasPermissionResponse
 	(*SetRankRequest)(nil),             // 25: user.v1.SetRankRequest
-	(*timestamppb.Timestamp)(nil),      // 26: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),        // 27: google.protobuf.Duration
+	(*ActivateRankRequest)(nil),        // 26: user.v1.ActivateRankRequest
+	(*ActivateRankResponse)(nil),       // 27: user.v1.ActivateRankResponse
+	(*timestamppb.Timestamp)(nil),      // 28: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),        // 29: google.protobuf.Duration
 }
 var file_user_domain_proto_depIdxs = []int32{
 	5,  // 0: user.v1.UserPublic.rank:type_name -> user.v1.Rank
 	4,  // 1: user.v1.UserPublic.settings:type_name -> user.v1.UserPublicSettings
-	26, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
-	26, // 3: user.v1.UserPublic.activeAt:type_name -> google.protobuf.Timestamp
+	28, // 2: user.v1.UserPublic.joinedAt:type_name -> google.protobuf.Timestamp
+	28, // 3: user.v1.UserPublic.activeAt:type_name -> google.protobuf.Timestamp
 	0,  // 4: user.v1.UserSelf.public:type_name -> user.v1.UserPublic
 	3,  // 5: user.v1.UserSelf.settings:type_name -> user.v1.UserSettings
 	6,  // 6: user.v1.UserSelf.email:type_name -> user.v1.UserEmail
 	2,  // 7: user.v1.UserSettings.avatar:type_name -> user.v1.Avatar
 	2,  // 8: user.v1.UserPublicSettings.avatar:type_name -> user.v1.Avatar
-	26, // 9: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
-	26, // 10: user.v1.Session.created:type_name -> google.protobuf.Timestamp
-	26, // 11: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
-	27, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
-	26, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
+	28, // 9: user.v1.Rank.expires:type_name -> google.protobuf.Timestamp
+	28, // 10: user.v1.Session.created:type_name -> google.protobuf.Timestamp
+	28, // 11: user.v1.Session.lastSeen:type_name -> google.protobuf.Timestamp
+	29, // 12: user.v1.BanUserRequest.duration:type_name -> google.protobuf.Duration
+	28, // 13: user.v1.Message.at:type_name -> google.protobuf.Timestamp
 	1,  // 14: user.v1.UserSelfResponse.data:type_name -> user.v1.UserSelf
 	0,  // 15: user.v1.UserPublicResponse.data:type_name -> user.v1.UserPublic
 	0,  // 16: user.v1.UsersResponse.data:type_name -> user.v1.UserPublic
 	8,  // 17: user.v1.UserSessionsResponse.data:type_name -> user.v1.Session
 	13, // 18: user.v1.MessagesResponse.messages:type_name -> user.v1.Message
 	0,  // 19: user.v1.BanInfoResponse.executor:type_name -> user.v1.UserPublic
-	26, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
-	26, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
-	26, // 22: user.v1.SetRankRequest.expires:type_name -> google.protobuf.Timestamp
+	28, // 20: user.v1.BanInfoResponse.at:type_name -> google.protobuf.Timestamp
+	28, // 21: user.v1.BanInfoResponse.expires:type_name -> google.protobuf.Timestamp
+	28, // 22: user.v1.SetRankRequest.expires:type_name -> google.protobuf.Timestamp
 	23, // [23:23] is the sub-list for method output_type
 	23, // [23:23] is the sub-list for method input_type
 	23, // [23:23] is the sub-list for extension type_name
@@ -1700,7 +1803,7 @@ func file_user_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_domain_proto_rawDesc), len(file_user_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

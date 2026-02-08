@@ -4,8 +4,8 @@ package ranks.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "ranks/domain.proto";
 import "permissions/domain.proto";
+import "ranks/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/ranks/v1;ranks";
 
@@ -23,27 +23,27 @@ service RanksService {
     };
   }
   rpc Get(NameRequest) returns (RankResponse) {
-    option (google.api.http) = {
-      get: "/api/ranks/{name}"
-    };
+    option (google.api.http) = {get: "/api/ranks/{name}"};
   }
   rpc Users(NameRequest) returns (UsersResponse) {
-    option (google.api.http) = {
-      get: "/api/ranks/{name}/users"
-    };
+    option (google.api.http) = {get: "/api/ranks/{name}/users"};
   }
   rpc List(google.protobuf.Empty) returns (RanksResponse) {
-    option (google.api.http) = {
-      get: "/api/ranks/list"
-    };
+    option (google.api.http) = {get: "/api/ranks/list"};
   }
   rpc Delete(NameRequest) returns (EmptyResponse) {
     option (google.api.http) = {delete: "/api/ranks/{name}/delete"};
   }
   rpc PermsPatch(PermsPatchRequest) returns (EmptyResponse) {
-      option (google.api.http) = {patch: "/api/ranks/{name}/perms/{perm}", body: "*"};
+    option (google.api.http) = {
+      patch: "/api/ranks/{name}/perms/{perm}"
+      body: "*"
+    };
   }
   rpc Perms(NameRequest) returns (permissions.v1.PermissionsResponse) {
-      option (google.api.http) = {get: "/api/ranks/{name}/perms"};
+    option (google.api.http) = {get: "/api/ranks/{name}/perms"};
+  }
+  rpc GenerateActivation(ActivationGenerateRequest) returns (ActivationGenerateResponse) {
+    option (google.api.http) = {post: "/api/ranks/activation/generate" body: "*"};
   }
 }

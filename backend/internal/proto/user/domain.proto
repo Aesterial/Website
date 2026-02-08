@@ -153,3 +153,12 @@ message SetRankRequest {
   string rank = 2;
   optional google.protobuf.Timestamp expires = 3;
 }
+
+message ActivateRankRequest {
+    string code = 1;
+}
+
+message ActivateRankResponse {
+    string rank = 1;
+    string tracing = 2;
+}

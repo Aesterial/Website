@@ -6,7 +6,11 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
+	"math/rand"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -156,6 +160,46 @@ func (s *Service) ChangePerms(ctx context.Context, name string, perm permissions
 		return apperrors.Wrap(err)
 	}
 	return nil
+}
+
+func (s *Service) CreateActivations(ctx context.Context, limit int, weighLimit int) ([]uuid.UUID, error) {
+	ranks, err := s.repo.List(ctx)
+	if err != nil {
+		logger.Debug("failed to get list: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	if len(ranks) == 0 {
+		return nil, apperrors.RecordNotFound
+	}
+	if limit <= 0 {
+		return nil, apperrors.InvalidArguments
+	}
+	if weighLimit <= 0 {
+		return nil, apperrors.InvalidArguments
+	}
+
+	codes := make([]rank.ActivationData, 0, limit)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	for len(codes) < limit {
+		r := ranks[rng.Intn(len(ranks))]
+		if r.Weight > weighLimit {
+			continue
+		}
+		codes = append(codes, rank.ActivationData{
+			Rank: r.Name,
+			Code: uuid.New(),
+		})
+	}
+
+	if err := s.repo.CreateActivations(ctx, codes); err != nil {
+		return nil, err
+	}
+	var list []uuid.UUID
+	for _, c := range codes {
+		list = append(list, c.Code)
+	}
+	return list, nil
 }
 
 func (s *Service) CanEdit(ctx context.Context, current string, target string) (bool, error) {

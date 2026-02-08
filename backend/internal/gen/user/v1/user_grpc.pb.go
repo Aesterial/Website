@@ -41,6 +41,7 @@ const (
 	UserService_Permissions_FullMethodName      = "/user.v1.UserService/Permissions"
 	UserService_ChangePerms_FullMethodName      = "/user.v1.UserService/ChangePerms"
 	UserService_DeleteProfile_FullMethodName    = "/user.v1.UserService/DeleteProfile"
+	UserService_ActivateRank_FullMethodName     = "/user.v1.UserService/ActivateRank"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -67,6 +68,7 @@ type UserServiceClient interface {
 	Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
 	ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	DeleteProfile(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ActivateRank(ctx context.Context, in *ActivateRankRequest, opts ...grpc.CallOption) (*ActivateRankResponse, error)
 }
 
 type userServiceClient struct {
@@ -277,6 +279,16 @@ func (c *userServiceClient) DeleteProfile(ctx context.Context, in *emptypb.Empty
 	return out, nil
 }
 
+func (c *userServiceClient) ActivateRank(ctx context.Context, in *ActivateRankRequest, opts ...grpc.CallOption) (*ActivateRankResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ActivateRankResponse)
+	err := c.cc.Invoke(ctx, UserService_ActivateRank_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -301,6 +313,7 @@ type UserServiceServer interface {
 	Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error)
 	ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*EmptyResponse, error)
 	DeleteProfile(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	ActivateRank(context.Context, *ActivateRankRequest) (*ActivateRankResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -370,6 +383,9 @@ func (UnimplementedUserServiceServer) ChangePerms(context.Context, *OtherUserPer
 }
 func (UnimplementedUserServiceServer) DeleteProfile(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteProfile not implemented")
+}
+func (UnimplementedUserServiceServer) ActivateRank(context.Context, *ActivateRankRequest) (*ActivateRankResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ActivateRank not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -752,6 +768,24 @@ func _UserService_DeleteProfile_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ActivateRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActivateRankRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ActivateRank(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ActivateRank_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ActivateRank(ctx, req.(*ActivateRankRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -838,6 +872,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProfile",
 			Handler:    _UserService_DeleteProfile_Handler,
+		},
+		{
+			MethodName: "ActivateRank",
+			Handler:    _UserService_ActivateRank_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

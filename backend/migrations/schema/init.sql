@@ -390,6 +390,17 @@ create table ranks (
 
 create unique index user_avatars_object_key_uq on user_avatars (object_key);
 
+create table rank_activations (
+    id uuid primary key default pg_catalog.gen_random_uuid(),
+    code uuid not null unique,
+    rank text not null default 'user',
+    createdAt timestamptz not null default now(),
+    activated timestamptz, 
+    activated_by bigint
+);
+
+create index on rank_activations (activated) where activated is null;
+
 -- projects
 create table projects (
     id uuid primary key default pg_catalog.gen_random_uuid(),

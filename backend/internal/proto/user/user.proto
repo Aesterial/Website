@@ -91,4 +91,10 @@ service UserService {
       body: "*"
     };
   }
+  rpc ActivateRank(ActivateRankRequest) returns (ActivateRankResponse) {
+    option (google.api.http) = {
+      post: "/api/user/activate/rank"
+      body: "*"
+    };
+  }
 }

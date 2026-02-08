@@ -523,6 +523,13 @@ func (s *Service) CanEdit(ctx context.Context, user uint, target uint) (bool, er
 	return s.repo.CanEdit(ctx, user, target)
 }
 
+func (s *Service) ActivateRank(ctx context.Context, uid uint, code uuid.UUID) (string, error) {
+	if uid == 0 {
+		return "", apperrors.InvalidArguments
+	}
+	return s.repo.ActivateRank(ctx, uid, code)
+}
+
 func isNotFound(err error) bool {
 	if err == nil {
 		return false

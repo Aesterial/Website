@@ -6,6 +6,8 @@ import (
 	"Aesterial/backend/internal/gen/user/v1"
 	"context"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Repository interface {
@@ -52,4 +54,5 @@ type Repository interface {
 	GetTOTPSecret(ctx context.Context, uid uint) (string, error)
 	SetTOTPLastStep(ctx context.Context, uid uint, step int64) error
 	CanEdit(ctx context.Context, user uint, target uint) (bool, error)
+	ActivateRank(ctx context.Context, uid uint, code uuid.UUID) (string, error)
 }

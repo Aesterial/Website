@@ -5,6 +5,7 @@ import (
 	userpb "Aesterial/backend/internal/gen/user/v1"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -14,6 +15,11 @@ type Rank struct {
 	Description string
 	AddedAt     time.Time
 	Weight      int
+}
+
+type ActivationData struct {
+	Rank string
+	Code uuid.UUID
 }
 
 type UserRank struct {

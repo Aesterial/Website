@@ -541,6 +541,110 @@ func (x *RanksResponse) GetTracing() string {
 	return ""
 }
 
+type ActivationGenerateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Weight        uint32                 `protobuf:"varint,2,opt,name=weight,proto3" json:"weight,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActivationGenerateRequest) Reset() {
+	*x = ActivationGenerateRequest{}
+	mi := &file_ranks_domain_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActivationGenerateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActivationGenerateRequest) ProtoMessage() {}
+
+func (x *ActivationGenerateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ranks_domain_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActivationGenerateRequest.ProtoReflect.Descriptor instead.
+func (*ActivationGenerateRequest) Descriptor() ([]byte, []int) {
+	return file_ranks_domain_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ActivationGenerateRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ActivationGenerateRequest) GetWeight() uint32 {
+	if x != nil {
+		return x.Weight
+	}
+	return 0
+}
+
+type ActivationGenerateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	List          []string               `protobuf:"bytes,1,rep,name=list,proto3" json:"list,omitempty"`
+	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActivationGenerateResponse) Reset() {
+	*x = ActivationGenerateResponse{}
+	mi := &file_ranks_domain_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActivationGenerateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActivationGenerateResponse) ProtoMessage() {}
+
+func (x *ActivationGenerateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ranks_domain_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActivationGenerateResponse.ProtoReflect.Descriptor instead.
+func (*ActivationGenerateResponse) Descriptor() ([]byte, []int) {
+	return file_ranks_domain_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ActivationGenerateResponse) GetList() []string {
+	if x != nil {
+		return x.List
+	}
+	return nil
+}
+
+func (x *ActivationGenerateResponse) GetTracing() string {
+	if x != nil {
+		return x.Tracing
+	}
+	return ""
+}
+
 var File_ranks_domain_proto protoreflect.FileDescriptor
 
 const file_ranks_domain_proto_rawDesc = "" +
@@ -580,7 +684,13 @@ const file_ranks_domain_proto_rawDesc = "" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"O\n" +
 	"\rRanksResponse\x12$\n" +
 	"\x05ranks\x18\x02 \x03(\v2\x0e.ranks.v1.RankR\x05ranks\x12\x18\n" +
-	"\atracing\x18\x03 \x01(\tR\atracingB/Z-Aesterial/backend/internal/gen/ranks/v1;ranksb\x06proto3"
+	"\atracing\x18\x03 \x01(\tR\atracing\"I\n" +
+	"\x19ActivationGenerateRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
+	"\x06weight\x18\x02 \x01(\rR\x06weight\"J\n" +
+	"\x1aActivationGenerateResponse\x12\x12\n" +
+	"\x04list\x18\x01 \x03(\tR\x04list\x12\x18\n" +
+	"\atracing\x18\x02 \x01(\tR\atracingB/Z-Aesterial/backend/internal/gen/ranks/v1;ranksb\x06proto3"
 
 var (
 	file_ranks_domain_proto_rawDescOnce sync.Once
@@ -594,27 +704,29 @@ func file_ranks_domain_proto_rawDescGZIP() []byte {
 	return file_ranks_domain_proto_rawDescData
 }
 
-var file_ranks_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_ranks_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_ranks_domain_proto_goTypes = []any{
-	(*CreateRequest)(nil),         // 0: ranks.v1.CreateRequest
-	(*PatchRequest)(nil),          // 1: ranks.v1.PatchRequest
-	(*NameRequest)(nil),           // 2: ranks.v1.NameRequest
-	(*EmptyResponse)(nil),         // 3: ranks.v1.EmptyResponse
-	(*PermsPatchRequest)(nil),     // 4: ranks.v1.PermsPatchRequest
-	(*UsersResponse)(nil),         // 5: ranks.v1.UsersResponse
-	(*Rank)(nil),                  // 6: ranks.v1.Rank
-	(*RankResponse)(nil),          // 7: ranks.v1.RankResponse
-	(*RanksResponse)(nil),         // 8: ranks.v1.RanksResponse
-	(*v1.Permissions)(nil),        // 9: permissions.v1.Permissions
-	(*structpb.Value)(nil),        // 10: google.protobuf.Value
-	(*v11.UserPublic)(nil),        // 11: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*CreateRequest)(nil),              // 0: ranks.v1.CreateRequest
+	(*PatchRequest)(nil),               // 1: ranks.v1.PatchRequest
+	(*NameRequest)(nil),                // 2: ranks.v1.NameRequest
+	(*EmptyResponse)(nil),              // 3: ranks.v1.EmptyResponse
+	(*PermsPatchRequest)(nil),          // 4: ranks.v1.PermsPatchRequest
+	(*UsersResponse)(nil),              // 5: ranks.v1.UsersResponse
+	(*Rank)(nil),                       // 6: ranks.v1.Rank
+	(*RankResponse)(nil),               // 7: ranks.v1.RankResponse
+	(*RanksResponse)(nil),              // 8: ranks.v1.RanksResponse
+	(*ActivationGenerateRequest)(nil),  // 9: ranks.v1.ActivationGenerateRequest
+	(*ActivationGenerateResponse)(nil), // 10: ranks.v1.ActivationGenerateResponse
+	(*v1.Permissions)(nil),             // 11: permissions.v1.Permissions
+	(*structpb.Value)(nil),             // 12: google.protobuf.Value
+	(*v11.UserPublic)(nil),             // 13: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil),      // 14: google.protobuf.Timestamp
 }
 var file_ranks_domain_proto_depIdxs = []int32{
-	9,  // 0: ranks.v1.CreateRequest.permissions:type_name -> permissions.v1.Permissions
-	10, // 1: ranks.v1.PatchRequest.value:type_name -> google.protobuf.Value
-	11, // 2: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
-	12, // 3: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
+	11, // 0: ranks.v1.CreateRequest.permissions:type_name -> permissions.v1.Permissions
+	12, // 1: ranks.v1.PatchRequest.value:type_name -> google.protobuf.Value
+	13, // 2: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
+	14, // 3: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
 	6,  // 4: ranks.v1.RankResponse.data:type_name -> ranks.v1.Rank
 	6,  // 5: ranks.v1.RanksResponse.ranks:type_name -> ranks.v1.Rank
 	6,  // [6:6] is the sub-list for method output_type
@@ -636,7 +748,7 @@ func file_ranks_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ranks_domain_proto_rawDesc), len(file_ranks_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

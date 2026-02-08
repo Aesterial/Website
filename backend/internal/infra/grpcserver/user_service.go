@@ -548,3 +548,23 @@ func (s *UserService) SetRank(ctx context.Context, req *userpb.SetRankRequest) (
 	}
 	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
 }
+
+func (s *UserService) ActivateRank(ctx context.Context, req *userpb.ActivateRankRequest) (*userpb.ActivateRankResponse, error) {
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logged in")
+	}
+	code, err := uuid.Parse(req.GetCode())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	rank, err := s.info.ActivateRank(ctx, requestor.UID, code)
+	if err != nil {
+		logger.Debug("failed to activate rank: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &userpb.ActivateRankResponse{Rank: rank, Tracing: TraceIDOrNew(ctx)}, nil
+}
