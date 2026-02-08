@@ -141,7 +141,7 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 	contentType, body := buildBody(htmlBody, textBody)
 
 	headers := []string{
-		"From: " + formatAddress(s.fromName, transactionalFrom),
+		"From: " + formatAddress(s.fromName, s.user),
 		"To: " + to,
 		"Subject: " + subject,
 		"Message-ID: " + messageID,
@@ -235,7 +235,7 @@ func (s *Service) smtpSend(ctx context.Context, to string, msg []byte) error {
 		}
 	}
 
-	if err := c.Mail(transactionalFrom); err != nil {
+	if err := c.Mail(s.user); err != nil {
 		return fmt.Errorf("smtp mail from: %w", err)
 	}
 	if err := c.Rcpt(to); err != nil {

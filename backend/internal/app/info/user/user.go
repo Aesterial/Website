@@ -170,7 +170,7 @@ func (s *Service) UpdateDescription(ctx context.Context, uid uint, description s
 		return apperrors.InvalidArguments
 	}
 	if err := s.repo.UpdateDescription(ctx, uid, description); err != nil {
-		logger.Debug("error on change description: " + err.Error(), "")
+		logger.Debug("error on change description: "+err.Error(), "")
 		return apperrors.Wrap(err)
 	}
 	return nil
