@@ -273,9 +273,6 @@ func (s *Service) validateConfig() error {
 	if s.pass == "" {
 		return apperrors.NotConfigured.AddErrDetails("smtp pass is empty")
 	}
-	if !strings.EqualFold(s.user, transactionalFrom) {
-		return apperrors.NotConfigured.AddErrDetails("smtp user must be " + transactionalFrom)
-	}
 	if s.secure && s.startTLS {
 		return apperrors.NotConfigured.AddErrDetails("smtp secure and starttls cannot both be enabled")
 	}
