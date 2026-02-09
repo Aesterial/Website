@@ -329,23 +329,25 @@ func (t *TicketsService) List(ctx context.Context, _ *emptypb.Empty) (*tickpb.Ti
 		return nil, err
 	}
 	var list ticketsdomain.Tickets
-	// if err := t.auth.RequirePermissions(ctx, requestor.UID, permsdomain.TicketsViewListAny); err != nil {
-	// 	if errors.Is(err, apperrors.AccessDenied) {
-	// 		logger.Debug("checking only for own", "")
-	// 		list, err = t.serv.List(ctx, true, &requestor.UID, nil)
-	// 		if err != nil {
-	// 			return nil, apperrors.Wrap(err)
-	// 		}
-	// 	} else {
-	// 		return nil, apperrors.Wrap(err)
-	// 	}
-	// } else {
-	// 	logger.Debug("checking for all", "")
-	// 	list, err = t.serv.List(ctx, false, nil, nil)
-	// 	if err != nil {
-	// 		return nil, apperrors.Wrap(err)
-	// 	}
-	// }
+	if err := t.auth.RequirePermissions(ctx, requestor.UID, permsdomain.TicketsViewListAny); err != nil {
+		return nil, err
+	}
+	list, err = t.serv.List(ctx, false, nil, nil)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	return &tickpb.TicketsListResponse{List: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (t *TicketsService) Self(ctx context.Context, _ *emptypb.Empty) (*tickpb.TicketsListResponse, error) {
+	if t == nil || t.serv == nil {
+		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
+	}
+	requestor, err := t.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	var list ticketsdomain.Tickets
 	list, err = t.serv.List(ctx, true, &requestor.UID, nil)
 	if err != nil {
 		return nil, apperrors.Wrap(err)

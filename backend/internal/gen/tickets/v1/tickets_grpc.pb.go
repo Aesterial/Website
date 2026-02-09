@@ -27,6 +27,7 @@ const (
 	TicketsService_CloseTicket_FullMethodName   = "/tickets.v1.TicketsService/CloseTicket"
 	TicketsService_AcceptTicket_FullMethodName  = "/tickets.v1.TicketsService/AcceptTicket"
 	TicketsService_List_FullMethodName          = "/tickets.v1.TicketsService/List"
+	TicketsService_Self_FullMethodName          = "/tickets.v1.TicketsService/Self"
 	TicketsService_IsValid_FullMethodName       = "/tickets.v1.TicketsService/IsValid"
 )
 
@@ -41,6 +42,7 @@ type TicketsServiceClient interface {
 	CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	AcceptTicket(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TicketsListResponse, error)
+	Self(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TicketsListResponse, error)
 	IsValid(ctx context.Context, in *IsValidRequest, opts ...grpc.CallOption) (*IsValidResponse, error)
 }
 
@@ -122,6 +124,16 @@ func (c *ticketsServiceClient) List(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *ticketsServiceClient) Self(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TicketsListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TicketsListResponse)
+	err := c.cc.Invoke(ctx, TicketsService_Self_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ticketsServiceClient) IsValid(ctx context.Context, in *IsValidRequest, opts ...grpc.CallOption) (*IsValidResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IsValidResponse)
@@ -143,6 +155,7 @@ type TicketsServiceServer interface {
 	CloseTicket(context.Context, *CloseTicketRequest) (*EmptyResponse, error)
 	AcceptTicket(context.Context, *TicketInfoRequest) (*EmptyResponse, error)
 	List(context.Context, *emptypb.Empty) (*TicketsListResponse, error)
+	Self(context.Context, *emptypb.Empty) (*TicketsListResponse, error)
 	IsValid(context.Context, *IsValidRequest) (*IsValidResponse, error)
 	mustEmbedUnimplementedTicketsServiceServer()
 }
@@ -174,6 +187,9 @@ func (UnimplementedTicketsServiceServer) AcceptTicket(context.Context, *TicketIn
 }
 func (UnimplementedTicketsServiceServer) List(context.Context, *emptypb.Empty) (*TicketsListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedTicketsServiceServer) Self(context.Context, *emptypb.Empty) (*TicketsListResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Self not implemented")
 }
 func (UnimplementedTicketsServiceServer) IsValid(context.Context, *IsValidRequest) (*IsValidResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IsValid not implemented")
@@ -325,6 +341,24 @@ func _TicketsService_List_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TicketsService_Self_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TicketsServiceServer).Self(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TicketsService_Self_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TicketsServiceServer).Self(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TicketsService_IsValid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IsValidRequest)
 	if err := dec(in); err != nil {
@@ -377,6 +411,10 @@ var TicketsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _TicketsService_List_Handler,
+		},
+		{
+			MethodName: "Self",
+			Handler:    _TicketsService_Self_Handler,
 		},
 		{
 			MethodName: "IsValid",

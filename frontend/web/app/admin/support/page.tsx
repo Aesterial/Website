@@ -30,7 +30,7 @@ import {
   createTicketMessage,
   fetchTicketInfo,
   fetchTicketMessages,
-  fetchTickets,
+  fetchTicketsALL,
   ApiError,
 } from "@/lib/api";
 import {
@@ -267,7 +267,7 @@ export default function AdminSupportPage() {
         setRefreshingList(true);
       }
       try {
-        const list = await fetchTickets({ signal });
+        const list = await fetchTicketsALL({ signal });
         if (signal?.aborted) {
           return;
         }

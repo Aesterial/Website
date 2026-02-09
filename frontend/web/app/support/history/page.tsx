@@ -7,7 +7,7 @@ import { ArrowLeft, CalendarDays, MessageSquare } from "lucide-react";
 import { Header } from "@/components/header";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
-import { fetchTickets } from "@/lib/api";
+import { fetchTicketsSelf } from "@/lib/api";
 import { mapTicket, type Ticket, type TicketStatus } from "@/lib/tickets";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +73,6 @@ const copyByLanguage = {
   },
 } as const;
 
-
 const resolveLocale = (language: string) =>
   language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
 
@@ -121,7 +120,7 @@ export default function SupportHistoryPage() {
       setLoading(true);
       setError(null);
       try {
-        const list = await fetchTickets({ signal });
+        const list = await fetchTicketsSelf({ signal });
         if (signal?.aborted) {
           return;
         }

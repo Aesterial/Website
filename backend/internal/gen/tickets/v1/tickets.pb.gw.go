@@ -333,6 +333,27 @@ func local_request_TicketsService_List_0(ctx context.Context, marshaler runtime.
 	return msg, metadata, err
 }
 
+func request_TicketsService_Self_0(ctx context.Context, marshaler runtime.Marshaler, client TicketsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.Self(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_TicketsService_Self_0(ctx context.Context, marshaler runtime.Marshaler, server TicketsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.Self(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_TicketsService_IsValid_0(ctx context.Context, marshaler runtime.Marshaler, client TicketsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq IsValidRequest
@@ -534,6 +555,26 @@ func RegisterTicketsServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		}
 		forward_TicketsService_List_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_TicketsService_Self_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/tickets.v1.TicketsService/Self", runtime.WithHTTPPathPattern("/api/tickets/self"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TicketsService_Self_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TicketsService_Self_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_TicketsService_IsValid_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -713,6 +754,23 @@ func RegisterTicketsServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		}
 		forward_TicketsService_List_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_TicketsService_Self_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/tickets.v1.TicketsService/Self", runtime.WithHTTPPathPattern("/api/tickets/self"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TicketsService_Self_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TicketsService_Self_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_TicketsService_IsValid_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -741,6 +799,7 @@ var (
 	pattern_TicketsService_CloseTicket_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "tickets", "id", "close"}, ""))
 	pattern_TicketsService_AcceptTicket_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"api", "tickets", "id", "accept"}, ""))
 	pattern_TicketsService_List_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "tickets", "list"}, ""))
+	pattern_TicketsService_Self_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "tickets", "self"}, ""))
 	pattern_TicketsService_IsValid_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "tickets", "id", "requestor", "token"}, ""))
 )
 
@@ -752,5 +811,6 @@ var (
 	forward_TicketsService_CloseTicket_0   = runtime.ForwardResponseMessage
 	forward_TicketsService_AcceptTicket_0  = runtime.ForwardResponseMessage
 	forward_TicketsService_List_0          = runtime.ForwardResponseMessage
+	forward_TicketsService_Self_0          = runtime.ForwardResponseMessage
 	forward_TicketsService_IsValid_0       = runtime.ForwardResponseMessage
 )

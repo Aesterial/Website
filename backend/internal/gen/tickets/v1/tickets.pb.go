@@ -27,7 +27,7 @@ var File_tickets_tickets_proto protoreflect.FileDescriptor
 const file_tickets_tickets_proto_rawDesc = "" +
 	"\n" +
 	"\x15tickets/tickets.proto\x12\n" +
-	"tickets.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14tickets/domain.proto2\xf2\x06\n" +
+	"tickets.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14tickets/domain.proto2\xce\a\n" +
 	"\x0eTicketsService\x12_\n" +
 	"\x06Create\x12\x19.tickets.v1.CreateRequest\x1a\x1a.tickets.v1.CreateResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/tickets/create\x12e\n" +
 	"\x04Info\x12\x1d.tickets.v1.TicketInfoRequest\x1a\x1e.tickets.v1.TicketInfoResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/tickets/{id}/info\x12v\n" +
@@ -35,7 +35,8 @@ const file_tickets_tickets_proto_rawDesc = "" +
 	"\rMessageCreate\x12\x1f.tickets.v1.TicketMessageCreate\x1a\x19.tickets.v1.EmptyResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/tickets/{id}/messages/create\x12l\n" +
 	"\vCloseTicket\x12\x1e.tickets.v1.CloseTicketRequest\x1a\x19.tickets.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/tickets/{id}/close\x12j\n" +
 	"\fAcceptTicket\x12\x1d.tickets.v1.TicketInfoRequest\x1a\x19.tickets.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a\"\x18/api/tickets/{id}/accept\x12Z\n" +
-	"\x04List\x12\x16.google.protobuf.Empty\x1a\x1f.tickets.v1.TicketsListResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/tickets/list\x12o\n" +
+	"\x04List\x12\x16.google.protobuf.Empty\x1a\x1f.tickets.v1.TicketsListResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/tickets/list\x12Z\n" +
+	"\x04Self\x12\x16.google.protobuf.Empty\x1a\x1f.tickets.v1.TicketsListResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/tickets/self\x12o\n" +
 	"\aIsValid\x12\x1a.tickets.v1.IsValidRequest\x1a\x1b.tickets.v1.IsValidResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/tickets/{id}/requestor/{token}B3Z1Aesterial/backend/internal/gen/tickets/v1;ticketsb\x06proto3"
 
 var file_tickets_tickets_proto_goTypes = []any{
@@ -60,17 +61,19 @@ var file_tickets_tickets_proto_depIdxs = []int32{
 	3,  // 4: tickets.v1.TicketsService.CloseTicket:input_type -> tickets.v1.CloseTicketRequest
 	1,  // 5: tickets.v1.TicketsService.AcceptTicket:input_type -> tickets.v1.TicketInfoRequest
 	4,  // 6: tickets.v1.TicketsService.List:input_type -> google.protobuf.Empty
-	5,  // 7: tickets.v1.TicketsService.IsValid:input_type -> tickets.v1.IsValidRequest
-	6,  // 8: tickets.v1.TicketsService.Create:output_type -> tickets.v1.CreateResponse
-	7,  // 9: tickets.v1.TicketsService.Info:output_type -> tickets.v1.TicketInfoResponse
-	8,  // 10: tickets.v1.TicketsService.Messages:output_type -> tickets.v1.TicketMessagesResponse
-	9,  // 11: tickets.v1.TicketsService.MessageCreate:output_type -> tickets.v1.EmptyResponse
-	9,  // 12: tickets.v1.TicketsService.CloseTicket:output_type -> tickets.v1.EmptyResponse
-	9,  // 13: tickets.v1.TicketsService.AcceptTicket:output_type -> tickets.v1.EmptyResponse
-	10, // 14: tickets.v1.TicketsService.List:output_type -> tickets.v1.TicketsListResponse
-	11, // 15: tickets.v1.TicketsService.IsValid:output_type -> tickets.v1.IsValidResponse
-	8,  // [8:16] is the sub-list for method output_type
-	0,  // [0:8] is the sub-list for method input_type
+	4,  // 7: tickets.v1.TicketsService.Self:input_type -> google.protobuf.Empty
+	5,  // 8: tickets.v1.TicketsService.IsValid:input_type -> tickets.v1.IsValidRequest
+	6,  // 9: tickets.v1.TicketsService.Create:output_type -> tickets.v1.CreateResponse
+	7,  // 10: tickets.v1.TicketsService.Info:output_type -> tickets.v1.TicketInfoResponse
+	8,  // 11: tickets.v1.TicketsService.Messages:output_type -> tickets.v1.TicketMessagesResponse
+	9,  // 12: tickets.v1.TicketsService.MessageCreate:output_type -> tickets.v1.EmptyResponse
+	9,  // 13: tickets.v1.TicketsService.CloseTicket:output_type -> tickets.v1.EmptyResponse
+	9,  // 14: tickets.v1.TicketsService.AcceptTicket:output_type -> tickets.v1.EmptyResponse
+	10, // 15: tickets.v1.TicketsService.List:output_type -> tickets.v1.TicketsListResponse
+	10, // 16: tickets.v1.TicketsService.Self:output_type -> tickets.v1.TicketsListResponse
+	11, // 17: tickets.v1.TicketsService.IsValid:output_type -> tickets.v1.IsValidResponse
+	9,  // [9:18] is the sub-list for method output_type
+	0,  // [0:9] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -2095,10 +2095,29 @@ export async function acceptTicket(id: string): Promise<void> {
   });
 }
 
-export async function fetchTickets(options?: {
+export async function fetchTicketsALL(options?: {
   signal?: AbortSignal;
 }): Promise<ApiTicket[]> {
   const payload = await apiRequest<unknown>("/api/tickets/list", {
+    method: "GET",
+    signal: options?.signal,
+  });
+  const record = toTicketRecord(payload);
+  const tickets = Array.isArray(payload)
+    ? payload
+    : (record?.data ??
+      record?.tickets ??
+      record?.list ??
+      record?.items ??
+      record?.ticket_list ??
+      []);
+  return Array.isArray(tickets) ? (tickets as ApiTicket[]) : [];
+}
+
+export async function fetchTicketsSelf(options?: {
+  signal?: AbortSignal;
+}): Promise<ApiTicket[]> {
+  const payload = await apiRequest<unknown>("/api/tickets/self", {
     method: "GET",
     signal: options?.signal,
   });

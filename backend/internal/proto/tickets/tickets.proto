@@ -38,6 +38,9 @@ service TicketsService {
   rpc List(google.protobuf.Empty) returns (TicketsListResponse) {
     option (google.api.http) = {get: "/api/tickets/list"};
   }
+  rpc Self(google.protobuf.Empty) returns (TicketsListResponse) {
+    option (google.api.http) = {get: "/api/tickets/self"};
+  }
   rpc IsValid(IsValidRequest) returns (IsValidResponse) {
     option (google.api.http) = {get: "/api/tickets/{id}/requestor/{token}"};
   }
