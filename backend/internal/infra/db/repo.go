@@ -298,8 +298,8 @@ func parseRowsToUsers(ctx context.Context, rows *sql.Rows, getAvatar func(contex
 						usr.Settings.DisplayName = &displayName
 					}
 				}
-				if len(fields) >= 3 && fields[2].Valid && fields[2].Value != "" {
-					liveTime, err := strconv.Atoi(fields[2].Value)
+				if len(fields) >= 3 && fields[3].Valid && fields[3].Value != "" {
+					liveTime, err := strconv.Atoi(fields[3].Value)
 					if err != nil {
 						logger.Debug("error on parsing user sessions live time, value: "+fields[2].Value, "")
 						return nil, err
@@ -398,8 +398,8 @@ func parseRowsToUsers(ctx context.Context, rows *sql.Rows, getAvatar func(contex
 						usr.Settings.DisplayName = &displayName
 					}
 				}
-				if len(fields) >= 3 && fields[2].Valid && fields[2].Value != "" {
-					liveTime, err := strconv.Atoi(fields[2].Value)
+				if len(fields) >= 3 && fields[3].Valid && fields[3].Value != "" {
+					liveTime, err := strconv.Atoi(fields[3].Value)
 					if err != nil {
 						logger.Debug("error on parsing user sessions live time, value: "+fields[2].Value, "")
 						return nil, err
