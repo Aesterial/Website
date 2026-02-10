@@ -12,6 +12,10 @@ message GetRequest {
   int32 offset = 2;
 }
 
+message GetProjectRequest {
+  string id = 1;
+}
+
 message MadeByRequest {
   uint32 user_id = 1;
 }
@@ -23,6 +27,11 @@ message GetTopRequest {
 
 message GetResponse {
   repeated Project projects = 1;
+  string tracing = 2;
+}
+
+message GetProjectResponse {
+  Project project = 1;
   string tracing = 2;
 }
 

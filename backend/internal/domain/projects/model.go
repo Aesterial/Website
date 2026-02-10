@@ -89,6 +89,15 @@ func (p ProjectVoteStatus) String() string {
 	return string(p)
 }
 
+func (p ProjectVoteStatus) IsPublic() bool {
+	switch p {
+	case InProgress, Published, Implementing:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p ProjectVoteStatus) ToProto() projpb.ProjectVoteStatus {
 	switch p {
 	case OnModeration:

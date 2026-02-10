@@ -153,6 +153,35 @@ func (s *ProjectService) Get(ctx context.Context, req *projpb.GetRequest) (*proj
 	return &projpb.GetResponse{Projects: projects, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
+func (s *ProjectService) GetByID(ctx context.Context, req *projpb.GetProjectRequest) (*projpb.GetProjectResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if requestor == nil {
+		return nil, apperrors.Unauthenticated.AddErrDetails("user not logon")
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.ProjectsView); err != nil {
+		return nil, err
+	}
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	info, err := s.projects.GetProject(ctx, id)
+	if err != nil {
+		logger.Debug("failed to receive project: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	if !info.Status.IsPublic() && info.Author.UID != requestor.UID {
+		return nil, apperrors.AccessDenied
+	}
+	return &projpb.GetProjectResponse{Project: info.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
 func (s *ProjectService) ByUID(ctx context.Context, req *projpb.MadeByRequest) (*projpb.GetResponse, error) {
 	if s == nil || s.projects == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
