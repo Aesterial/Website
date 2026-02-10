@@ -1,15 +1,12 @@
 "use client";
 
-import type React from "react";
-
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Moon, RefreshCw, Sun } from "lucide-react";
+import { Moon, RefreshCw, Sun } from "lucide-react";
 
 import { GradientButton } from "@/components/gradient-button";
-import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
@@ -18,12 +15,8 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import {
-  clearAuthChallenge,
-  loadAuthChallenge,
-  saveAuthChallenge,
-} from "@/lib/auth-challenge";
-import { resendAuthCode, verifyAuthCode, type AuthChallenge } from "@/lib/api";
+import { loadAuthChallenge } from "@/lib/auth-challenge";
+import { resendAuthCode, type AuthChallenge } from "@/lib/api";
 
 const resolveOtpLength = (challenge: AuthChallenge | null) => {
   const length = challenge?.length;
@@ -35,7 +28,6 @@ const resolveOtpLength = (challenge: AuthChallenge | null) => {
 
 export default function VerifyLoginPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -43,7 +35,6 @@ export default function VerifyLoginPage() {
   const [code, setCode] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
@@ -61,46 +52,6 @@ export default function VerifyLoginPage() {
     : isEmail
       ? t("authCodeSubtitleEmail")
       : t("authCodeSubtitleTotp");
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setErrorMessage(null);
-    setInfoMessage(null);
-
-    if (!challenge) {
-      setErrorMessage(t("authCodeMissing"));
-      return;
-    }
-
-    if (code.trim().length < otpLength) {
-      setErrorMessage(t("authCodeError"));
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await verifyAuthCode({ code, challenge });
-      if (result.status === "challenge") {
-        const nextChallenge = result.challenge ?? { type: "unknown" };
-        const mergedChallenge = {
-          ...nextChallenge,
-          loginMethod: challenge.loginMethod,
-          redirectUrl: result.redirectUrl ?? nextChallenge.redirectUrl,
-        };
-        saveAuthChallenge(mergedChallenge);
-        setChallenge(mergedChallenge);
-        setCode("");
-        return;
-      }
-      clearAuthChallenge();
-      await refreshUser({ silent: true });
-      router.replace(result.redirectUrl || challenge.redirectUrl || "/");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : t("authCodeError"));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleResend = async () => {
     if (!challenge) {
@@ -188,7 +139,7 @@ export default function VerifyLoginPage() {
               {t("authCodeMissing")}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {errorMessage ? (
                 <div className="rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {errorMessage}
@@ -226,12 +177,11 @@ export default function VerifyLoginPage() {
                 className="pt-2 sm:pt-4"
               >
                 <GradientButton
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-3"
-                  disabled={isSubmitting}
+                  type="button"
+                  className="w-full"
+                  onClick={() => router.push("/")}
                 >
-                  {isSubmitting ? "Loading..." : t("authCodeSubmit")}
-                  <ArrowRight className="w-5 h-5" />
+                  {t("authCodeReturnToSite")}
                 </GradientButton>
               </motion.div>
 
@@ -250,7 +200,7 @@ export default function VerifyLoginPage() {
                   </button>
                 </div>
               ) : null}
-            </form>
+            </div>
           )}
 
           <div className="mt-6 text-center text-sm text-muted-foreground">

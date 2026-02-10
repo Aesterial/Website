@@ -2195,9 +2195,9 @@ export const translations: Translations = {
     KZ: "Кіруді растау",
   },
   authCodeSubtitleEmail: {
-    RU: "Введите код из письма.",
-    EN: "Enter the code from the email.",
-    KZ: "Электрондық поштадан келген кодты енгізіңіз.",
+    RU: "Введите email и код из письма.",
+    EN: "Enter your email and the code from the email.",
+    KZ: "Email мен поштадағы кодты енгізіңіз.",
   },
   authCodeSubtitleTotp: {
     RU: "Введите код из приложения-аутентификатора.",
@@ -2218,6 +2218,11 @@ export const translations: Translations = {
     RU: "Подтвердить вход",
     EN: "Verify sign in",
     KZ: "Кіруді растау",
+  },
+  authCodeReturnToSite: {
+    RU: "Вернуться на сайт",
+    EN: "Return to website",
+    KZ: "Сайтқа оралу",
   },
   authCodeResend: {
     RU: "Отправить код ещё раз",
