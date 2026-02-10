@@ -105,7 +105,7 @@ func grpcExposeHeaders() []string {
 
 func gatewayHeaderMatcher(key string) (string, bool) {
 	switch strings.ToLower(key) {
-	case "authorization", "cookie", "x-session-token", "user-agent":
+	case "authorization", "cookie", "x-session-token", "user-agent", "x-forwarded-for", "x-real-ip", "forwarded":
 		return strings.ToLower(key), true
 	default:
 		return runtime.DefaultHeaderMatcher(key)
@@ -220,6 +220,15 @@ func clientAddr(r *http.Request) string {
 	if r == nil {
 		return "unknown"
 	}
+	if ip := firstForwardedIP(r.Header.Get("X-Forwarded-For")); ip != "" {
+		return ip
+	}
+	if ip := normalizeClientHost(r.Header.Get("X-Real-IP")); ip != "" {
+		return ip
+	}
+	if ip := firstForwardedHeaderIP(r.Header.Values("Forwarded")); ip != "" {
+		return ip
+	}
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && host != "" {
 		return host
 	}
@@ -227,4 +236,46 @@ func clientAddr(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return "unknown"
+}
+
+func firstForwardedIP(value string) string {
+	for _, part := range strings.Split(value, ",") {
+		if ip := normalizeClientHost(part); ip != "" {
+			return ip
+		}
+	}
+	return ""
+}
+
+func firstForwardedHeaderIP(values []string) string {
+	for _, value := range values {
+		for _, entry := range strings.Split(value, ",") {
+			for _, attr := range strings.Split(entry, ";") {
+				kv := strings.SplitN(strings.TrimSpace(attr), "=", 2)
+				if len(kv) != 2 || !strings.EqualFold(kv[0], "for") {
+					continue
+				}
+				if ip := normalizeClientHost(kv[1]); ip != "" {
+					return ip
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func normalizeClientHost(value string) string {
+	raw := strings.TrimSpace(strings.Trim(value, `"`))
+	if raw == "" || strings.EqualFold(raw, "unknown") {
+		return ""
+	}
+	if strings.HasPrefix(raw, "[") {
+		if host, _, err := net.SplitHostPort(raw); err == nil {
+			return strings.Trim(host, "[]")
+		}
+	}
+	if host, _, err := net.SplitHostPort(raw); err == nil {
+		return host
+	}
+	return strings.Trim(raw, "[]")
 }

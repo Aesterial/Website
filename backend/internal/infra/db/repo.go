@@ -1591,7 +1591,7 @@ func (p *ProjectsRepository) GetTopProjects(ctx context.Context, limit int, city
 	if city != "" {
 		filtered := make(projectdomain.Projects, 0, len(projects))
 		for _, proj := range projects {
-			if proj.Info.Location.City == city {
+			if proj.Info.Location.City == city && proj.Status.IsPublic() {
 				filtered = append(filtered, proj)
 			}
 		}
