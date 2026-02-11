@@ -13,6 +13,7 @@ import {
   LogOut,
   MessageSquare,
   Moon,
+  House,
   Shield,
   Sparkles,
   Settings,
@@ -1647,6 +1648,55 @@ export default function AdminPage() {
                             </div>
                           );
                         })}
+                      </div>
+
+                      <div className="border-t border-border/70 p-2">
+                        <DropdownMenuItem
+                          asChild
+                          className="rounded-lg px-2.5 py-2"
+                          onSelect={() => {
+                            setQuickMenuOpen(false);
+                          }}
+                        >
+                          <Link
+                            href="/"
+                            className="group flex items-center gap-2.5"
+                          >
+                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background">
+                              <House className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="min-w-0 truncate text-[13px] font-medium">
+                              {t("userProfileBackHome")}
+                            </span>
+                          </Link>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="rounded-lg px-2.5 py-2"
+                          onSelect={(event) => {
+                            event.preventDefault();
+                            toggleTheme();
+                            setQuickMenuOpen(false);
+                          }}
+                        >
+                          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background">
+                            {mounted ? (
+                              theme === "light" ? (
+                                <Moon className="h-3.5 w-3.5" />
+                              ) : (
+                                <Sun className="h-3.5 w-3.5" />
+                              )
+                            ) : (
+                              <span className="block h-3.5 w-3.5" />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                            {t("adminTheme")}:{" "}
+                            {theme === "light"
+                              ? t("adminThemeLight")
+                              : t("adminThemeDark")}
+                          </span>
+                        </DropdownMenuItem>
                       </div>
                     </motion.div>
                   </DropdownMenuContent>
