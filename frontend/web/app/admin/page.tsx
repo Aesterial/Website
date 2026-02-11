@@ -47,6 +47,7 @@ import {
   deleteUserProfile,
   fetchUserBanInfo,
   fetchUsers,
+  getPublicApiErrorMessage,
   handleBannedUser,
   unbanUser,
   type BanInfo,
@@ -366,7 +367,7 @@ async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
     return (await response.json()) as T;
   }
 
-  let message = `Request failed (${response.status})`;
+  let rawMessage = `Request failed (${response.status})`;
   let data: { error?: string; data?: unknown; message?: string } | null = null;
   try {
     data = (await response.json()) as {
@@ -377,21 +378,22 @@ async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   } catch {
     const text = await response.text();
     if (text) {
-      message = text;
+      rawMessage = text;
     }
   }
   if (data?.error) {
-    message = data.error;
+    rawMessage = data.error;
   } else if (data?.message) {
-    message = data.message;
+    rawMessage = data.message;
   }
-  if (isBannedResponse(response.status, data, message)) {
+  if (isBannedResponse(response.status, data, rawMessage)) {
     await handleBannedUser({ signal });
   }
-  if (isMfaRequiredResponse(response.status, data, message)) {
-    emitMfaRequired({ reason: message });
+  const publicMessage = getPublicApiErrorMessage(response.status, rawMessage);
+  if (isMfaRequiredResponse(response.status, data, rawMessage)) {
+    emitMfaRequired({ reason: publicMessage });
   }
-  throw new Error(message);
+  throw new Error(publicMessage);
 }
 
 export default function AdminPage() {

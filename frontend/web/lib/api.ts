@@ -484,6 +484,110 @@ const toRankListItem = (value: ApiRankListEntry): ApiRankListItem | null => {
 const BAN_STORAGE_KEY = "banInfo";
 const BANNED_ERROR_MATCH = "user is banned";
 
+const includesAny = (value: string, patterns: string[]) =>
+  patterns.some((pattern) => value.includes(pattern));
+
+const sanitizeErrorByStatus = (status: number): string => {
+  if (
+    status === StatusCodes.BAD_REQUEST ||
+    status === StatusCodes.UNPROCESSABLE_ENTITY
+  ) {
+    return "Invalid request data. Please check your input and try again.";
+  }
+  if (status === StatusCodes.UNAUTHORIZED) {
+    return "Authentication required. Please sign in and try again.";
+  }
+  if (status === StatusCodes.FORBIDDEN) {
+    return "Access denied. You do not have permission for this action.";
+  }
+  if (status === StatusCodes.NOT_FOUND) {
+    return "Requested data was not found.";
+  }
+  if (status === StatusCodes.CONFLICT) {
+    return "Data conflict. Please refresh and try again.";
+  }
+  if (status === StatusCodes.TOO_MANY_REQUESTS) {
+    return "Too many requests. Please try again later.";
+  }
+  if (
+    status === StatusCodes.BAD_GATEWAY ||
+    status === StatusCodes.SERVICE_UNAVAILABLE ||
+    status === StatusCodes.GATEWAY_TIMEOUT
+  ) {
+    return "Service is temporarily unavailable. Please try again later.";
+  }
+  if (status >= 500) {
+    return "Server error. Please try again later.";
+  }
+  return "Request failed. Please try again.";
+};
+
+export const getPublicApiErrorMessage = (
+  status: number,
+  rawMessage?: string,
+): string => {
+  const normalized = rawMessage?.trim().toLowerCase() ?? "";
+
+  if (normalized) {
+    if (normalized.includes("mfa required")) {
+      return "Additional verification is required.";
+    }
+    if (normalized.includes(BANNED_ERROR_MATCH)) {
+      return "Access to this account is restricted.";
+    }
+    if (includesAny(normalized, ["record not found", "not found"])) {
+      return "Requested data was not found.";
+    }
+    if (
+      includesAny(normalized, [
+        "invalid arguments",
+        "required data missing",
+        "passed data expired",
+        "invalid argument",
+      ])
+    ) {
+      return "Invalid request data. Please check your input and try again.";
+    }
+    if (
+      includesAny(normalized, [
+        "already exists",
+        "already used",
+        "conflict error",
+        "data collides with exists one",
+      ])
+    ) {
+      return "Data conflict. Please refresh and try again.";
+    }
+    if (
+      includesAny(normalized, [
+        "permissions denied",
+        "failed to authorize",
+        "unauthenticated",
+      ])
+    ) {
+      return status === StatusCodes.UNAUTHORIZED
+        ? "Authentication required. Please sign in and try again."
+        : "Access denied. You do not have permission for this action.";
+    }
+    if (includesAny(normalized, ["service unavailable", "unavailable"])) {
+      return "Service is temporarily unavailable. Please try again later.";
+    }
+    if (
+      includesAny(normalized, [
+        "server error while progress",
+        "service not configured",
+      ])
+    ) {
+      return "Server error. Please try again later.";
+    }
+    if (normalized.includes("not implemented")) {
+      return "This action is not available right now.";
+    }
+  }
+
+  return sanitizeErrorByStatus(status);
+};
+
 function isBannedResponse(
   status: number,
   data: { error?: string; data?: unknown; message?: string } | null,
@@ -791,7 +895,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    let message = `Request failed (${response.status})`;
+    let rawMessage = `Request failed (${response.status})`;
     let data: { error?: string; data?: unknown; message?: string } | null =
       null;
     try {
@@ -803,26 +907,28 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       const text = await response.text();
       if (text) {
-        message = text;
+        rawMessage = text;
       } else if (response.statusText) {
-        message = response.statusText;
+        rawMessage = response.statusText;
       }
     }
 
     if (data?.error) {
-      message = data.error;
+      rawMessage = data.error;
     } else if (data?.message) {
-      message = data.message;
+      rawMessage = data.message;
     }
-    // все потрать детка все потрать у меня есть деньги детка все потрать (трать)
-    if (isBannedResponse(response.status, data, message)) {
+
+    if (isBannedResponse(response.status, data, rawMessage)) {
       await handleBannedUser({ signal: init?.signal });
     }
-    if (isMfaRequiredResponse(response.status, data, message)) {
-      emitMfaRequired({ reason: message });
-      throw new MfaRequiredError(message);
+
+    const publicMessage = getPublicApiErrorMessage(response.status, rawMessage);
+    if (isMfaRequiredResponse(response.status, data, rawMessage)) {
+      emitMfaRequired({ reason: publicMessage });
+      throw new MfaRequiredError(publicMessage);
     }
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, publicMessage);
   }
 
   if (response.status === 204) {
