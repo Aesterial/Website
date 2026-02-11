@@ -28,6 +28,7 @@ interface IdeaCard {
   votes: number;
   isVoted: boolean;
   createdAt: string;
+  status: "pending" | "approved" | "declined" | "unknown";
 }
 
 const CATEGORY_ENUM_MAP: Record<number, string> = {
@@ -181,6 +182,46 @@ const parseTimestamp = (value: unknown) => {
   return "";
 };
 
+const normalizeProjectStatus = (
+  value: unknown,
+): "pending" | "approved" | "declined" | "unknown" => {
+  if (typeof value === "number") {
+    if (value === 1) return "pending";
+    if (value === 2) return "approved";
+    if (value === 3) return "declined";
+    return "unknown";
+  }
+  if (typeof value !== "string") {
+    return "unknown";
+  }
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "pending" ||
+    normalized === "new" ||
+    normalized === "in_review" ||
+    normalized === "inreview" ||
+    normalized === "on_moderation" ||
+    normalized === "moderation"
+  ) {
+    return "pending";
+  }
+  if (
+    normalized === "approved" ||
+    normalized === "accept" ||
+    normalized === "accepted"
+  ) {
+    return "approved";
+  }
+  if (
+    normalized === "declined" ||
+    normalized === "rejected" ||
+    normalized === "decline"
+  ) {
+    return "declined";
+  }
+  return "unknown";
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -312,6 +353,15 @@ export default function VotingPage() {
     }),
     [t],
   );
+  const statusLabels = useMemo<Record<IdeaCard["status"], string>>(
+    () => ({
+      pending: t("statusPending"),
+      approved: t("statusApproved"),
+      declined: t("statusDeclined"),
+      unknown: "Не указан",
+    }),
+    [t],
+  );
 
   const loadIdeas = useCallback(
     async (signal?: AbortSignal) => {
@@ -381,6 +431,7 @@ export default function VotingPage() {
           isVoted,
           createdAt:
             parseTimestamp(project.createdAt ?? project.created_at) || "",
+          status: normalizeProjectStatus(project.status),
         };
       };
 
@@ -1003,6 +1054,10 @@ export default function VotingPage() {
                             const voteShare = maxVotes
                               ? Math.round((idea.votes / maxVotes) * 100)
                               : 0;
+                            const neededVotes = Math.max(
+                              0,
+                              maxVotes - idea.votes,
+                            );
                             return (
                               <motion.article
                                 key={idea.id}
@@ -1015,6 +1070,19 @@ export default function VotingPage() {
                                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                                       <span className="rounded-full bg-foreground/10 px-3 py-1 text-foreground">
                                         {idea.category}
+                                      </span>
+                                      <span
+                                        className={`rounded-full border px-3 py-1 ${
+                                          idea.status === "approved"
+                                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+                                            : idea.status === "declined"
+                                              ? "border-rose-500/40 bg-rose-500/10 text-rose-700"
+                                              : idea.status === "pending"
+                                                ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                                                : "border-border/60 bg-background/70 text-muted-foreground"
+                                        }`}
+                                      >
+                                        {statusLabels[idea.status]}
                                       </span>
                                       <span className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-muted-foreground">
                                         <MapPin className="h-3.5 w-3.5" />
@@ -1036,7 +1104,7 @@ export default function VotingPage() {
                                     <div className="space-y-2">
                                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                                         <span>{idea.votes} голосов</span>
-                                        <span>{voteShare}%</span>
+                                        <span>Нужно: {neededVotes}</span>
                                       </div>
                                       <div className="h-2 w-full rounded-full bg-muted/60">
                                         <div
@@ -1087,8 +1155,14 @@ export default function VotingPage() {
                                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border/60 pt-4">
                                   <div className="flex flex-wrap items-center gap-3">
                                     <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                                      {idea.votes} голосов
+                                      {idea.votes} гол.
                                     </span>
+                                    <Link
+                                      href={`/projects/${idea.id}`}
+                                      className="inline-flex rounded-full border border-border/70 bg-background/80 px-5 py-2 text-xs font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-foreground hover:text-background sm:px-6 sm:py-3 sm:text-sm"
+                                    >
+                                      К проекту
+                                    </Link>
                                     <GradientButton
                                       className="px-5 py-2 text-xs sm:px-6 sm:py-3 sm:text-sm"
                                       onClick={() => handleVote(idea.id)}
