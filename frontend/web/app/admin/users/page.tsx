@@ -238,7 +238,7 @@ export default function AdminUsersPage() {
         const list = await fetchUsers({ signal: controller.signal });
         const banResults = await Promise.allSettled(
           list.map((item) =>
-            fetchUserBanInfo(item.userID, undefined, {
+            fetchUserBanInfo(item.userID, item.banned, {
               signal: controller.signal,
             }),
           ),
