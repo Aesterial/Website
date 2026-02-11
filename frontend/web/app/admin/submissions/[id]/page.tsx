@@ -23,7 +23,7 @@ import { useLanguage } from "@/components/language-provider";
 import {
   approveSubmission,
   declineSubmission,
-  fetchSubmissions,
+  fetchSubmissionById,
 } from "@/lib/api";
 import {
   DropdownMenu,
@@ -144,17 +144,21 @@ export default function SubmissionDetailPage({
   useEffect(() => {
     const controller = new AbortController();
     setIsLoading(true);
-    fetchSubmissions({ signal: controller.signal })
-      .then((data) => {
+    const submissionId = Number(id);
+    if (!Number.isFinite(submissionId) || submissionId <= 0) {
+      setSubmission(null);
+      setIsLoading(false);
+      return () => controller.abort();
+    }
+    fetchSubmissionById(submissionId, { signal: controller.signal })
+      .then((item) => {
         if (controller.signal.aborted) {
           return;
         }
-        const mapped = data
-          .map((item) =>
-            mapSubmissionTarget(item, { locale, resolveCategoryLabel }),
-          )
-          .filter((item): item is Submission => Boolean(item));
-        setSubmission(mapped.find((item) => item.id === id) ?? null);
+        const mapped = item
+          ? mapSubmissionTarget(item, { locale, resolveCategoryLabel })
+          : null;
+        setSubmission(mapped);
       })
       .catch(() => {
         if (!controller.signal.aborted) {

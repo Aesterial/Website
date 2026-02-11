@@ -226,6 +226,11 @@ type ApiSubmissionsResponse = {
   tracing?: string;
 };
 
+type ApiSubmissionResponse = {
+  data?: ApiSubmissionTarget | null;
+  tracing?: string;
+};
+
 export type ApiTicket = Record<string, unknown>;
 export type ApiTicketMessage = Record<string, unknown>;
 
@@ -1751,6 +1756,30 @@ export async function fetchSubmissions(options?: {
   );
   const records = payload?.data ?? [];
   return Array.isArray(records) ? records : [];
+}
+
+export async function fetchSubmissionById(
+  id: number,
+  options?: { signal?: AbortSignal },
+): Promise<ApiSubmissionTarget | null> {
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("Submission id is required.");
+  }
+  const payload = await apiRequest<ApiSubmissionResponse | ApiSubmissionTarget>(
+    `/api/submissions/${id}`,
+    {
+      method: "GET",
+      signal: options?.signal,
+    },
+  );
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "data" in (payload as Record<string, unknown>)
+  ) {
+    return (payload as ApiSubmissionResponse).data ?? null;
+  }
+  return payload as ApiSubmissionTarget;
 }
 
 export async function approveSubmission(id: number): Promise<void> {
