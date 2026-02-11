@@ -401,6 +401,7 @@ export default function AdminPage() {
   const { language, setLanguage, t } = useLanguage();
 
   const [mounted, setMounted] = useState(false);
+  const [showHeaderNote, setShowHeaderNote] = useState(true);
   const [activeSection, setActiveSection] = useState("users");
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
   const [quickMenuExpanded, setQuickMenuExpanded] = useState<
@@ -461,6 +462,47 @@ export default function AdminPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const updateHeaderNoteVisibility = () => {
+      const left = quickMenuTriggerRef.current;
+      const right = headerActionsRef.current;
+      const note = headerNoteRef.current;
+      if (!left || !right || !note) {
+        return;
+      }
+      if (window.innerWidth <= 1202) {
+        setShowHeaderNote(false);
+        return;
+      }
+      const leftRect = left.getBoundingClientRect();
+      const rightRect = right.getBoundingClientRect();
+      const availableWidth = rightRect.left - leftRect.right;
+      const neededWidth = note.scrollWidth + 300;
+      setShowHeaderNote(availableWidth > neededWidth);
+    };
+
+    const observedElements = [
+      headerBarRef.current,
+      quickMenuTriggerRef.current,
+      headerActionsRef.current,
+      headerNoteRef.current,
+    ].filter((node) => node !== null);
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(updateHeaderNoteVisibility);
+      observedElements.forEach((element) => observer?.observe(element));
+    }
+
+    window.addEventListener("resize", updateHeaderNoteVisibility);
+    updateHeaderNoteVisibility();
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateHeaderNoteVisibility);
+    };
+  }, [language, t, mounted]);
+
   const headerVariants = {
     hidden: { opacity: 0, y: -10, filter: "blur(6px)" },
     visible: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -487,6 +529,10 @@ export default function AdminPage() {
   });
   const statsLoadGuardRef = useRef(false);
   const usersLoadGuardRef = useRef(false);
+  const headerBarRef = useRef<HTMLDivElement | null>(null);
+  const quickMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const headerActionsRef = useRef<HTMLDivElement | null>(null);
+  const headerNoteRef = useRef<HTMLParagraphElement | null>(null);
 
   const displayName = user?.displayName || user?.username || "";
   const initials = (displayName || "U").slice(0, 2).toUpperCase();
@@ -1517,6 +1563,7 @@ export default function AdminPage() {
 
               <motion.div
                 layout
+                ref={headerBarRef}
                 className={[
                   "relative flex items-center gap-2",
                   headerCompact
@@ -1530,6 +1577,7 @@ export default function AdminPage() {
                 >
                   <DropdownMenuTrigger asChild>
                     <motion.button
+                      ref={quickMenuTriggerRef}
                       type="button"
                       data-tutorial="admin-functional-trigger"
                       whileHover={{ scale: 1.03 }}
@@ -1703,12 +1751,20 @@ export default function AdminPage() {
                 </DropdownMenu>
 
                 <div className="pointer-events-none absolute inset-x-0 hidden items-center justify-center px-24 md:flex">
-                  <p className="truncate text-center text-sm text-muted-foreground">
+                  <p
+                    ref={headerNoteRef}
+                    className={`truncate text-center text-sm text-muted-foreground transition-opacity duration-150 ${
+                      showHeaderNote ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
                     {t("adminHeaderNote")}
                   </p>
                 </div>
 
-                <div className="ml-auto flex items-center gap-2 sm:gap-3">
+                <div
+                  ref={headerActionsRef}
+                  className="ml-auto flex items-center gap-2 sm:gap-3"
+                >
                   <motion.button
                     type="button"
                     onClick={toggleTheme}
