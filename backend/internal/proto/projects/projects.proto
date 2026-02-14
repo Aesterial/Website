@@ -5,6 +5,7 @@ package projects.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "projects/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/projects/v1;projects";
 
@@ -30,19 +31,19 @@ service ProjectService {
       body: "*"
     };
   }
-  rpc ChangeTitle(ChangeRequest) returns (EmptyResponse) {
+  rpc ChangeTitle(ChangeRequest) returns (types.WithTracing) {
     option (google.api.http) = {patch: "/api/projects/{id}/name/{to}"};
   }
-  rpc ChangeDescription(ChangeRequest) returns (EmptyResponse) {
+  rpc ChangeDescription(ChangeRequest) returns (types.WithTracing) {
     option (google.api.http) = {patch: "/api/project/{id}/description/{to}"};
   }
-  rpc Delete(RequestWithID) returns (EmptyResponse) {
+  rpc Delete(RequestWithID) returns (types.WithTracing) {
     option (google.api.http) = {delete: "/api/projects/{id}/delete"};
   }
   rpc Categories(google.protobuf.Empty) returns (CategoriesResponse) {
     option (google.api.http) = {get: "/api/projects/categories"};
   }
-  rpc ToggleLike(LikeRequest) returns (EmptyResponse) {
+  rpc ToggleLike(LikeRequest) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/projects/like/{id}"};
   }
 }

@@ -5,6 +5,7 @@ package submissions.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "submissions/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/submissions/v1;submissions";
 
@@ -13,15 +14,15 @@ service SubmissionsService {
     option (google.api.http) = {get: "/api/submissions/list"};
   }
   rpc Get(GetRequest) returns (GetResponse) {
-    option (google.api.http) = {get: "/api/submissions/{id}"};
+    option (google.api.http) = {get: "/api/submissions/info/{id}"};
   }
-  rpc Approve(ApproveRequest) returns (DataResponse) {
+  rpc Approve(ApproveRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/submissions/{id}/approve"
       body: "*"
     };
   }
-  rpc Decline(DeclineRequest) returns (DataResponse) {
+  rpc Decline(DeclineRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/submissions/{id}/decline"
       body: "*"

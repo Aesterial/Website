@@ -25,9 +25,6 @@ message RegisterResponse {
   string tracing = 2;
 }
 
-message EmptyResponse {
-  string tracing = 1;
-}
 
 message VKStartResponse {
   string auth_url = 1;

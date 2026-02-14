@@ -4,6 +4,7 @@ import (
 	appconfig "Aesterial/backend/internal/app/config"
 	"Aesterial/backend/internal/domain/login"
 	"Aesterial/backend/internal/domain/maintenance"
+	"Aesterial/backend/internal/domain/notifications"
 	"Aesterial/backend/internal/domain/permissions"
 	projectdomain "Aesterial/backend/internal/domain/projects"
 	"Aesterial/backend/internal/domain/rank"
@@ -80,6 +81,10 @@ type TicketsRepository struct {
 	DB *sql.DB
 }
 
+type NotificationsRepository struct {
+	DB *sql.DB
+}
+
 var _ user.Repository = (*UserRepository)(nil)
 
 func NewUserRepository(db *sql.DB) *UserRepository {
@@ -112,6 +117,9 @@ func NewMaintenanceRepository(db *sql.DB) *MaintenanceRepository {
 }
 func NewTicketsRepository(db *sql.DB) *TicketsRepository {
 	return &TicketsRepository{DB: db}
+}
+func NewNotificationsRepository(db *sql.DB) *NotificationsRepository {
+	return &NotificationsRepository{DB: db}
 }
 
 type compositeField struct {
@@ -1621,6 +1629,7 @@ func hydrateProjectsByIDs(ctx context.Context, db *sql.DB, ids []uuid.UUID) (pro
 				})
 				return
 			}
+			project.Info.Location.Normalize()
 			projects[i] = project
 		}()
 	}
@@ -1663,18 +1672,18 @@ func (p *ProjectsRepository) GetTopProjects(ctx context.Context, limit int, city
 		return projects[i].Likes < projects[j].Likes
 	})
 
-	if limit > 0 && len(projects) > limit {
-		projects = projects[:limit]
-	}
-
 	if city != "" {
 		filtered := make(projectdomain.Projects, 0, len(projects))
 		for _, proj := range projects {
-			if proj.Info.Location.City == city && proj.Status.IsPublic() {
+			if strings.EqualFold(proj.Info.Location.City, city) && proj.Status.IsPublic() {
 				filtered = append(filtered, proj)
 			}
 		}
 		projects = filtered
+	}
+	
+	if limit > 0 && len(projects) > limit {
+		projects = projects[:limit]
 	}
 
 	return projects, nil
@@ -1708,7 +1717,7 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) (pro
 func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdomain.Project) (*uuid.UUID, error) {
 	var projectId uuid.UUID
 	logger.Debug(fmt.Sprintf("latitude: %f, longitude: %f", info.Info.Location.Latitude, info.Info.Location.Longitude), "")
-	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, info.Info.Location.City, info.Info.Location.Latitude, info.Info.Location.Longitude).Scan(&projectId); err != nil {
+	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, strings.ToLower(info.Info.Location.City), info.Info.Location.Latitude, info.Info.Location.Longitude).Scan(&projectId); err != nil {
 		return nil, err
 	}
 	if len(info.Info.Photos) > 0 {
@@ -3202,4 +3211,57 @@ func (r *RanksRepository) CreateActivations(ctx context.Context, list []rank.Act
 		}
 	}
 	return nil
+}
+
+/*
+ *
+ type Repository interface {
+	GetAll(ctx context.Context) (Notifications, error)
+	ForUser(ctx context.Context, id uint) (*Notification, error)
+	Create(ctx context.Context, scope string, body string, receiver *string, expires *time.Time) error
+	Mark(ctx context.Context, id uuid.UUID) error
+ }
+
+*/
+
+func (n *NotificationsRepository) GetAll(ctx context.Context) (notifications.Notifications, error) {
+	rows, err := n.DB.QueryContext(ctx, "SELECT id, type, body, createdAt, scope, expires FROM notifications")
+	if err != nil {
+		return nil, err
+	}
+	var list notifications.Notifications
+	defer rows.Close()
+	for rows.Next() {
+		var notify notifications.Notification
+		if err := rows.Scan(&notify.ID, &notify.Type, &notify.Body, &notify.Created, &notify.Created, &notify.Scope, &notify.Expires); err != nil {
+			return nil, err
+		}
+		switch notify.Scope {
+		case notifications.User:
+			var id sql.NullInt64
+			var readAt sql.NullTime
+			if err := n.DB.QueryRowContext(ctx, "SELECT userID, readAt FROM notification_receipts WHERE notify_id = $1", notify.ID).Scan(&id, &readAt); err != nil {
+				return nil, err
+			}
+			var readed *time.Time
+			var ID uint
+			if readAt.Valid {
+				readed = &readAt.Time
+			}
+			if id.Valid {
+				ID = uint(id.Int64)
+			}
+			notify.Readed = readed
+			notify.Target.User = &ID
+		case notifications.Segment:
+			var rank sql.NullString
+			var readAt sql.NullTime
+			if err := n.DB.QueryRowContext(ctx, "SELECT rank, readAt FROM notification_receipts WHERE notify_id = $1", notify.ID).Scan(&rank, &readAt); err != nil {
+				return nil, err
+			}
+
+		}
+		list = append(list, &notify)
+	}
+	return list, nil
 }

@@ -5,6 +5,7 @@ package maintenance.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "maintenance/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/maintenance/v1;maintenance";
 
@@ -18,25 +19,25 @@ service MaintenanceService {
   rpc Data(google.protobuf.Empty) returns (DataResponse) {
     option (google.api.http) = {get: "/api/maintenance/data"};
   }
-  rpc Start(CreateRequest) returns (Response) {
+  rpc Start(CreateRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/maintenance/create"
       body: "*"
     };
   }
-  rpc StartPlanned(CreateRequest) returns (Response) {
+  rpc StartPlanned(CreateRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/maintenance/create/{will_start}"
       body: "*"
     };
   }
-  rpc Edit(EditRequest) returns (Response) {
+  rpc Edit(EditRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/maintenance/edit"
       body: "*"
     };
   }
-  rpc Complete(google.protobuf.Empty) returns (Response) {
+  rpc Complete(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/maintenance/complete"};
   }
 }

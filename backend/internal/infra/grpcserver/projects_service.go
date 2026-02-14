@@ -10,6 +10,7 @@ import (
 	projectsdomain "Aesterial/backend/internal/domain/projects"
 	"Aesterial/backend/internal/domain/user"
 	projpb "Aesterial/backend/internal/gen/projects/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -227,7 +228,7 @@ func (s *ProjectService) GetArchived(ctx context.Context, req *projpb.GetRequest
 	return &projpb.GetResponse{Projects: projects, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest) (*projpb.EmptyResponse, error) {
+func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest) (*types.WithTracing, error) {
 	if s == nil || s.projects == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -247,13 +248,14 @@ func (s *ProjectService) ToggleLike(ctx context.Context, req *projpb.LikeRequest
 	if err := s.projects.ToggleLike(ctx, id, requestor.UID); err != nil {
 		return nil, err
 	}
-	return &projpb.EmptyResponse{Tracing: trace}, nil
+	return &types.WithTracing{Tracing: trace}, nil
 }
 
 func (s *ProjectService) GetTop(ctx context.Context, req *projpb.GetTopRequest) (*projpb.GetResponse, error) {
 	if s == nil || s.projects == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
+	req.City = strings.ToLower(req.City)
 	proj, err := s.projects.GetTopProjects(ctx, int(req.GetLimit()), req.GetCity())
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get projects top list: " + err.Error() + "for city: " + req.GetCity())

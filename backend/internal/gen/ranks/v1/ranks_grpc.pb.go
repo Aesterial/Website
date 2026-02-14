@@ -7,7 +7,8 @@
 package ranks
 
 import (
-	v1 "Aesterial/backend/internal/gen/permissions/v1"
+	v11 "Aesterial/backend/internal/gen/permissions/v1"
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -36,14 +37,14 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RanksServiceClient interface {
-	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Get(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*RankResponse, error)
 	Users(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*UsersResponse, error)
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RanksResponse, error)
-	Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
+	Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v11.PermissionsResponse, error)
 	GenerateActivation(ctx context.Context, in *ActivationGenerateRequest, opts ...grpc.CallOption) (*ActivationGenerateResponse, error)
 }
 
@@ -55,9 +56,9 @@ func NewRanksServiceClient(cc grpc.ClientConnInterface) RanksServiceClient {
 	return &ranksServiceClient{cc}
 }
 
-func (c *ranksServiceClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, RanksService_Create_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -65,9 +66,9 @@ func (c *ranksServiceClient) Create(ctx context.Context, in *CreateRequest, opts
 	return out, nil
 }
 
-func (c *ranksServiceClient) Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) Patch(ctx context.Context, in *PatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, RanksService_Patch_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -105,9 +106,9 @@ func (c *ranksServiceClient) List(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
-func (c *ranksServiceClient) Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) Delete(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, RanksService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -115,9 +116,9 @@ func (c *ranksServiceClient) Delete(ctx context.Context, in *NameRequest, opts .
 	return out, nil
 }
 
-func (c *ranksServiceClient) PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ranksServiceClient) PermsPatch(ctx context.Context, in *PermsPatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, RanksService_PermsPatch_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -125,9 +126,9 @@ func (c *ranksServiceClient) PermsPatch(ctx context.Context, in *PermsPatchReque
 	return out, nil
 }
 
-func (c *ranksServiceClient) Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error) {
+func (c *ranksServiceClient) Perms(ctx context.Context, in *NameRequest, opts ...grpc.CallOption) (*v11.PermissionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.PermissionsResponse)
+	out := new(v11.PermissionsResponse)
 	err := c.cc.Invoke(ctx, RanksService_Perms_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -149,14 +150,14 @@ func (c *ranksServiceClient) GenerateActivation(ctx context.Context, in *Activat
 // All implementations must embed UnimplementedRanksServiceServer
 // for forward compatibility.
 type RanksServiceServer interface {
-	Create(context.Context, *CreateRequest) (*EmptyResponse, error)
-	Patch(context.Context, *PatchRequest) (*EmptyResponse, error)
+	Create(context.Context, *CreateRequest) (*v1.WithTracing, error)
+	Patch(context.Context, *PatchRequest) (*v1.WithTracing, error)
 	Get(context.Context, *NameRequest) (*RankResponse, error)
 	Users(context.Context, *NameRequest) (*UsersResponse, error)
 	List(context.Context, *emptypb.Empty) (*RanksResponse, error)
-	Delete(context.Context, *NameRequest) (*EmptyResponse, error)
-	PermsPatch(context.Context, *PermsPatchRequest) (*EmptyResponse, error)
-	Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error)
+	Delete(context.Context, *NameRequest) (*v1.WithTracing, error)
+	PermsPatch(context.Context, *PermsPatchRequest) (*v1.WithTracing, error)
+	Perms(context.Context, *NameRequest) (*v11.PermissionsResponse, error)
 	GenerateActivation(context.Context, *ActivationGenerateRequest) (*ActivationGenerateResponse, error)
 	mustEmbedUnimplementedRanksServiceServer()
 }
@@ -168,10 +169,10 @@ type RanksServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRanksServiceServer struct{}
 
-func (UnimplementedRanksServiceServer) Create(context.Context, *CreateRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) Create(context.Context, *CreateRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedRanksServiceServer) Patch(context.Context, *PatchRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) Patch(context.Context, *PatchRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Patch not implemented")
 }
 func (UnimplementedRanksServiceServer) Get(context.Context, *NameRequest) (*RankResponse, error) {
@@ -183,13 +184,13 @@ func (UnimplementedRanksServiceServer) Users(context.Context, *NameRequest) (*Us
 func (UnimplementedRanksServiceServer) List(context.Context, *emptypb.Empty) (*RanksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedRanksServiceServer) Delete(context.Context, *NameRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) Delete(context.Context, *NameRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedRanksServiceServer) PermsPatch(context.Context, *PermsPatchRequest) (*EmptyResponse, error) {
+func (UnimplementedRanksServiceServer) PermsPatch(context.Context, *PermsPatchRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method PermsPatch not implemented")
 }
-func (UnimplementedRanksServiceServer) Perms(context.Context, *NameRequest) (*v1.PermissionsResponse, error) {
+func (UnimplementedRanksServiceServer) Perms(context.Context, *NameRequest) (*v11.PermissionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Perms not implemented")
 }
 func (UnimplementedRanksServiceServer) GenerateActivation(context.Context, *ActivationGenerateRequest) (*ActivationGenerateResponse, error) {

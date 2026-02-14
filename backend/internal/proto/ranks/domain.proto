@@ -26,9 +26,6 @@ message NameRequest {
   string name = 1;
 }
 
-message EmptyResponse {
-  string tracing = 1;
-}
 
 message PermsPatchRequest {
   string name = 1;

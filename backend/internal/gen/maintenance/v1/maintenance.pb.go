@@ -7,6 +7,7 @@
 package maintenance
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -26,15 +27,15 @@ var File_maintenance_maintenance_proto protoreflect.FileDescriptor
 
 const file_maintenance_maintenance_proto_rawDesc = "" +
 	"\n" +
-	"\x1dmaintenance/maintenance.proto\x12\x0emaintenance.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x18maintenance/domain.proto2\xe9\x05\n" +
+	"\x1dmaintenance/maintenance.proto\x12\x0emaintenance.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x18maintenance/domain.proto\x1a\vtypes.proto2\xd1\x05\n" +
 	"\x12MaintenanceService\x12h\n" +
 	"\bIsActive\x12\x16.google.protobuf.Empty\x1a#.maintenance.v1.IsSomethingResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/maintenance/active\x12j\n" +
 	"\tIsPlanned\x12\x16.google.protobuf.Empty\x1a#.maintenance.v1.IsSomethingResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/maintenance/planned\x12[\n" +
-	"\x04Data\x12\x16.google.protobuf.Empty\x1a\x1c.maintenance.v1.DataResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/maintenance/data\x12d\n" +
-	"\x05Start\x12\x1d.maintenance.v1.CreateRequest\x1a\x18.maintenance.v1.Response\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/maintenance/create\x12x\n" +
-	"\fStartPlanned\x12\x1d.maintenance.v1.CreateRequest\x1a\x18.maintenance.v1.Response\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/maintenance/create/{will_start}\x12_\n" +
-	"\x04Edit\x12\x1b.maintenance.v1.EditRequest\x1a\x18.maintenance.v1.Response\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/maintenance/edit\x12_\n" +
-	"\bComplete\x12\x16.google.protobuf.Empty\x1a\x18.maintenance.v1.Response\"!\x82\xd3\xe4\x93\x02\x1b\"\x19/api/maintenance/completeB;Z9Aesterial/backend/internal/gen/maintenance/v1;maintenanceb\x06proto3"
+	"\x04Data\x12\x16.google.protobuf.Empty\x1a\x1c.maintenance.v1.DataResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/maintenance/data\x12^\n" +
+	"\x05Start\x12\x1d.maintenance.v1.CreateRequest\x1a\x12.types.WithTracing\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/maintenance/create\x12r\n" +
+	"\fStartPlanned\x12\x1d.maintenance.v1.CreateRequest\x1a\x12.types.WithTracing\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/maintenance/create/{will_start}\x12Y\n" +
+	"\x04Edit\x12\x1b.maintenance.v1.EditRequest\x1a\x12.types.WithTracing\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/maintenance/edit\x12Y\n" +
+	"\bComplete\x12\x16.google.protobuf.Empty\x1a\x12.types.WithTracing\"!\x82\xd3\xe4\x93\x02\x1b\"\x19/api/maintenance/completeB;Z9Aesterial/backend/internal/gen/maintenance/v1;maintenanceb\x06proto3"
 
 var file_maintenance_maintenance_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),       // 0: google.protobuf.Empty
@@ -42,7 +43,7 @@ var file_maintenance_maintenance_proto_goTypes = []any{
 	(*EditRequest)(nil),         // 2: maintenance.v1.EditRequest
 	(*IsSomethingResponse)(nil), // 3: maintenance.v1.IsSomethingResponse
 	(*DataResponse)(nil),        // 4: maintenance.v1.DataResponse
-	(*Response)(nil),            // 5: maintenance.v1.Response
+	(*v1.WithTracing)(nil),      // 5: types.WithTracing
 }
 var file_maintenance_maintenance_proto_depIdxs = []int32{
 	0, // 0: maintenance.v1.MaintenanceService.IsActive:input_type -> google.protobuf.Empty
@@ -55,10 +56,10 @@ var file_maintenance_maintenance_proto_depIdxs = []int32{
 	3, // 7: maintenance.v1.MaintenanceService.IsActive:output_type -> maintenance.v1.IsSomethingResponse
 	3, // 8: maintenance.v1.MaintenanceService.IsPlanned:output_type -> maintenance.v1.IsSomethingResponse
 	4, // 9: maintenance.v1.MaintenanceService.Data:output_type -> maintenance.v1.DataResponse
-	5, // 10: maintenance.v1.MaintenanceService.Start:output_type -> maintenance.v1.Response
-	5, // 11: maintenance.v1.MaintenanceService.StartPlanned:output_type -> maintenance.v1.Response
-	5, // 12: maintenance.v1.MaintenanceService.Edit:output_type -> maintenance.v1.Response
-	5, // 13: maintenance.v1.MaintenanceService.Complete:output_type -> maintenance.v1.Response
+	5, // 10: maintenance.v1.MaintenanceService.Start:output_type -> types.WithTracing
+	5, // 11: maintenance.v1.MaintenanceService.StartPlanned:output_type -> types.WithTracing
+	5, // 12: maintenance.v1.MaintenanceService.Edit:output_type -> types.WithTracing
+	5, // 13: maintenance.v1.MaintenanceService.Complete:output_type -> types.WithTracing
 	7, // [7:14] is the sub-list for method output_type
 	0, // [0:7] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

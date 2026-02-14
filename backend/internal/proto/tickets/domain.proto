@@ -72,9 +72,6 @@ message TicketMessageCreate {
   string token = 3;
 }
 
-message EmptyResponse {
-  string tracing = 1;
-}
 
 message CloseTicketRequest {
   string id = 1;

@@ -4,6 +4,7 @@ package tickets.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "tickets/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/tickets/v1;tickets";
 
@@ -20,19 +21,19 @@ service TicketsService {
   rpc Messages(TicketInfoRequest) returns (TicketMessagesResponse) {
     option (google.api.http) = {get: "/api/tickets/{id}/messages/list"};
   }
-  rpc MessageCreate(TicketMessageCreate) returns (EmptyResponse) {
+  rpc MessageCreate(TicketMessageCreate) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/tickets/{id}/messages/create"
       body: "*"
     };
   }
-  rpc CloseTicket(CloseTicketRequest) returns (EmptyResponse) {
+  rpc CloseTicket(CloseTicketRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/tickets/{id}/close"
       body: "*"
     };
   }
-  rpc AcceptTicket(TicketInfoRequest) returns (EmptyResponse) {
+  rpc AcceptTicket(TicketInfoRequest) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/tickets/{id}/accept"};
   }
   rpc List(google.protobuf.Empty) returns (TicketsListResponse) {

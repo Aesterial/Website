@@ -937,50 +937,6 @@ func (x *ChangeRequest) GetTo() string {
 	return ""
 }
 
-type EmptyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tracing       string                 `protobuf:"bytes,1,opt,name=tracing,proto3" json:"tracing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmptyResponse) Reset() {
-	*x = EmptyResponse{}
-	mi := &file_projects_domain_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmptyResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmptyResponse) ProtoMessage() {}
-
-func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
-func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *EmptyResponse) GetTracing() string {
-	if x != nil {
-		return x.Tracing
-	}
-	return ""
-}
-
 type CategoriesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Categories    []string               `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
@@ -991,7 +947,7 @@ type CategoriesResponse struct {
 
 func (x *CategoriesResponse) Reset() {
 	*x = CategoriesResponse{}
-	mi := &file_projects_domain_proto_msgTypes[15]
+	mi := &file_projects_domain_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1003,7 +959,7 @@ func (x *CategoriesResponse) String() string {
 func (*CategoriesResponse) ProtoMessage() {}
 
 func (x *CategoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_projects_domain_proto_msgTypes[15]
+	mi := &file_projects_domain_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1016,7 +972,7 @@ func (x *CategoriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoriesResponse.ProtoReflect.Descriptor instead.
 func (*CategoriesResponse) Descriptor() ([]byte, []int) {
-	return file_projects_domain_proto_rawDescGZIP(), []int{15}
+	return file_projects_domain_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CategoriesResponse) GetCategories() []string {
@@ -1090,9 +1046,7 @@ const file_projects_domain_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"/\n" +
 	"\rChangeRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\")\n" +
-	"\rEmptyResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracing\"N\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"N\n" +
 	"\x12CategoriesResponse\x12\x1e\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\tR\n" +
@@ -1129,7 +1083,7 @@ func file_projects_domain_proto_rawDescGZIP() []byte {
 }
 
 var file_projects_domain_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_projects_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_projects_domain_proto_goTypes = []any{
 	(ProjectCategory)(0),          // 0: projects.v1.ProjectCategory
 	(ProjectVoteStatus)(0),        // 1: projects.v1.ProjectVoteStatus
@@ -1147,24 +1101,23 @@ var file_projects_domain_proto_goTypes = []any{
 	(*CreateResponse)(nil),        // 13: projects.v1.CreateResponse
 	(*RequestWithID)(nil),         // 14: projects.v1.RequestWithID
 	(*ChangeRequest)(nil),         // 15: projects.v1.ChangeRequest
-	(*EmptyResponse)(nil),         // 16: projects.v1.EmptyResponse
-	(*CategoriesResponse)(nil),    // 17: projects.v1.CategoriesResponse
-	(*v1.Avatar)(nil),             // 18: user.v1.Avatar
-	(*v1.UserPublic)(nil),         // 19: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil), // 20: google.protobuf.Timestamp
+	(*CategoriesResponse)(nil),    // 16: projects.v1.CategoriesResponse
+	(*v1.Avatar)(nil),             // 17: user.v1.Avatar
+	(*v1.UserPublic)(nil),         // 18: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
 }
 var file_projects_domain_proto_depIdxs = []int32{
 	11, // 0: projects.v1.GetResponse.projects:type_name -> projects.v1.Project
 	11, // 1: projects.v1.GetProjectResponse.project:type_name -> projects.v1.Project
-	18, // 2: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
+	17, // 2: projects.v1.ProjectInfo.photos:type_name -> user.v1.Avatar
 	0,  // 3: projects.v1.ProjectInfo.category:type_name -> projects.v1.ProjectCategory
 	9,  // 4: projects.v1.ProjectInfo.location:type_name -> projects.v1.ProjectLocation
-	19, // 5: projects.v1.Project.author:type_name -> user.v1.UserPublic
+	18, // 5: projects.v1.Project.author:type_name -> user.v1.UserPublic
 	10, // 6: projects.v1.Project.details:type_name -> projects.v1.ProjectInfo
 	1,  // 7: projects.v1.Project.status:type_name -> projects.v1.ProjectVoteStatus
-	19, // 8: projects.v1.Project.liked:type_name -> user.v1.UserPublic
-	20, // 9: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
-	18, // 10: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
+	18, // 8: projects.v1.Project.liked:type_name -> user.v1.UserPublic
+	19, // 9: projects.v1.Project.createdAt:type_name -> google.protobuf.Timestamp
+	17, // 10: projects.v1.CreateRequest.photos:type_name -> user.v1.Avatar
 	9,  // 11: projects.v1.CreateRequest.location:type_name -> projects.v1.ProjectLocation
 	12, // [12:12] is the sub-list for method output_type
 	12, // [12:12] is the sub-list for method input_type
@@ -1185,7 +1138,7 @@ func file_projects_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_projects_domain_proto_rawDesc), len(file_projects_domain_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   16,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

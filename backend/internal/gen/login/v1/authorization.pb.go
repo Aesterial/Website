@@ -7,6 +7,7 @@
 package login
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -26,22 +27,22 @@ var File_login_authorization_proto protoreflect.FileDescriptor
 
 const file_login_authorization_proto_rawDesc = "" +
 	"\n" +
-	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto2\xc2\v\n" +
+	"\x19login/authorization.proto\x12\blogin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x12login/domain.proto\x1a\vtypes.proto2\x9f\v\n" +
 	"\fLoginService\x12c\n" +
 	"\rAuthorization\x12\x15.login.v1.AuthRequest\x1a\x16.login.v1.AuthResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/login/authorization\x12a\n" +
-	"\bRegister\x12\x19.login.v1.RegisterRequest\x1a\x1a.login.v1.RegisterResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/register\x12W\n" +
-	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logout\x12\\\n" +
+	"\bRegister\x12\x19.login.v1.RegisterRequest\x1a\x1a.login.v1.RegisterResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/register\x12R\n" +
+	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x12.types.WithTracing\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/login/logout\x12\\\n" +
 	"\aVkStart\x12\x16.google.protobuf.Empty\x1a\x19.login.v1.VKStartResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/login/vk/start\x12j\n" +
 	"\n" +
-	"VkCallback\x12\x1b.login.v1.VKCallbackRequest\x1a\x1c.login.v1.VKCallbackResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/vk/callback\x12m\n" +
-	"\x10VerifyEmailStart\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/verify-email/start\x12u\n" +
-	"\x12ResetPasswordStart\x12\x1a.login.v1.WithEmailRequest\x1a\x17.login.v1.EmptyResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/login/reset-password/start\x12h\n" +
-	"\vVerifyEmail\x12\x1c.login.v1.VerifyEmailRequest\x1a\x17.login.v1.EmptyResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/login/verify-email\x12n\n" +
-	"\rResetPassword\x12\x1e.login.v1.ResetPasswordRequest\x1a\x17.login.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/login/reset-password\x12R\n" +
-	"\x05Check\x12\x16.google.protobuf.Empty\x1a\x17.login.v1.EmptyResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/login/check\x12a\n" +
+	"VkCallback\x12\x1b.login.v1.VKCallbackRequest\x1a\x1c.login.v1.VKCallbackResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/vk/callback\x12h\n" +
+	"\x10VerifyEmailStart\x12\x16.google.protobuf.Empty\x1a\x12.types.WithTracing\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/verify-email/start\x12p\n" +
+	"\x12ResetPasswordStart\x12\x1a.login.v1.WithEmailRequest\x1a\x12.types.WithTracing\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/login/reset-password/start\x12c\n" +
+	"\vVerifyEmail\x12\x1c.login.v1.VerifyEmailRequest\x1a\x12.types.WithTracing\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/login/verify-email\x12i\n" +
+	"\rResetPassword\x12\x1e.login.v1.ResetPasswordRequest\x1a\x12.types.WithTracing\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/login/reset-password\x12M\n" +
+	"\x05Check\x12\x16.google.protobuf.Empty\x1a\x12.types.WithTracing\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/login/check\x12a\n" +
 	"\tSetupTOTP\x12\x16.google.protobuf.Empty\x1a\x1b.login.v1.SetupTOTPResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/login/2fa/setup\x12m\n" +
-	"\vConfirmTOTP\x12\x1c.login.v1.ConfirmTOTPRequest\x1a\x1d.login.v1.ConfirmTOTPResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/2fa/confirm\x12x\n" +
-	"\x10Reset2FARecovery\x12!.login.v1.Reset2FARecoveryRequest\x1a\x17.login.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/2fa/reset/recovery\x12g\n" +
+	"\vConfirmTOTP\x12\x1c.login.v1.ConfirmTOTPRequest\x1a\x1d.login.v1.ConfirmTOTPResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/login/2fa/confirm\x12s\n" +
+	"\x10Reset2FARecovery\x12!.login.v1.Reset2FARecoveryRequest\x1a\x12.types.WithTracing\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/login/2fa/reset/recovery\x12g\n" +
 	"\tCheckTOTP\x12\x1c.login.v1.ConfirmTOTPRequest\x1a\x1b.login.v1.CheckTOTPResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/login/2fa/checkB/Z-Aesterial/backend/internal/gen/login/v1;loginb\x06proto3"
 
 var file_login_authorization_proto_goTypes = []any{
@@ -56,7 +57,7 @@ var file_login_authorization_proto_goTypes = []any{
 	(*Reset2FARecoveryRequest)(nil), // 8: login.v1.Reset2FARecoveryRequest
 	(*AuthResponse)(nil),            // 9: login.v1.AuthResponse
 	(*RegisterResponse)(nil),        // 10: login.v1.RegisterResponse
-	(*EmptyResponse)(nil),           // 11: login.v1.EmptyResponse
+	(*v1.WithTracing)(nil),          // 11: types.WithTracing
 	(*VKStartResponse)(nil),         // 12: login.v1.VKStartResponse
 	(*VKCallbackResponse)(nil),      // 13: login.v1.VKCallbackResponse
 	(*SetupTOTPResponse)(nil),       // 14: login.v1.SetupTOTPResponse
@@ -80,17 +81,17 @@ var file_login_authorization_proto_depIdxs = []int32{
 	7,  // 13: login.v1.LoginService.CheckTOTP:input_type -> login.v1.ConfirmTOTPRequest
 	9,  // 14: login.v1.LoginService.Authorization:output_type -> login.v1.AuthResponse
 	10, // 15: login.v1.LoginService.Register:output_type -> login.v1.RegisterResponse
-	11, // 16: login.v1.LoginService.Logout:output_type -> login.v1.EmptyResponse
+	11, // 16: login.v1.LoginService.Logout:output_type -> types.WithTracing
 	12, // 17: login.v1.LoginService.VkStart:output_type -> login.v1.VKStartResponse
 	13, // 18: login.v1.LoginService.VkCallback:output_type -> login.v1.VKCallbackResponse
-	11, // 19: login.v1.LoginService.VerifyEmailStart:output_type -> login.v1.EmptyResponse
-	11, // 20: login.v1.LoginService.ResetPasswordStart:output_type -> login.v1.EmptyResponse
-	11, // 21: login.v1.LoginService.VerifyEmail:output_type -> login.v1.EmptyResponse
-	11, // 22: login.v1.LoginService.ResetPassword:output_type -> login.v1.EmptyResponse
-	11, // 23: login.v1.LoginService.Check:output_type -> login.v1.EmptyResponse
+	11, // 19: login.v1.LoginService.VerifyEmailStart:output_type -> types.WithTracing
+	11, // 20: login.v1.LoginService.ResetPasswordStart:output_type -> types.WithTracing
+	11, // 21: login.v1.LoginService.VerifyEmail:output_type -> types.WithTracing
+	11, // 22: login.v1.LoginService.ResetPassword:output_type -> types.WithTracing
+	11, // 23: login.v1.LoginService.Check:output_type -> types.WithTracing
 	14, // 24: login.v1.LoginService.SetupTOTP:output_type -> login.v1.SetupTOTPResponse
 	15, // 25: login.v1.LoginService.ConfirmTOTP:output_type -> login.v1.ConfirmTOTPResponse
-	11, // 26: login.v1.LoginService.Reset2FARecovery:output_type -> login.v1.EmptyResponse
+	11, // 26: login.v1.LoginService.Reset2FARecovery:output_type -> types.WithTracing
 	16, // 27: login.v1.LoginService.CheckTOTP:output_type -> login.v1.CheckTOTPResponse
 	14, // [14:28] is the sub-list for method output_type
 	0,  // [0:14] is the sub-list for method input_type

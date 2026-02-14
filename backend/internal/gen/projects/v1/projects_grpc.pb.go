@@ -7,6 +7,7 @@
 package projects
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -43,11 +44,11 @@ type ProjectServiceClient interface {
 	GetTop(ctx context.Context, in *GetTopRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	GetArchived(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
-	ChangeTitle(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	ChangeDescription(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Delete(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ChangeTitle(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	ChangeDescription(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Delete(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Categories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CategoriesResponse, error)
-	ToggleLike(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ToggleLike(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 }
 
 type projectServiceClient struct {
@@ -118,9 +119,9 @@ func (c *projectServiceClient) Create(ctx context.Context, in *CreateRequest, op
 	return out, nil
 }
 
-func (c *projectServiceClient) ChangeTitle(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *projectServiceClient) ChangeTitle(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, ProjectService_ChangeTitle_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -128,9 +129,9 @@ func (c *projectServiceClient) ChangeTitle(ctx context.Context, in *ChangeReques
 	return out, nil
 }
 
-func (c *projectServiceClient) ChangeDescription(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *projectServiceClient) ChangeDescription(ctx context.Context, in *ChangeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, ProjectService_ChangeDescription_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -138,9 +139,9 @@ func (c *projectServiceClient) ChangeDescription(ctx context.Context, in *Change
 	return out, nil
 }
 
-func (c *projectServiceClient) Delete(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *projectServiceClient) Delete(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, ProjectService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -158,9 +159,9 @@ func (c *projectServiceClient) Categories(ctx context.Context, in *emptypb.Empty
 	return out, nil
 }
 
-func (c *projectServiceClient) ToggleLike(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *projectServiceClient) ToggleLike(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, ProjectService_ToggleLike_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -178,11 +179,11 @@ type ProjectServiceServer interface {
 	GetTop(context.Context, *GetTopRequest) (*GetResponse, error)
 	GetArchived(context.Context, *GetRequest) (*GetResponse, error)
 	Create(context.Context, *CreateRequest) (*CreateResponse, error)
-	ChangeTitle(context.Context, *ChangeRequest) (*EmptyResponse, error)
-	ChangeDescription(context.Context, *ChangeRequest) (*EmptyResponse, error)
-	Delete(context.Context, *RequestWithID) (*EmptyResponse, error)
+	ChangeTitle(context.Context, *ChangeRequest) (*v1.WithTracing, error)
+	ChangeDescription(context.Context, *ChangeRequest) (*v1.WithTracing, error)
+	Delete(context.Context, *RequestWithID) (*v1.WithTracing, error)
 	Categories(context.Context, *emptypb.Empty) (*CategoriesResponse, error)
-	ToggleLike(context.Context, *LikeRequest) (*EmptyResponse, error)
+	ToggleLike(context.Context, *LikeRequest) (*v1.WithTracing, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -211,19 +212,19 @@ func (UnimplementedProjectServiceServer) GetArchived(context.Context, *GetReques
 func (UnimplementedProjectServiceServer) Create(context.Context, *CreateRequest) (*CreateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedProjectServiceServer) ChangeTitle(context.Context, *ChangeRequest) (*EmptyResponse, error) {
+func (UnimplementedProjectServiceServer) ChangeTitle(context.Context, *ChangeRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ChangeTitle not implemented")
 }
-func (UnimplementedProjectServiceServer) ChangeDescription(context.Context, *ChangeRequest) (*EmptyResponse, error) {
+func (UnimplementedProjectServiceServer) ChangeDescription(context.Context, *ChangeRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ChangeDescription not implemented")
 }
-func (UnimplementedProjectServiceServer) Delete(context.Context, *RequestWithID) (*EmptyResponse, error) {
+func (UnimplementedProjectServiceServer) Delete(context.Context, *RequestWithID) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedProjectServiceServer) Categories(context.Context, *emptypb.Empty) (*CategoriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Categories not implemented")
 }
-func (UnimplementedProjectServiceServer) ToggleLike(context.Context, *LikeRequest) (*EmptyResponse, error) {
+func (UnimplementedProjectServiceServer) ToggleLike(context.Context, *LikeRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ToggleLike not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}

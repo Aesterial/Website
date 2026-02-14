@@ -8,6 +8,7 @@ import (
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	permspb "Aesterial/backend/internal/gen/permissions/v1"
 	rankpb "Aesterial/backend/internal/gen/ranks/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -35,7 +36,7 @@ func NewRanksService(ranks *rankapp.Service, sess *sessionsapp.Service, users *u
 	}
 }
 
-func (s *RanksService) Create(ctx context.Context, req *rankpb.CreateRequest) (*rankpb.EmptyResponse, error) {
+func (s *RanksService) Create(ctx context.Context, req *rankpb.CreateRequest) (*types.WithTracing, error) {
 	if s == nil || s.ranks == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("ranks service not configured")
 	}
@@ -71,10 +72,10 @@ func (s *RanksService) Create(ctx context.Context, req *rankpb.CreateRequest) (*
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Created rank", "ranks.create.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &rankpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*rankpb.EmptyResponse, error) {
+func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*types.WithTracing, error) {
 	if s == nil || s.ranks == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("ranks service not configured")
 	}
@@ -101,10 +102,10 @@ func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*ra
 
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Updated rank", "ranks.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &rankpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*rankpb.EmptyResponse, error) {
+func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*types.WithTracing, error) {
 	if s == nil || s.ranks == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("ranks service not configured")
 	}
@@ -130,7 +131,7 @@ func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*ra
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Deleted rank", "ranks.delete.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &rankpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 func (s *RanksService) Get(ctx context.Context, req *rankpb.NameRequest) (*rankpb.RankResponse, error) {
@@ -261,7 +262,7 @@ func (s *RanksService) Perms(ctx context.Context, req *rankpb.NameRequest) (*per
 	return &permspb.PermissionsResponse{Data: perms.ToProto(), Tracing: traceID}, nil
 }
 
-func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchRequest) (*rankpb.EmptyResponse, error) {
+func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchRequest) (*types.WithTracing, error) {
 	if s == nil || s.ranks == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("ranks service not configured")
 	}
@@ -291,7 +292,7 @@ func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchReq
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Updated rank permissions", "ranks.perms.patch.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &rankpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 func (s *RanksService) GenerateActivation(ctx context.Context, req *rankpb.ActivationGenerateRequest) (*rankpb.ActivationGenerateResponse, error) {

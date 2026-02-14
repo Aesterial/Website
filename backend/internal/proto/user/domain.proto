@@ -127,10 +127,6 @@ message MessagesResponse {
   string tracing = 2;
 }
 
-message EmptyResponse {
-  string tracing = 1;
-}
-
 message BanInfoResponse {
   string id = 1;
   UserPublic executor = 2;

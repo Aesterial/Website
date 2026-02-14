@@ -18,6 +18,10 @@ type projectLocation struct {
 	Longitude float64
 }
 
+func (p *projectLocation) Normalize() {
+	p.City = strings.ToLower(p.City)
+}
+
 type ProjectCategory string
 
 func (p ProjectCategory) String() string {

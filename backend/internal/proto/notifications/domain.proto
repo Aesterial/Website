@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package notifications.v1;
+
+option go_package = "Aesterial/backend/internal/gen/notifications/v1;notifications";
+
+import "google/protobuf/timestamp.proto";
+
+message ForUserRequest {
+  bool shown = 1;
+}
+
+message Notification {
+  string id = 1;
+  string type = 2;
+  string scope = 3;
+  google.protobuf.Timestamp created = 4;
+  google.protobuf.Timestamp expires = 5;
+  optional google.protobuf.Timestamp readed = 6;
+}
+
+message ForUserResponse {
+  Notification data = 1;
+  string tracing = 2;
+}
+
+message AllResponse {
+  repeated Notification data = 1;
+  string tracing = 2;
+}
+
+enum Scope {
+  SCOPE_USER = 0;
+  SCOPE_BROADCAST = 1;
+  SCOPE_SEGMENT = 2;
+}
+
+message CreateRequest {
+  Scope scope = 1;
+  string body = 2;
+  optional string receiver = 3;
+  optional google.protobuf.Timestamp expires = 4;
+}
+
+message WithIDRequest {
+    string id = 1;
+}

@@ -6,17 +6,18 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "permissions/domain.proto";
 import "ranks/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/ranks/v1;ranks";
 
 service RanksService {
-  rpc Create(CreateRequest) returns (EmptyResponse) {
+  rpc Create(CreateRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/ranks/create"
       body: "*"
     };
   }
-  rpc Patch(PatchRequest) returns (EmptyResponse) {
+  rpc Patch(PatchRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       patch: "/api/ranks/{name}/patch/{target}"
       body: "*"
@@ -31,10 +32,10 @@ service RanksService {
   rpc List(google.protobuf.Empty) returns (RanksResponse) {
     option (google.api.http) = {get: "/api/ranks/list"};
   }
-  rpc Delete(NameRequest) returns (EmptyResponse) {
+  rpc Delete(NameRequest) returns (types.WithTracing) {
     option (google.api.http) = {delete: "/api/ranks/{name}/delete"};
   }
-  rpc PermsPatch(PermsPatchRequest) returns (EmptyResponse) {
+  rpc PermsPatch(PermsPatchRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       patch: "/api/ranks/{name}/perms/{perm}"
       body: "*"

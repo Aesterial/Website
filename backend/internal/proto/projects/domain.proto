@@ -105,9 +105,6 @@ message ChangeRequest {
   string to = 2;
 }
 
-message EmptyResponse {
-  string tracing = 1;
-}
 
 message CategoriesResponse {
   repeated string categories = 1;

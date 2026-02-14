@@ -8,6 +8,7 @@ import (
 	"Aesterial/backend/internal/domain/permissions"
 	"Aesterial/backend/internal/domain/user"
 	permpb "Aesterial/backend/internal/gen/permissions/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	userpb "Aesterial/backend/internal/gen/user/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
@@ -64,7 +65,7 @@ func (s *UserService) Self(ctx context.Context, _ *emptypb.Empty) (*userpb.UserS
 	return &userpb.UserSelfResponse{Data: self, Tracing: traceID}, nil
 }
 
-func (s *UserService) RevokeSession(ctx context.Context, req *userpb.RevokeSessionRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) RevokeSession(ctx context.Context, req *userpb.RevokeSessionRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ func (s *UserService) RevokeSession(ctx context.Context, req *userpb.RevokeSessi
 	if err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *UserService) Other(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.UserPublicResponse, error) {
@@ -136,7 +137,7 @@ func (s *UserService) Sessions(ctx context.Context, _ *emptypb.Empty) (*userpb.U
 	return &userpb.UserSessionsResponse{Data: list.ToProto(), Tracing: traceID}, nil
 }
 
-func (s *UserService) UpdateSelfName(ctx context.Context, req *userpb.ChangeSelfNameRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) UpdateSelfName(ctx context.Context, req *userpb.ChangeSelfNameRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -160,10 +161,10 @@ func (s *UserService) UpdateSelfName(ctx context.Context, req *userpb.ChangeSelf
 	if requestor != nil {
 		logger.Info("Updated self name", "user.update_self_name.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	}
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) UpdateSelfDescription(ctx context.Context, req *userpb.ChangeSelfDescriptionRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) UpdateSelfDescription(ctx context.Context, req *userpb.ChangeSelfDescriptionRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -184,10 +185,10 @@ func (s *UserService) UpdateSelfDescription(ctx context.Context, req *userpb.Cha
 	if requestor != nil {
 		logger.Info("Updated self description", "user.update_self_description.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	}
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) (*userpb.EmptyResponse, error) {
+func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -230,10 +231,10 @@ func (s *UserService) UpdateSelfAvatar(ctx context.Context, req *userpb.Avatar) 
 	if requestor != nil {
 		logger.Info("Updated self avatar", "user.update_self_avatar.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	}
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) Ban(ctx context.Context, req *userpb.BanUserRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) Ban(ctx context.Context, req *userpb.BanUserRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -254,13 +255,13 @@ func (s *UserService) Ban(ctx context.Context, req *userpb.BanUserRequest) (*use
 	}
 	err = s.info.Ban(ctx, user.BanInfo{Executor: requestor.UID, Target: uint(req.UserID), Reason: req.Reason, Expire: time.Now().Add(req.Duration.AsDuration())})
 	if err != nil {
-		return &userpb.EmptyResponse{Tracing: traceID}, apperrors.Wrap(err)
+		return &types.WithTracing{Tracing: traceID}, apperrors.Wrap(err)
 	}
 	logger.Info("Banned user", "user.ban.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -281,10 +282,10 @@ func (s *UserService) Unban(ctx context.Context, req *userpb.OtherUserRequest) (
 	}
 	err = s.info.UnBan(ctx, uint(req.UserID))
 	if err != nil {
-		return &userpb.EmptyResponse{Tracing: traceID}, err
+		return &types.WithTracing{Tracing: traceID}, err
 	}
 	logger.Info("Unbanned user", "user.unban.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 func (s *UserService) formateBanInfoResponse(ctx context.Context, info *user.BanInfo) (*userpb.BanInfoResponse, error) {
@@ -384,7 +385,7 @@ func (s *UserService) Users(ctx context.Context, _ *emptypb.Empty) (*userpb.User
 	return &userpb.UsersResponse{Data: info, Tracing: traceID}, nil
 }
 
-func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*userpb.EmptyResponse, error) {
+func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -409,10 +410,10 @@ func (s *UserService) DeleteSelfAvatar(ctx context.Context, _ *emptypb.Empty) (*
 		}
 	}
 	logger.Info("Deleted self avatar", "user.delete_self_avatar.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUserRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUserRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -444,7 +445,7 @@ func (s *UserService) DeleteUserAvatar(ctx context.Context, req *userpb.OtherUse
 		}
 	}
 	logger.Info("Deleted user avatar", "user.delete_user_avatar.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 func (s *UserService) applyAvatarURL(ctx context.Context, u *userpb.UserPublic) {
@@ -519,7 +520,7 @@ func (s *UserService) DeleteProfile(ctx context.Context, _ *emptypb.Empty) (*emp
 	return &emptypb.Empty{}, nil
 }
 
-func (s *UserService) ChangePerms(ctx context.Context, req *userpb.OtherUserPermsPatchRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) ChangePerms(ctx context.Context, req *userpb.OtherUserPermsPatchRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -540,10 +541,10 @@ func (s *UserService) ChangePerms(ctx context.Context, req *userpb.OtherUserPerm
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Updated user permissions", "user.permissions.update.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &userpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *UserService) SetRank(ctx context.Context, req *userpb.SetRankRequest) (*userpb.EmptyResponse, error) {
+func (s *UserService) SetRank(ctx context.Context, req *userpb.SetRankRequest) (*types.WithTracing, error) {
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
 		return nil, err
@@ -570,7 +571,7 @@ func (s *UserService) SetRank(ctx context.Context, req *userpb.SetRankRequest) (
 		logger.Debug("Failed to set rank: "+err.Error(), "")
 		return nil, apperrors.ServerError
 	}
-	return &userpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *UserService) ActivateRank(ctx context.Context, req *userpb.ActivateRankRequest) (*userpb.ActivateRankResponse, error) {

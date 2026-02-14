@@ -5,6 +5,7 @@ package login.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "login/domain.proto";
+import "types.proto";
 
 option go_package = "Aesterial/backend/internal/gen/login/v1;login";
 
@@ -21,7 +22,7 @@ service LoginService {
       body: "*"
     };
   }
-  rpc Logout(google.protobuf.Empty) returns (EmptyResponse) {
+  rpc Logout(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/logout"
       body: "*"
@@ -39,31 +40,31 @@ service LoginService {
       body: "*"
     };
   }
-  rpc VerifyEmailStart(google.protobuf.Empty) returns (EmptyResponse) {
+  rpc VerifyEmailStart(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/verify-email/start"
       body: "*"
     };
   }
-  rpc ResetPasswordStart(WithEmailRequest) returns (EmptyResponse) {
+  rpc ResetPasswordStart(WithEmailRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/reset-password/start"
       body: "*"
     };
   }
-  rpc VerifyEmail(VerifyEmailRequest) returns (EmptyResponse) {
+  rpc VerifyEmail(VerifyEmailRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/verify-email"
       body: "*"
     };
   }
-  rpc ResetPassword(ResetPasswordRequest) returns (EmptyResponse) {
+  rpc ResetPassword(ResetPasswordRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/reset-password"
       body: "*"
     };
   }
-  rpc Check(google.protobuf.Empty) returns (EmptyResponse) {
+  rpc Check(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {get: "/api/login/check"};
   }
   rpc SetupTOTP(google.protobuf.Empty) returns (SetupTOTPResponse) {
@@ -78,7 +79,7 @@ service LoginService {
       body: "*"
     };
   }
-  rpc Reset2FARecovery(Reset2FARecoveryRequest) returns (EmptyResponse) {
+  rpc Reset2FARecovery(Reset2FARecoveryRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/login/2fa/reset/recovery"
       body: "*"

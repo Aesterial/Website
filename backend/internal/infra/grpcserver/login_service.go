@@ -9,6 +9,7 @@ import (
 	logindomain "Aesterial/backend/internal/domain/login"
 	verdomain "Aesterial/backend/internal/domain/verification"
 	loginpb "Aesterial/backend/internal/gen/login/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -106,7 +107,7 @@ func (s *LoginService) Register(ctx context.Context, req *loginpb.RegisterReques
 	return &loginpb.RegisterResponse{Data: "success", Tracing: traceID}, nil
 }
 
-func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*types.WithTracing, error) {
 	if s == nil || s.login == nil {
 		return nil, apperrors.NotConfigured
 	}
@@ -119,10 +120,10 @@ func (s *LoginService) Logout(ctx context.Context, _ *emptypb.Empty) (*loginpb.E
 		return nil, apperrors.Wrap(err)
 	}
 	logger.Info("Logged out", "login.logout.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &loginpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.WithEmailRequest) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.WithEmailRequest) (*types.WithTracing, error) {
 	if s == nil || s.verification == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("verification service is not configured")
 	}
@@ -166,10 +167,10 @@ func (s *LoginService) ResetPasswordStart(ctx context.Context, req *loginpb.With
 		logger.Debug("failed to send mail message: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (*types.WithTracing, error) {
 	if s == nil || s.verification == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("verification service is not configured")
 	}
@@ -216,10 +217,10 @@ func (s *LoginService) VerifyEmailStart(ctx context.Context, _ *emptypb.Empty) (
 		logger.Debug("error on sending email: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmailRequest) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmailRequest) (*types.WithTracing, error) {
 	if s == nil || s.verification == nil || s.login == nil || s.login.User == nil {
 		return nil, apperrors.NotConfigured
 	}
@@ -243,10 +244,10 @@ func (s *LoginService) VerifyEmail(ctx context.Context, req *loginpb.VerifyEmail
 	if _, err := s.verification.Consume(ctx, verdomain.EmailVerification, token); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) ResetPassword(ctx context.Context, req *loginpb.ResetPasswordRequest) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) ResetPassword(ctx context.Context, req *loginpb.ResetPasswordRequest) (*types.WithTracing, error) {
 	if s == nil || s.verification == nil || s.login == nil || s.login.User == nil {
 		return nil, apperrors.NotConfigured
 	}
@@ -278,7 +279,7 @@ func (s *LoginService) ResetPassword(ctx context.Context, req *loginpb.ResetPass
 	if _, err := s.verification.Consume(ctx, verdomain.PasswordReset, token); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) SetupTOTP(ctx context.Context, _ *emptypb.Empty) (*loginpb.SetupTOTPResponse, error) {
@@ -332,7 +333,7 @@ func (s *LoginService) ConfirmTOTP(ctx context.Context, req *loginpb.ConfirmTOTP
 	return &loginpb.ConfirmTOTPResponse{Enabled: true, Recovery: codes, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2FARecoveryRequest) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2FARecoveryRequest) (*types.WithTracing, error) {
 	if s == nil || s.login == nil {
 		return nil, apperrors.NotConfigured
 	}
@@ -362,7 +363,7 @@ func (s *LoginService) Reset2FARecovery(ctx context.Context, req *loginpb.Reset2
 		logger.Debug("failed to reset mfa's: "+err.Error(), "")
 		return nil, apperrors.Wrap(err)
 	}
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) CheckTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRequest) (*loginpb.CheckTOTPResponse, error) {
@@ -395,7 +396,7 @@ func (s *LoginService) CheckTOTP(ctx context.Context, req *loginpb.ConfirmTOTPRe
 	return &loginpb.CheckTOTPResponse{Success: true, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (s *LoginService) Check(ctx context.Context, _ *emptypb.Empty) (*loginpb.EmptyResponse, error) {
+func (s *LoginService) Check(ctx context.Context, _ *emptypb.Empty) (*types.WithTracing, error) {
 	if s.login == nil {
 		return nil, apperrors.NotConfigured
 	}
@@ -407,7 +408,7 @@ func (s *LoginService) Check(ctx context.Context, _ *emptypb.Empty) (*loginpb.Em
 		return nil, apperrors.Unauthenticated
 	}
 	logger.Debug("user with id: "+strconv.Itoa(int(requestor.UID))+" joined", "service.login.check")
-	return &loginpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *LoginService) issueAndStoreSession(ctx context.Context, uid uint) error {

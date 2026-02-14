@@ -210,50 +210,6 @@ func (x *CreateRequest) GetWillEnd() *timestamppb.Timestamp {
 	return nil
 }
 
-type Response struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tracing       string                 `protobuf:"bytes,1,opt,name=tracing,proto3" json:"tracing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Response) Reset() {
-	*x = Response{}
-	mi := &file_maintenance_domain_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Response) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Response) ProtoMessage() {}
-
-func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_maintenance_domain_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Response.ProtoReflect.Descriptor instead.
-func (*Response) Descriptor() ([]byte, []int) {
-	return file_maintenance_domain_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Response) GetTracing() string {
-	if x != nil {
-		return x.Tracing
-	}
-	return ""
-}
-
 type EditRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Description   *string                `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
@@ -264,7 +220,7 @@ type EditRequest struct {
 
 func (x *EditRequest) Reset() {
 	*x = EditRequest{}
-	mi := &file_maintenance_domain_proto_msgTypes[4]
+	mi := &file_maintenance_domain_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -276,7 +232,7 @@ func (x *EditRequest) String() string {
 func (*EditRequest) ProtoMessage() {}
 
 func (x *EditRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_maintenance_domain_proto_msgTypes[4]
+	mi := &file_maintenance_domain_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -289,7 +245,7 @@ func (x *EditRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditRequest.ProtoReflect.Descriptor instead.
 func (*EditRequest) Descriptor() ([]byte, []int) {
-	return file_maintenance_domain_proto_rawDescGZIP(), []int{4}
+	return file_maintenance_domain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EditRequest) GetDescription() string {
@@ -325,9 +281,7 @@ const file_maintenance_domain_proto_rawDesc = "" +
 	"\n" +
 	"will_start\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\twillStart\x125\n" +
 	"\bwill_end\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\awillEndB\b\n" +
-	"\x06_scope\"$\n" +
-	"\bResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracing\"i\n" +
+	"\x06_scope\"i\n" +
 	"\vEditRequest\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01\x12\x19\n" +
 	"\x05scope\x18\x03 \x01(\tH\x01R\x05scope\x88\x01\x01B\x0e\n" +
@@ -346,19 +300,18 @@ func file_maintenance_domain_proto_rawDescGZIP() []byte {
 	return file_maintenance_domain_proto_rawDescData
 }
 
-var file_maintenance_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_maintenance_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_maintenance_domain_proto_goTypes = []any{
 	(*IsSomethingResponse)(nil),   // 0: maintenance.v1.IsSomethingResponse
 	(*DataResponse)(nil),          // 1: maintenance.v1.DataResponse
 	(*CreateRequest)(nil),         // 2: maintenance.v1.CreateRequest
-	(*Response)(nil),              // 3: maintenance.v1.Response
-	(*EditRequest)(nil),           // 4: maintenance.v1.EditRequest
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*EditRequest)(nil),           // 3: maintenance.v1.EditRequest
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_maintenance_domain_proto_depIdxs = []int32{
-	5, // 0: maintenance.v1.DataResponse.will_end:type_name -> google.protobuf.Timestamp
-	5, // 1: maintenance.v1.CreateRequest.will_start:type_name -> google.protobuf.Timestamp
-	5, // 2: maintenance.v1.CreateRequest.will_end:type_name -> google.protobuf.Timestamp
+	4, // 0: maintenance.v1.DataResponse.will_end:type_name -> google.protobuf.Timestamp
+	4, // 1: maintenance.v1.CreateRequest.will_start:type_name -> google.protobuf.Timestamp
+	4, // 2: maintenance.v1.CreateRequest.will_end:type_name -> google.protobuf.Timestamp
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -372,14 +325,14 @@ func file_maintenance_domain_proto_init() {
 		return
 	}
 	file_maintenance_domain_proto_msgTypes[2].OneofWrappers = []any{}
-	file_maintenance_domain_proto_msgTypes[4].OneofWrappers = []any{}
+	file_maintenance_domain_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_maintenance_domain_proto_rawDesc), len(file_maintenance_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

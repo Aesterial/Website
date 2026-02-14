@@ -7,7 +7,8 @@
 package user
 
 import (
-	v1 "Aesterial/backend/internal/gen/permissions/v1"
+	v11 "Aesterial/backend/internal/gen/permissions/v1"
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -27,28 +28,28 @@ var File_user_user_proto protoreflect.FileDescriptor
 
 const file_user_user_proto_rawDesc = "" +
 	"\n" +
-	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x18permissions/domain.proto\x1a\x11user/domain.proto2\x8c\x12\n" +
+	"\x0fuser/user.proto\x12\auser.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x18permissions/domain.proto\x1a\vtypes.proto\x1a\x11user/domain.proto2\xdf\x11\n" +
 	"\vUserService\x12L\n" +
 	"\x04Self\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.UserSelfResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/api/user\x12[\n" +
 	"\x05Other\x12\x19.user.v1.OtherUserRequest\x1a\x1b.user.v1.UserPublicResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/{userID}\x12O\n" +
 	"\x05Users\x12\x16.google.protobuf.Empty\x1a\x16.user.v1.UsersResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/user/list\x12]\n" +
-	"\bSessions\x12\x16.google.protobuf.Empty\x1a\x1d.user.v1.UserSessionsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/sessions\x12q\n" +
-	"\rRevokeSession\x12\x1d.user.v1.RevokeSessionRequest\x1a\x16.user.v1.EmptyResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/user/sessions/revoke/{id}\x12Y\n" +
-	"\x03Ban\x12\x17.user.v1.BanUserRequest\x1a\x16.user.v1.EmptyResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/user/{userID}/ban\x12\\\n" +
-	"\x05Unban\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\" \x82\xd3\xe4\x93\x02\x1a\"\x18/api/user/{userID}/unban\x12W\n" +
+	"\bSessions\x12\x16.google.protobuf.Empty\x1a\x1d.user.v1.UserSessionsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/sessions\x12m\n" +
+	"\rRevokeSession\x12\x1d.user.v1.RevokeSessionRequest\x1a\x12.types.WithTracing\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/user/sessions/revoke/{id}\x12U\n" +
+	"\x03Ban\x12\x17.user.v1.BanUserRequest\x1a\x12.types.WithTracing\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/user/{userID}/ban\x12X\n" +
+	"\x05Unban\x12\x19.user.v1.OtherUserRequest\x1a\x12.types.WithTracing\" \x82\xd3\xe4\x93\x02\x1a\"\x18/api/user/{userID}/unban\x12W\n" +
 	"\aBanInfo\x12\x16.google.protobuf.Empty\x1a\x18.user.v1.BanInfoResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/ban/info\x12h\n" +
-	"\fBanInfoOther\x12\x19.user.v1.OtherUserRequest\x1a\x18.user.v1.BanInfoResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/user/{userID}/ban/info\x12n\n" +
-	"\x0eUpdateSelfName\x12\x1e.user.v1.ChangeSelfNameRequest\x1a\x16.user.v1.EmptyResponse\"$\x82\xd3\xe4\x93\x02\x1e2\x1c/api/user/change/name/{name}\x12\x8a\x01\n" +
-	"\x15UpdateSelfDescription\x12%.user.v1.ChangeSelfDescriptionRequest\x1a\x16.user.v1.EmptyResponse\"2\x82\xd3\xe4\x93\x02,2*/api/user/change/description/{description}\x12X\n" +
-	"\x10UpdateSelfAvatar\x12\x0f.user.v1.Avatar\x1a\x16.user.v1.EmptyResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/user/avatar\x12c\n" +
-	"\x10DeleteSelfAvatar\x12\x16.google.protobuf.Empty\x1a\x16.user.v1.EmptyResponse\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/user/delete/avatar\x12o\n" +
-	"\x10DeleteUserAvatar\x12\x19.user.v1.OtherUserRequest\x1a\x16.user.v1.EmptyResponse\"(\x82\xd3\xe4\x93\x02\"* /api/user/{userID}/delete/avatar\x12o\n" +
-	"\vSendMessage\x12\x1b.user.v1.SendMessageRequest\x1a\x16.user.v1.EmptyResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/user/{userID}/messages/send\x12b\n" +
-	"\aSetRank\x12\x17.user.v1.SetRankRequest\x1a\x16.user.v1.EmptyResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/user/{userID}/rank/set\x12Y\n" +
+	"\fBanInfoOther\x12\x19.user.v1.OtherUserRequest\x1a\x18.user.v1.BanInfoResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/user/{userID}/ban/info\x12j\n" +
+	"\x0eUpdateSelfName\x12\x1e.user.v1.ChangeSelfNameRequest\x1a\x12.types.WithTracing\"$\x82\xd3\xe4\x93\x02\x1e2\x1c/api/user/change/name/{name}\x12\x86\x01\n" +
+	"\x15UpdateSelfDescription\x12%.user.v1.ChangeSelfDescriptionRequest\x1a\x12.types.WithTracing\"2\x82\xd3\xe4\x93\x02,2*/api/user/change/description/{description}\x12T\n" +
+	"\x10UpdateSelfAvatar\x12\x0f.user.v1.Avatar\x1a\x12.types.WithTracing\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/user/avatar\x12_\n" +
+	"\x10DeleteSelfAvatar\x12\x16.google.protobuf.Empty\x1a\x12.types.WithTracing\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/user/delete/avatar\x12k\n" +
+	"\x10DeleteUserAvatar\x12\x19.user.v1.OtherUserRequest\x1a\x12.types.WithTracing\"(\x82\xd3\xe4\x93\x02\"* /api/user/{userID}/delete/avatar\x12k\n" +
+	"\vSendMessage\x12\x1b.user.v1.SendMessageRequest\x1a\x12.types.WithTracing\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/user/{userID}/messages/send\x12^\n" +
+	"\aSetRank\x12\x17.user.v1.SetRankRequest\x1a\x12.types.WithTracing\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/user/{userID}/rank/set\x12Y\n" +
 	"\bMessages\x12\x16.google.protobuf.Empty\x1a\x19.user.v1.MessagesResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/user/messages\x12\x82\x01\n" +
 	"\x0eHasPermissions\x12\x1d.user.v1.HasPermissionRequest\x1a\x1e.user.v1.HasPermissionResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/user/{userID}/permissions/has/{perm}\x12u\n" +
-	"\vPermissions\x12\x19.user.v1.OtherUserRequest\x1a#.permissions.v1.PermissionsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/user/{userID}/permissions\x12\x82\x01\n" +
-	"\vChangePerms\x12#.user.v1.OtherUserPermsPatchRequest\x1a\x16.user.v1.EmptyResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/user/{userID}/permissions/patch/{perm}\x12d\n" +
+	"\vPermissions\x12\x19.user.v1.OtherUserRequest\x1a#.permissions.v1.PermissionsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/user/{userID}/permissions\x12~\n" +
+	"\vChangePerms\x12#.user.v1.OtherUserPermsPatchRequest\x1a\x12.types.WithTracing\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/user/{userID}/permissions/patch/{perm}\x12d\n" +
 	"\rDeleteProfile\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/user/delete/profile\x12o\n" +
 	"\fActivateRank\x12\x1c.user.v1.ActivateRankRequest\x1a\x1d.user.v1.ActivateRankResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/user/activate/rankB-Z+Aesterial/backend/internal/gen/user/v1;userb\x06proto3"
 
@@ -69,11 +70,11 @@ var file_user_user_proto_goTypes = []any{
 	(*UserPublicResponse)(nil),           // 13: user.v1.UserPublicResponse
 	(*UsersResponse)(nil),                // 14: user.v1.UsersResponse
 	(*UserSessionsResponse)(nil),         // 15: user.v1.UserSessionsResponse
-	(*EmptyResponse)(nil),                // 16: user.v1.EmptyResponse
+	(*v1.WithTracing)(nil),               // 16: types.WithTracing
 	(*BanInfoResponse)(nil),              // 17: user.v1.BanInfoResponse
 	(*MessagesResponse)(nil),             // 18: user.v1.MessagesResponse
 	(*HasPermissionResponse)(nil),        // 19: user.v1.HasPermissionResponse
-	(*v1.PermissionsResponse)(nil),       // 20: permissions.v1.PermissionsResponse
+	(*v11.PermissionsResponse)(nil),      // 20: permissions.v1.PermissionsResponse
 	(*ActivateRankResponse)(nil),         // 21: user.v1.ActivateRankResponse
 }
 var file_user_user_proto_depIdxs = []int32{
@@ -103,22 +104,22 @@ var file_user_user_proto_depIdxs = []int32{
 	13, // 23: user.v1.UserService.Other:output_type -> user.v1.UserPublicResponse
 	14, // 24: user.v1.UserService.Users:output_type -> user.v1.UsersResponse
 	15, // 25: user.v1.UserService.Sessions:output_type -> user.v1.UserSessionsResponse
-	16, // 26: user.v1.UserService.RevokeSession:output_type -> user.v1.EmptyResponse
-	16, // 27: user.v1.UserService.Ban:output_type -> user.v1.EmptyResponse
-	16, // 28: user.v1.UserService.Unban:output_type -> user.v1.EmptyResponse
+	16, // 26: user.v1.UserService.RevokeSession:output_type -> types.WithTracing
+	16, // 27: user.v1.UserService.Ban:output_type -> types.WithTracing
+	16, // 28: user.v1.UserService.Unban:output_type -> types.WithTracing
 	17, // 29: user.v1.UserService.BanInfo:output_type -> user.v1.BanInfoResponse
 	17, // 30: user.v1.UserService.BanInfoOther:output_type -> user.v1.BanInfoResponse
-	16, // 31: user.v1.UserService.UpdateSelfName:output_type -> user.v1.EmptyResponse
-	16, // 32: user.v1.UserService.UpdateSelfDescription:output_type -> user.v1.EmptyResponse
-	16, // 33: user.v1.UserService.UpdateSelfAvatar:output_type -> user.v1.EmptyResponse
-	16, // 34: user.v1.UserService.DeleteSelfAvatar:output_type -> user.v1.EmptyResponse
-	16, // 35: user.v1.UserService.DeleteUserAvatar:output_type -> user.v1.EmptyResponse
-	16, // 36: user.v1.UserService.SendMessage:output_type -> user.v1.EmptyResponse
-	16, // 37: user.v1.UserService.SetRank:output_type -> user.v1.EmptyResponse
+	16, // 31: user.v1.UserService.UpdateSelfName:output_type -> types.WithTracing
+	16, // 32: user.v1.UserService.UpdateSelfDescription:output_type -> types.WithTracing
+	16, // 33: user.v1.UserService.UpdateSelfAvatar:output_type -> types.WithTracing
+	16, // 34: user.v1.UserService.DeleteSelfAvatar:output_type -> types.WithTracing
+	16, // 35: user.v1.UserService.DeleteUserAvatar:output_type -> types.WithTracing
+	16, // 36: user.v1.UserService.SendMessage:output_type -> types.WithTracing
+	16, // 37: user.v1.UserService.SetRank:output_type -> types.WithTracing
 	18, // 38: user.v1.UserService.Messages:output_type -> user.v1.MessagesResponse
 	19, // 39: user.v1.UserService.HasPermissions:output_type -> user.v1.HasPermissionResponse
 	20, // 40: user.v1.UserService.Permissions:output_type -> permissions.v1.PermissionsResponse
-	16, // 41: user.v1.UserService.ChangePerms:output_type -> user.v1.EmptyResponse
+	16, // 41: user.v1.UserService.ChangePerms:output_type -> types.WithTracing
 	0,  // 42: user.v1.UserService.DeleteProfile:output_type -> google.protobuf.Empty
 	21, // 43: user.v1.UserService.ActivateRank:output_type -> user.v1.ActivateRankResponse
 	22, // [22:44] is the sub-list for method output_type

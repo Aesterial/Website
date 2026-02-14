@@ -8,6 +8,7 @@ import (
 	"Aesterial/backend/internal/domain/permissions"
 	projpb "Aesterial/backend/internal/gen/projects/v1"
 	submpb "Aesterial/backend/internal/gen/submissions/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
@@ -30,7 +31,7 @@ func NewSubmissionsService(submissions *submissions.Service, sess *sessionsapp.S
 	}
 }
 
-func (s *SubmissionsService) Approve(ctx context.Context, req *submpb.ApproveRequest) (*submpb.DataResponse, error) {
+func (s *SubmissionsService) Approve(ctx context.Context, req *submpb.ApproveRequest) (*types.WithTracing, error) {
 	if s == nil || s.submissions == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -46,10 +47,10 @@ func (s *SubmissionsService) Approve(ctx context.Context, req *submpb.ApproveReq
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Approved submission", "submissions.approve.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &submpb.DataResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineRequest) (*submpb.DataResponse, error) {
+func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineRequest) (*types.WithTracing, error) {
 	if s == nil || s.submissions == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -65,7 +66,7 @@ func (s *SubmissionsService) Decline(ctx context.Context, req *submpb.DeclineReq
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Declined submission", "submissions.decline.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &submpb.DataResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 func (s *SubmissionsService) List(ctx context.Context, _ *emptypb.Empty) (*submpb.ListResponse, error) {

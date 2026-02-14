@@ -25,10 +25,6 @@ message CreateRequest {
   google.protobuf.Timestamp will_end = 4;
 }
 
-message Response {
-  string tracing = 1;
-}
-
 message EditRequest {
   optional string description = 2;
   optional string scope = 3;

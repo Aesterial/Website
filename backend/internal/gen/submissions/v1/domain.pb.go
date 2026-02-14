@@ -22,50 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type DataResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tracing       string                 `protobuf:"bytes,1,opt,name=tracing,proto3" json:"tracing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DataResponse) Reset() {
-	*x = DataResponse{}
-	mi := &file_submissions_domain_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DataResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DataResponse) ProtoMessage() {}
-
-func (x *DataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DataResponse.ProtoReflect.Descriptor instead.
-func (*DataResponse) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *DataResponse) GetTracing() string {
-	if x != nil {
-		return x.Tracing
-	}
-	return ""
-}
-
 type GetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -75,7 +31,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_submissions_domain_proto_msgTypes[1]
+	mi := &file_submissions_domain_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +43,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[1]
+	mi := &file_submissions_domain_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +56,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{1}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetRequest) GetId() int32 {
@@ -119,7 +75,7 @@ type ApproveRequest struct {
 
 func (x *ApproveRequest) Reset() {
 	*x = ApproveRequest{}
-	mi := &file_submissions_domain_proto_msgTypes[2]
+	mi := &file_submissions_domain_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +87,7 @@ func (x *ApproveRequest) String() string {
 func (*ApproveRequest) ProtoMessage() {}
 
 func (x *ApproveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[2]
+	mi := &file_submissions_domain_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +100,7 @@ func (x *ApproveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveRequest.ProtoReflect.Descriptor instead.
 func (*ApproveRequest) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{2}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ApproveRequest) GetId() int32 {
@@ -164,7 +120,7 @@ type DeclineRequest struct {
 
 func (x *DeclineRequest) Reset() {
 	*x = DeclineRequest{}
-	mi := &file_submissions_domain_proto_msgTypes[3]
+	mi := &file_submissions_domain_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +132,7 @@ func (x *DeclineRequest) String() string {
 func (*DeclineRequest) ProtoMessage() {}
 
 func (x *DeclineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[3]
+	mi := &file_submissions_domain_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +145,7 @@ func (x *DeclineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeclineRequest.ProtoReflect.Descriptor instead.
 func (*DeclineRequest) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{3}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DeclineRequest) GetId() int32 {
@@ -218,7 +174,7 @@ type Target struct {
 
 func (x *Target) Reset() {
 	*x = Target{}
-	mi := &file_submissions_domain_proto_msgTypes[4]
+	mi := &file_submissions_domain_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +186,7 @@ func (x *Target) String() string {
 func (*Target) ProtoMessage() {}
 
 func (x *Target) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[4]
+	mi := &file_submissions_domain_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +199,7 @@ func (x *Target) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Target.ProtoReflect.Descriptor instead.
 func (*Target) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{4}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Target) GetId() int32 {
@@ -284,7 +240,7 @@ type ListResponse struct {
 
 func (x *ListResponse) Reset() {
 	*x = ListResponse{}
-	mi := &file_submissions_domain_proto_msgTypes[5]
+	mi := &file_submissions_domain_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +252,7 @@ func (x *ListResponse) String() string {
 func (*ListResponse) ProtoMessage() {}
 
 func (x *ListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[5]
+	mi := &file_submissions_domain_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +265,7 @@ func (x *ListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResponse.ProtoReflect.Descriptor instead.
 func (*ListResponse) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{5}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListResponse) GetData() []*Target {
@@ -336,7 +292,7 @@ type GetResponse struct {
 
 func (x *GetResponse) Reset() {
 	*x = GetResponse{}
-	mi := &file_submissions_domain_proto_msgTypes[6]
+	mi := &file_submissions_domain_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -348,7 +304,7 @@ func (x *GetResponse) String() string {
 func (*GetResponse) ProtoMessage() {}
 
 func (x *GetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_submissions_domain_proto_msgTypes[6]
+	mi := &file_submissions_domain_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -361,7 +317,7 @@ func (x *GetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResponse.ProtoReflect.Descriptor instead.
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return file_submissions_domain_proto_rawDescGZIP(), []int{6}
+	return file_submissions_domain_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetResponse) GetData() *Target {
@@ -382,9 +338,7 @@ var File_submissions_domain_proto protoreflect.FileDescriptor
 
 const file_submissions_domain_proto_rawDesc = "" +
 	"\n" +
-	"\x18submissions/domain.proto\x12\x0esubmissions.v1\x1a\x15projects/domain.proto\"(\n" +
-	"\fDataResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracing\"\x1c\n" +
+	"\x18submissions/domain.proto\x12\x0esubmissions.v1\x1a\x15projects/domain.proto\"\x1c\n" +
 	"\n" +
 	"GetRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\" \n" +
@@ -417,21 +371,20 @@ func file_submissions_domain_proto_rawDescGZIP() []byte {
 	return file_submissions_domain_proto_rawDescData
 }
 
-var file_submissions_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_submissions_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_submissions_domain_proto_goTypes = []any{
-	(*DataResponse)(nil),   // 0: submissions.v1.DataResponse
-	(*GetRequest)(nil),     // 1: submissions.v1.GetRequest
-	(*ApproveRequest)(nil), // 2: submissions.v1.ApproveRequest
-	(*DeclineRequest)(nil), // 3: submissions.v1.DeclineRequest
-	(*Target)(nil),         // 4: submissions.v1.Target
-	(*ListResponse)(nil),   // 5: submissions.v1.ListResponse
-	(*GetResponse)(nil),    // 6: submissions.v1.GetResponse
-	(*v1.Project)(nil),     // 7: projects.v1.Project
+	(*GetRequest)(nil),     // 0: submissions.v1.GetRequest
+	(*ApproveRequest)(nil), // 1: submissions.v1.ApproveRequest
+	(*DeclineRequest)(nil), // 2: submissions.v1.DeclineRequest
+	(*Target)(nil),         // 3: submissions.v1.Target
+	(*ListResponse)(nil),   // 4: submissions.v1.ListResponse
+	(*GetResponse)(nil),    // 5: submissions.v1.GetResponse
+	(*v1.Project)(nil),     // 6: projects.v1.Project
 }
 var file_submissions_domain_proto_depIdxs = []int32{
-	7, // 0: submissions.v1.Target.info:type_name -> projects.v1.Project
-	4, // 1: submissions.v1.ListResponse.data:type_name -> submissions.v1.Target
-	4, // 2: submissions.v1.GetResponse.data:type_name -> submissions.v1.Target
+	6, // 0: submissions.v1.Target.info:type_name -> projects.v1.Project
+	3, // 1: submissions.v1.ListResponse.data:type_name -> submissions.v1.Target
+	3, // 2: submissions.v1.GetResponse.data:type_name -> submissions.v1.Target
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -450,7 +403,7 @@ func file_submissions_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_submissions_domain_proto_rawDesc), len(file_submissions_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -7,6 +7,7 @@
 package tickets
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -38,9 +39,9 @@ type TicketsServiceClient interface {
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
 	Info(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*TicketInfoResponse, error)
 	Messages(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*TicketMessagesResponse, error)
-	MessageCreate(ctx context.Context, in *TicketMessageCreate, opts ...grpc.CallOption) (*EmptyResponse, error)
-	CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	AcceptTicket(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	MessageCreate(ctx context.Context, in *TicketMessageCreate, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	AcceptTicket(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TicketsListResponse, error)
 	Self(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TicketsListResponse, error)
 	IsValid(ctx context.Context, in *IsValidRequest, opts ...grpc.CallOption) (*IsValidResponse, error)
@@ -84,9 +85,9 @@ func (c *ticketsServiceClient) Messages(ctx context.Context, in *TicketInfoReque
 	return out, nil
 }
 
-func (c *ticketsServiceClient) MessageCreate(ctx context.Context, in *TicketMessageCreate, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ticketsServiceClient) MessageCreate(ctx context.Context, in *TicketMessageCreate, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, TicketsService_MessageCreate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -94,9 +95,9 @@ func (c *ticketsServiceClient) MessageCreate(ctx context.Context, in *TicketMess
 	return out, nil
 }
 
-func (c *ticketsServiceClient) CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ticketsServiceClient) CloseTicket(ctx context.Context, in *CloseTicketRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, TicketsService_CloseTicket_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -104,9 +105,9 @@ func (c *ticketsServiceClient) CloseTicket(ctx context.Context, in *CloseTicketR
 	return out, nil
 }
 
-func (c *ticketsServiceClient) AcceptTicket(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *ticketsServiceClient) AcceptTicket(ctx context.Context, in *TicketInfoRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, TicketsService_AcceptTicket_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -151,9 +152,9 @@ type TicketsServiceServer interface {
 	Create(context.Context, *CreateRequest) (*CreateResponse, error)
 	Info(context.Context, *TicketInfoRequest) (*TicketInfoResponse, error)
 	Messages(context.Context, *TicketInfoRequest) (*TicketMessagesResponse, error)
-	MessageCreate(context.Context, *TicketMessageCreate) (*EmptyResponse, error)
-	CloseTicket(context.Context, *CloseTicketRequest) (*EmptyResponse, error)
-	AcceptTicket(context.Context, *TicketInfoRequest) (*EmptyResponse, error)
+	MessageCreate(context.Context, *TicketMessageCreate) (*v1.WithTracing, error)
+	CloseTicket(context.Context, *CloseTicketRequest) (*v1.WithTracing, error)
+	AcceptTicket(context.Context, *TicketInfoRequest) (*v1.WithTracing, error)
 	List(context.Context, *emptypb.Empty) (*TicketsListResponse, error)
 	Self(context.Context, *emptypb.Empty) (*TicketsListResponse, error)
 	IsValid(context.Context, *IsValidRequest) (*IsValidResponse, error)
@@ -176,13 +177,13 @@ func (UnimplementedTicketsServiceServer) Info(context.Context, *TicketInfoReques
 func (UnimplementedTicketsServiceServer) Messages(context.Context, *TicketInfoRequest) (*TicketMessagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Messages not implemented")
 }
-func (UnimplementedTicketsServiceServer) MessageCreate(context.Context, *TicketMessageCreate) (*EmptyResponse, error) {
+func (UnimplementedTicketsServiceServer) MessageCreate(context.Context, *TicketMessageCreate) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method MessageCreate not implemented")
 }
-func (UnimplementedTicketsServiceServer) CloseTicket(context.Context, *CloseTicketRequest) (*EmptyResponse, error) {
+func (UnimplementedTicketsServiceServer) CloseTicket(context.Context, *CloseTicketRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method CloseTicket not implemented")
 }
-func (UnimplementedTicketsServiceServer) AcceptTicket(context.Context, *TicketInfoRequest) (*EmptyResponse, error) {
+func (UnimplementedTicketsServiceServer) AcceptTicket(context.Context, *TicketInfoRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method AcceptTicket not implemented")
 }
 func (UnimplementedTicketsServiceServer) List(context.Context, *emptypb.Empty) (*TicketsListResponse, error) {

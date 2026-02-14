@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package notifications.v1;
+
+option go_package = "Aesterial/backend/internal/gen/notifications/v1;notifications";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+import "notifications/domain.proto";
+import "types.proto";
+
+service NotificationService {
+  rpc ForUser (ForUserRequest) returns (ForUserResponse) {
+    option (google.api.http) = {
+      get: "/api/user/notifications"
+    };
+  }
+  rpc All (google.protobuf.Empty) returns (AllResponse) {
+    option (google.api.http) = {
+      get: "/api/notifications/list"
+    };
+  }
+  rpc Create (CreateRequest) returns (types.WithTracing) {
+    option (google.api.http) = {
+      post: "/api/notifications/create"
+      body: "*"
+    };
+  }
+  rpc Mark(WithIDRequest) returns (types.WithTracing) {
+    option (google.api.http) = {
+        post: "/api/notifications/mark/{id}"
+        body: "*"
+    };
+  }
+}

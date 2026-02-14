@@ -9,6 +9,7 @@ import (
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	ticketsdomain "Aesterial/backend/internal/domain/tickets"
 	tickpb "Aesterial/backend/internal/gen/tickets/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	userpb "Aesterial/backend/internal/gen/user/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
@@ -224,7 +225,7 @@ func (t *TicketsService) Messages(ctx context.Context, req *tickpb.TicketInfoReq
 	return &tickpb.TicketMessagesResponse{List: protoList, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMessageCreate) (*tickpb.EmptyResponse, error) {
+func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMessageCreate) (*types.WithTracing, error) {
 	if t == nil || t.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -300,10 +301,10 @@ func (t *TicketsService) MessageCreate(ctx context.Context, req *tickpb.TicketMe
 			logger.Debug("failed to send ticket message: "+err.Error(), "")
 		}
 	}
-	return &tickpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (t *TicketsService) CloseTicket(ctx context.Context, req *tickpb.CloseTicketRequest) (*tickpb.EmptyResponse, error) {
+func (t *TicketsService) CloseTicket(ctx context.Context, req *tickpb.CloseTicketRequest) (*types.WithTracing, error) {
 	if t == nil || t.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -317,7 +318,7 @@ func (t *TicketsService) CloseTicket(ctx context.Context, req *tickpb.CloseTicke
 	if err := t.serv.Close(ctx, id, ticketsdomain.ClosedBySystem, "some reason"); err != nil {
 		return nil, apperrors.Wrap(err)
 	}
-	return &tickpb.EmptyResponse{Tracing: TraceIDOrNew(ctx)}, nil
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (t *TicketsService) List(ctx context.Context, _ *emptypb.Empty) (*tickpb.TicketsListResponse, error) {
@@ -355,7 +356,7 @@ func (t *TicketsService) Self(ctx context.Context, _ *emptypb.Empty) (*tickpb.Ti
 	return &tickpb.TicketsListResponse{List: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
 
-func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInfoRequest) (*tickpb.EmptyResponse, error) {
+func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInfoRequest) (*types.WithTracing, error) {
 	if t == nil || t.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
@@ -382,7 +383,7 @@ func (t *TicketsService) AcceptTicket(ctx context.Context, req *tickpb.TicketInf
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Accepted ticket", "tickets.accept.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &tickpb.EmptyResponse{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
 // Только для не авторизованных пользователей

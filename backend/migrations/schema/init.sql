@@ -724,6 +724,35 @@ create table maintenance (
 create index maintenance_status_idx on maintenance (status);
 create index maintenance_planned_start_at_idx on maintenance (planned_start_at);
 create index maintenance_planned_end_at_idx on maintenance (planned_end_at);
+
+create type notification_type as enum ('message', 'notify');
+create type notification_scope as enum ('user', 'broadcast', 'segment');
+
+create table notifications (
+    id uuid primary key default pg_catalog.gen_random_uuid(),
+    type notification_type not null,
+    body text not null default '',
+    createdAt timestamptz not null default now(),
+    scope notification_scope not null,
+    expiresAt timestamptz
+);
+
+create table notification_receipts (
+    notify_id uuid not null references notifications (id) on delete cascade,
+    userID bigint references users (uid) on delete cascade,
+    segment varchar(64) references ranks (name) on delete cascade,
+    readAt timestamptz,
+    primary key (notify_id, userID)
+);
+
+create index notification_receipts_user_id on notification_receipts (userID);
+create index notification_receipts_user_unread
+    on notification_receipts (userID)
+    where readAt is null;
+
+create index notifications_created_at on notifications (createdAt desc);
+create index notifications_scope_created_at on notifications (scope, createdAt desc);
+
 create type ticket_status as enum ('в обработке', 'закрыт', 'ожидает');
 create type ticket_topic as enum ('аккаунт и доступ', 'проект и заявка', 'техническая проблема', 'другое');
 create type ticket_close_by as enum ('user', 'staff', 'system');

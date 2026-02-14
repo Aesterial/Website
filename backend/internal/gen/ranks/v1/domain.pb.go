@@ -197,50 +197,6 @@ func (x *NameRequest) GetName() string {
 	return ""
 }
 
-type EmptyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tracing       string                 `protobuf:"bytes,1,opt,name=tracing,proto3" json:"tracing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmptyResponse) Reset() {
-	*x = EmptyResponse{}
-	mi := &file_ranks_domain_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmptyResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmptyResponse) ProtoMessage() {}
-
-func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
-func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EmptyResponse) GetTracing() string {
-	if x != nil {
-		return x.Tracing
-	}
-	return ""
-}
-
 type PermsPatchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -252,7 +208,7 @@ type PermsPatchRequest struct {
 
 func (x *PermsPatchRequest) Reset() {
 	*x = PermsPatchRequest{}
-	mi := &file_ranks_domain_proto_msgTypes[4]
+	mi := &file_ranks_domain_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +220,7 @@ func (x *PermsPatchRequest) String() string {
 func (*PermsPatchRequest) ProtoMessage() {}
 
 func (x *PermsPatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[4]
+	mi := &file_ranks_domain_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +233,7 @@ func (x *PermsPatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PermsPatchRequest.ProtoReflect.Descriptor instead.
 func (*PermsPatchRequest) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{4}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PermsPatchRequest) GetName() string {
@@ -312,7 +268,7 @@ type UsersResponse struct {
 
 func (x *UsersResponse) Reset() {
 	*x = UsersResponse{}
-	mi := &file_ranks_domain_proto_msgTypes[5]
+	mi := &file_ranks_domain_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -324,7 +280,7 @@ func (x *UsersResponse) String() string {
 func (*UsersResponse) ProtoMessage() {}
 
 func (x *UsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[5]
+	mi := &file_ranks_domain_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -337,7 +293,7 @@ func (x *UsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UsersResponse.ProtoReflect.Descriptor instead.
 func (*UsersResponse) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{5}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UsersResponse) GetLen() uint32 {
@@ -374,7 +330,7 @@ type Rank struct {
 
 func (x *Rank) Reset() {
 	*x = Rank{}
-	mi := &file_ranks_domain_proto_msgTypes[6]
+	mi := &file_ranks_domain_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +342,7 @@ func (x *Rank) String() string {
 func (*Rank) ProtoMessage() {}
 
 func (x *Rank) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[6]
+	mi := &file_ranks_domain_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,7 +355,7 @@ func (x *Rank) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Rank.ProtoReflect.Descriptor instead.
 func (*Rank) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{6}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Rank) GetName() string {
@@ -447,7 +403,7 @@ type RankResponse struct {
 
 func (x *RankResponse) Reset() {
 	*x = RankResponse{}
-	mi := &file_ranks_domain_proto_msgTypes[7]
+	mi := &file_ranks_domain_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -459,7 +415,7 @@ func (x *RankResponse) String() string {
 func (*RankResponse) ProtoMessage() {}
 
 func (x *RankResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[7]
+	mi := &file_ranks_domain_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -472,7 +428,7 @@ func (x *RankResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RankResponse.ProtoReflect.Descriptor instead.
 func (*RankResponse) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{7}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RankResponse) GetData() *Rank {
@@ -499,7 +455,7 @@ type RanksResponse struct {
 
 func (x *RanksResponse) Reset() {
 	*x = RanksResponse{}
-	mi := &file_ranks_domain_proto_msgTypes[8]
+	mi := &file_ranks_domain_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -511,7 +467,7 @@ func (x *RanksResponse) String() string {
 func (*RanksResponse) ProtoMessage() {}
 
 func (x *RanksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[8]
+	mi := &file_ranks_domain_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -524,7 +480,7 @@ func (x *RanksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RanksResponse.ProtoReflect.Descriptor instead.
 func (*RanksResponse) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{8}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RanksResponse) GetRanks() []*Rank {
@@ -551,7 +507,7 @@ type ActivationGenerateRequest struct {
 
 func (x *ActivationGenerateRequest) Reset() {
 	*x = ActivationGenerateRequest{}
-	mi := &file_ranks_domain_proto_msgTypes[9]
+	mi := &file_ranks_domain_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -563,7 +519,7 @@ func (x *ActivationGenerateRequest) String() string {
 func (*ActivationGenerateRequest) ProtoMessage() {}
 
 func (x *ActivationGenerateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[9]
+	mi := &file_ranks_domain_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -576,7 +532,7 @@ func (x *ActivationGenerateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivationGenerateRequest.ProtoReflect.Descriptor instead.
 func (*ActivationGenerateRequest) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{9}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ActivationGenerateRequest) GetLimit() uint32 {
@@ -603,7 +559,7 @@ type ActivationGenerateResponse struct {
 
 func (x *ActivationGenerateResponse) Reset() {
 	*x = ActivationGenerateResponse{}
-	mi := &file_ranks_domain_proto_msgTypes[10]
+	mi := &file_ranks_domain_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -615,7 +571,7 @@ func (x *ActivationGenerateResponse) String() string {
 func (*ActivationGenerateResponse) ProtoMessage() {}
 
 func (x *ActivationGenerateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ranks_domain_proto_msgTypes[10]
+	mi := &file_ranks_domain_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -628,7 +584,7 @@ func (x *ActivationGenerateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivationGenerateResponse.ProtoReflect.Descriptor instead.
 func (*ActivationGenerateResponse) Descriptor() ([]byte, []int) {
-	return file_ranks_domain_proto_rawDescGZIP(), []int{10}
+	return file_ranks_domain_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ActivationGenerateResponse) GetList() []string {
@@ -662,9 +618,7 @@ const file_ranks_domain_proto_rawDesc = "" +
 	"\x06target\x18\x02 \x01(\tR\x06target\x12,\n" +
 	"\x05value\x18\x03 \x01(\v2\x16.google.protobuf.ValueR\x05value\"!\n" +
 	"\vNameRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\")\n" +
-	"\rEmptyResponse\x12\x18\n" +
-	"\atracing\x18\x01 \x01(\tR\atracing\"Q\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"Q\n" +
 	"\x11PermsPatchRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04perm\x18\x02 \x01(\tR\x04perm\x12\x14\n" +
@@ -704,31 +658,30 @@ func file_ranks_domain_proto_rawDescGZIP() []byte {
 	return file_ranks_domain_proto_rawDescData
 }
 
-var file_ranks_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_ranks_domain_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_ranks_domain_proto_goTypes = []any{
 	(*CreateRequest)(nil),              // 0: ranks.v1.CreateRequest
 	(*PatchRequest)(nil),               // 1: ranks.v1.PatchRequest
 	(*NameRequest)(nil),                // 2: ranks.v1.NameRequest
-	(*EmptyResponse)(nil),              // 3: ranks.v1.EmptyResponse
-	(*PermsPatchRequest)(nil),          // 4: ranks.v1.PermsPatchRequest
-	(*UsersResponse)(nil),              // 5: ranks.v1.UsersResponse
-	(*Rank)(nil),                       // 6: ranks.v1.Rank
-	(*RankResponse)(nil),               // 7: ranks.v1.RankResponse
-	(*RanksResponse)(nil),              // 8: ranks.v1.RanksResponse
-	(*ActivationGenerateRequest)(nil),  // 9: ranks.v1.ActivationGenerateRequest
-	(*ActivationGenerateResponse)(nil), // 10: ranks.v1.ActivationGenerateResponse
-	(*v1.Permissions)(nil),             // 11: permissions.v1.Permissions
-	(*structpb.Value)(nil),             // 12: google.protobuf.Value
-	(*v11.UserPublic)(nil),             // 13: user.v1.UserPublic
-	(*timestamppb.Timestamp)(nil),      // 14: google.protobuf.Timestamp
+	(*PermsPatchRequest)(nil),          // 3: ranks.v1.PermsPatchRequest
+	(*UsersResponse)(nil),              // 4: ranks.v1.UsersResponse
+	(*Rank)(nil),                       // 5: ranks.v1.Rank
+	(*RankResponse)(nil),               // 6: ranks.v1.RankResponse
+	(*RanksResponse)(nil),              // 7: ranks.v1.RanksResponse
+	(*ActivationGenerateRequest)(nil),  // 8: ranks.v1.ActivationGenerateRequest
+	(*ActivationGenerateResponse)(nil), // 9: ranks.v1.ActivationGenerateResponse
+	(*v1.Permissions)(nil),             // 10: permissions.v1.Permissions
+	(*structpb.Value)(nil),             // 11: google.protobuf.Value
+	(*v11.UserPublic)(nil),             // 12: user.v1.UserPublic
+	(*timestamppb.Timestamp)(nil),      // 13: google.protobuf.Timestamp
 }
 var file_ranks_domain_proto_depIdxs = []int32{
-	11, // 0: ranks.v1.CreateRequest.permissions:type_name -> permissions.v1.Permissions
-	12, // 1: ranks.v1.PatchRequest.value:type_name -> google.protobuf.Value
-	13, // 2: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
-	14, // 3: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
-	6,  // 4: ranks.v1.RankResponse.data:type_name -> ranks.v1.Rank
-	6,  // 5: ranks.v1.RanksResponse.ranks:type_name -> ranks.v1.Rank
+	10, // 0: ranks.v1.CreateRequest.permissions:type_name -> permissions.v1.Permissions
+	11, // 1: ranks.v1.PatchRequest.value:type_name -> google.protobuf.Value
+	12, // 2: ranks.v1.UsersResponse.users:type_name -> user.v1.UserPublic
+	13, // 3: ranks.v1.Rank.added:type_name -> google.protobuf.Timestamp
+	5,  // 4: ranks.v1.RankResponse.data:type_name -> ranks.v1.Rank
+	5,  // 5: ranks.v1.RanksResponse.ranks:type_name -> ranks.v1.Rank
 	6,  // [6:6] is the sub-list for method output_type
 	6,  // [6:6] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
@@ -748,7 +701,7 @@ func file_ranks_domain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ranks_domain_proto_rawDesc), len(file_ranks_domain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

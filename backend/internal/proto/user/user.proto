@@ -5,6 +5,7 @@ package user.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "permissions/domain.proto";
+import "types.proto";
 import "user/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/user/v1;user";
@@ -22,19 +23,19 @@ service UserService {
   rpc Sessions(google.protobuf.Empty) returns (UserSessionsResponse) {
     option (google.api.http) = {get: "/api/user/sessions"};
   }
-  rpc RevokeSession(RevokeSessionRequest) returns (EmptyResponse) {
+  rpc RevokeSession(RevokeSessionRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/sessions/revoke/{id}"
       body: "*"
     };
   }
-  rpc Ban(BanUserRequest) returns (EmptyResponse) {
+  rpc Ban(BanUserRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/{userID}/ban"
       body: "*"
     };
   }
-  rpc Unban(OtherUserRequest) returns (EmptyResponse) {
+  rpc Unban(OtherUserRequest) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/user/{userID}/unban"};
   }
   rpc BanInfo(google.protobuf.Empty) returns (BanInfoResponse) {
@@ -43,31 +44,31 @@ service UserService {
   rpc BanInfoOther(OtherUserRequest) returns (BanInfoResponse) {
     option (google.api.http) = {get: "/api/user/{userID}/ban/info"};
   }
-  rpc UpdateSelfName(ChangeSelfNameRequest) returns (EmptyResponse) {
+  rpc UpdateSelfName(ChangeSelfNameRequest) returns (types.WithTracing) {
     option (google.api.http) = {patch: "/api/user/change/name/{name}"};
   }
-  rpc UpdateSelfDescription(ChangeSelfDescriptionRequest) returns (EmptyResponse) {
+  rpc UpdateSelfDescription(ChangeSelfDescriptionRequest) returns (types.WithTracing) {
     option (google.api.http) = {patch: "/api/user/change/description/{description}"};
   }
-  rpc UpdateSelfAvatar(Avatar) returns (EmptyResponse) {
+  rpc UpdateSelfAvatar(Avatar) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/avatar"
       body: "*"
     };
   }
-  rpc DeleteSelfAvatar(google.protobuf.Empty) returns (EmptyResponse) {
+  rpc DeleteSelfAvatar(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {delete: "/api/user/delete/avatar"};
   }
-  rpc DeleteUserAvatar(OtherUserRequest) returns (EmptyResponse) {
+  rpc DeleteUserAvatar(OtherUserRequest) returns (types.WithTracing) {
     option (google.api.http) = {delete: "/api/user/{userID}/delete/avatar"};
   }
-  rpc SendMessage(SendMessageRequest) returns (EmptyResponse) {
+  rpc SendMessage(SendMessageRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/{userID}/messages/send"
       body: "*"
     };
   }
-  rpc SetRank(SetRankRequest) returns (EmptyResponse) {
+  rpc SetRank(SetRankRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/{userID}/rank/set"
       body: "*"
@@ -82,7 +83,7 @@ service UserService {
   rpc Permissions(OtherUserRequest) returns (permissions.v1.PermissionsResponse) {
     option (google.api.http) = {get: "/api/user/{userID}/permissions"};
   }
-  rpc ChangePerms(OtherUserPermsPatchRequest) returns (EmptyResponse) {
+  rpc ChangePerms(OtherUserPermsPatchRequest) returns (types.WithTracing) {
     option (google.api.http) = {
       post: "/api/user/{userID}/permissions/patch/{perm}"
       body: "*"

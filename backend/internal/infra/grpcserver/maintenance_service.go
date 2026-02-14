@@ -7,6 +7,7 @@ import (
 	maintdomain "Aesterial/backend/internal/domain/maintenance"
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	maintpb "Aesterial/backend/internal/gen/maintenance/v1"
+	"Aesterial/backend/internal/gen/types/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"time"
@@ -85,7 +86,7 @@ func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maint
 	return resp, nil
 }
 
-func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateRequest) (*maintpb.Response, error) {
+func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateRequest) (*types.WithTracing, error) {
 	if s == nil || s.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
@@ -105,10 +106,10 @@ func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateReque
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Started maintenance", "maintenance.start.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &maintpb.Response{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.CreateRequest) (*maintpb.Response, error) {
+func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.CreateRequest) (*types.WithTracing, error) {
 	if s == nil || s.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
@@ -127,10 +128,10 @@ func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.Crea
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Started planned maintenance", "maintenance.start_planned.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &maintpb.Response{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest) (*maintpb.Response, error) {
+func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest) (*types.WithTracing, error) {
 	if s == nil || s.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
@@ -149,10 +150,10 @@ func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest)
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Edited maintenance", "maintenance.edit.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &maintpb.Response{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }
 
-func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*maintpb.Response, error) {
+func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*types.WithTracing, error) {
 	if s == nil || s.serv == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("maintenance service is not configured")
 	}
@@ -171,5 +172,5 @@ func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*m
 	}
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Completed maintenance", "maintenance.complete.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
-	return &maintpb.Response{Tracing: traceID}, nil
+	return &types.WithTracing{Tracing: traceID}, nil
 }

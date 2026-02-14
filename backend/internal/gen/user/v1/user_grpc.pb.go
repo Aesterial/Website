@@ -7,7 +7,8 @@
 package user
 
 import (
-	v1 "Aesterial/backend/internal/gen/permissions/v1"
+	v11 "Aesterial/backend/internal/gen/permissions/v1"
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -53,22 +54,22 @@ type UserServiceClient interface {
 	Other(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*UserPublicResponse, error)
 	Users(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UsersResponse, error)
 	Sessions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserSessionsResponse, error)
-	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	BanInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BanInfoResponse, error)
 	BanInfoOther(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*BanInfoResponse, error)
-	UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	UpdateSelfDescription(ctx context.Context, in *ChangeSelfDescriptionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	UpdateSelfAvatar(ctx context.Context, in *Avatar, opts ...grpc.CallOption) (*EmptyResponse, error)
-	DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
-	DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	UpdateSelfDescription(ctx context.Context, in *ChangeSelfDescriptionRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	UpdateSelfAvatar(ctx context.Context, in *Avatar, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Messages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MessagesResponse, error)
 	HasPermissions(ctx context.Context, in *HasPermissionRequest, opts ...grpc.CallOption) (*HasPermissionResponse, error)
-	Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error)
-	ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v11.PermissionsResponse, error)
+	ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	DeleteProfile(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ActivateRank(ctx context.Context, in *ActivateRankRequest, opts ...grpc.CallOption) (*ActivateRankResponse, error)
 }
@@ -121,9 +122,9 @@ func (c *userServiceClient) Sessions(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
-func (c *userServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_RevokeSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -131,9 +132,9 @@ func (c *userServiceClient) RevokeSession(ctx context.Context, in *RevokeSession
 	return out, nil
 }
 
-func (c *userServiceClient) Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) Ban(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_Ban_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -141,9 +142,9 @@ func (c *userServiceClient) Ban(ctx context.Context, in *BanUserRequest, opts ..
 	return out, nil
 }
 
-func (c *userServiceClient) Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) Unban(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_Unban_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -171,9 +172,9 @@ func (c *userServiceClient) BanInfoOther(ctx context.Context, in *OtherUserReque
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) UpdateSelfName(ctx context.Context, in *ChangeSelfNameRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_UpdateSelfName_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -181,9 +182,9 @@ func (c *userServiceClient) UpdateSelfName(ctx context.Context, in *ChangeSelfNa
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateSelfDescription(ctx context.Context, in *ChangeSelfDescriptionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) UpdateSelfDescription(ctx context.Context, in *ChangeSelfDescriptionRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_UpdateSelfDescription_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -191,9 +192,9 @@ func (c *userServiceClient) UpdateSelfDescription(ctx context.Context, in *Chang
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateSelfAvatar(ctx context.Context, in *Avatar, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) UpdateSelfAvatar(ctx context.Context, in *Avatar, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_UpdateSelfAvatar_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -201,9 +202,9 @@ func (c *userServiceClient) UpdateSelfAvatar(ctx context.Context, in *Avatar, op
 	return out, nil
 }
 
-func (c *userServiceClient) DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) DeleteSelfAvatar(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_DeleteSelfAvatar_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -211,9 +212,9 @@ func (c *userServiceClient) DeleteSelfAvatar(ctx context.Context, in *emptypb.Em
 	return out, nil
 }
 
-func (c *userServiceClient) DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) DeleteUserAvatar(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_DeleteUserAvatar_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -221,9 +222,9 @@ func (c *userServiceClient) DeleteUserAvatar(ctx context.Context, in *OtherUserR
 	return out, nil
 }
 
-func (c *userServiceClient) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_SendMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -231,9 +232,9 @@ func (c *userServiceClient) SendMessage(ctx context.Context, in *SendMessageRequ
 	return out, nil
 }
 
-func (c *userServiceClient) SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) SetRank(ctx context.Context, in *SetRankRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_SetRank_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -261,9 +262,9 @@ func (c *userServiceClient) HasPermissions(ctx context.Context, in *HasPermissio
 	return out, nil
 }
 
-func (c *userServiceClient) Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v1.PermissionsResponse, error) {
+func (c *userServiceClient) Permissions(ctx context.Context, in *OtherUserRequest, opts ...grpc.CallOption) (*v11.PermissionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.PermissionsResponse)
+	out := new(v11.PermissionsResponse)
 	err := c.cc.Invoke(ctx, UserService_Permissions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -271,9 +272,9 @@ func (c *userServiceClient) Permissions(ctx context.Context, in *OtherUserReques
 	return out, nil
 }
 
-func (c *userServiceClient) ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *userServiceClient) ChangePerms(ctx context.Context, in *OtherUserPermsPatchRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, UserService_ChangePerms_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -309,22 +310,22 @@ type UserServiceServer interface {
 	Other(context.Context, *OtherUserRequest) (*UserPublicResponse, error)
 	Users(context.Context, *emptypb.Empty) (*UsersResponse, error)
 	Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error)
-	RevokeSession(context.Context, *RevokeSessionRequest) (*EmptyResponse, error)
-	Ban(context.Context, *BanUserRequest) (*EmptyResponse, error)
-	Unban(context.Context, *OtherUserRequest) (*EmptyResponse, error)
+	RevokeSession(context.Context, *RevokeSessionRequest) (*v1.WithTracing, error)
+	Ban(context.Context, *BanUserRequest) (*v1.WithTracing, error)
+	Unban(context.Context, *OtherUserRequest) (*v1.WithTracing, error)
 	BanInfo(context.Context, *emptypb.Empty) (*BanInfoResponse, error)
 	BanInfoOther(context.Context, *OtherUserRequest) (*BanInfoResponse, error)
-	UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*EmptyResponse, error)
-	UpdateSelfDescription(context.Context, *ChangeSelfDescriptionRequest) (*EmptyResponse, error)
-	UpdateSelfAvatar(context.Context, *Avatar) (*EmptyResponse, error)
-	DeleteSelfAvatar(context.Context, *emptypb.Empty) (*EmptyResponse, error)
-	DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error)
-	SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error)
-	SetRank(context.Context, *SetRankRequest) (*EmptyResponse, error)
+	UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*v1.WithTracing, error)
+	UpdateSelfDescription(context.Context, *ChangeSelfDescriptionRequest) (*v1.WithTracing, error)
+	UpdateSelfAvatar(context.Context, *Avatar) (*v1.WithTracing, error)
+	DeleteSelfAvatar(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
+	DeleteUserAvatar(context.Context, *OtherUserRequest) (*v1.WithTracing, error)
+	SendMessage(context.Context, *SendMessageRequest) (*v1.WithTracing, error)
+	SetRank(context.Context, *SetRankRequest) (*v1.WithTracing, error)
 	Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error)
 	HasPermissions(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error)
-	Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error)
-	ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*EmptyResponse, error)
+	Permissions(context.Context, *OtherUserRequest) (*v11.PermissionsResponse, error)
+	ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*v1.WithTracing, error)
 	DeleteProfile(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	ActivateRank(context.Context, *ActivateRankRequest) (*ActivateRankResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -349,13 +350,13 @@ func (UnimplementedUserServiceServer) Users(context.Context, *emptypb.Empty) (*U
 func (UnimplementedUserServiceServer) Sessions(context.Context, *emptypb.Empty) (*UserSessionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Sessions not implemented")
 }
-func (UnimplementedUserServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
 }
-func (UnimplementedUserServiceServer) Ban(context.Context, *BanUserRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) Ban(context.Context, *BanUserRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ban not implemented")
 }
-func (UnimplementedUserServiceServer) Unban(context.Context, *OtherUserRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) Unban(context.Context, *OtherUserRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Unban not implemented")
 }
 func (UnimplementedUserServiceServer) BanInfo(context.Context, *emptypb.Empty) (*BanInfoResponse, error) {
@@ -364,25 +365,25 @@ func (UnimplementedUserServiceServer) BanInfo(context.Context, *emptypb.Empty) (
 func (UnimplementedUserServiceServer) BanInfoOther(context.Context, *OtherUserRequest) (*BanInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BanInfoOther not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) UpdateSelfName(context.Context, *ChangeSelfNameRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSelfName not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateSelfDescription(context.Context, *ChangeSelfDescriptionRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) UpdateSelfDescription(context.Context, *ChangeSelfDescriptionRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSelfDescription not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateSelfAvatar(context.Context, *Avatar) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) UpdateSelfAvatar(context.Context, *Avatar) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSelfAvatar not implemented")
 }
-func (UnimplementedUserServiceServer) DeleteSelfAvatar(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) DeleteSelfAvatar(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteSelfAvatar not implemented")
 }
-func (UnimplementedUserServiceServer) DeleteUserAvatar(context.Context, *OtherUserRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) DeleteUserAvatar(context.Context, *OtherUserRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUserAvatar not implemented")
 }
-func (UnimplementedUserServiceServer) SendMessage(context.Context, *SendMessageRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) SendMessage(context.Context, *SendMessageRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
 }
-func (UnimplementedUserServiceServer) SetRank(context.Context, *SetRankRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) SetRank(context.Context, *SetRankRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetRank not implemented")
 }
 func (UnimplementedUserServiceServer) Messages(context.Context, *emptypb.Empty) (*MessagesResponse, error) {
@@ -391,10 +392,10 @@ func (UnimplementedUserServiceServer) Messages(context.Context, *emptypb.Empty) 
 func (UnimplementedUserServiceServer) HasPermissions(context.Context, *HasPermissionRequest) (*HasPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HasPermissions not implemented")
 }
-func (UnimplementedUserServiceServer) Permissions(context.Context, *OtherUserRequest) (*v1.PermissionsResponse, error) {
+func (UnimplementedUserServiceServer) Permissions(context.Context, *OtherUserRequest) (*v11.PermissionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Permissions not implemented")
 }
-func (UnimplementedUserServiceServer) ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*EmptyResponse, error) {
+func (UnimplementedUserServiceServer) ChangePerms(context.Context, *OtherUserPermsPatchRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ChangePerms not implemented")
 }
 func (UnimplementedUserServiceServer) DeleteProfile(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {

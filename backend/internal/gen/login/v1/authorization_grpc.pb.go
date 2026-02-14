@@ -7,6 +7,7 @@
 package login
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -42,17 +43,17 @@ const (
 type LoginServiceClient interface {
 	Authorization(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
-	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	VkStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*VKStartResponse, error)
 	VkCallback(ctx context.Context, in *VKCallbackRequest, opts ...grpc.CallOption) (*VKCallbackResponse, error)
-	VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
-	ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error)
+	VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	SetupTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetupTOTPResponse, error)
 	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*ConfirmTOTPResponse, error)
-	Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	CheckTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*CheckTOTPResponse, error)
 }
 
@@ -84,9 +85,9 @@ func (c *loginServiceClient) Register(ctx context.Context, in *RegisterRequest, 
 	return out, nil
 }
 
-func (c *loginServiceClient) Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_Logout_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -114,9 +115,9 @@ func (c *loginServiceClient) VkCallback(ctx context.Context, in *VKCallbackReque
 	return out, nil
 }
 
-func (c *loginServiceClient) VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) VerifyEmailStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_VerifyEmailStart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -124,9 +125,9 @@ func (c *loginServiceClient) VerifyEmailStart(ctx context.Context, in *emptypb.E
 	return out, nil
 }
 
-func (c *loginServiceClient) ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) ResetPasswordStart(ctx context.Context, in *WithEmailRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_ResetPasswordStart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -134,9 +135,9 @@ func (c *loginServiceClient) ResetPasswordStart(ctx context.Context, in *WithEma
 	return out, nil
 }
 
-func (c *loginServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_VerifyEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -144,9 +145,9 @@ func (c *loginServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailReq
 	return out, nil
 }
 
-func (c *loginServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_ResetPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -154,9 +155,9 @@ func (c *loginServiceClient) ResetPassword(ctx context.Context, in *ResetPasswor
 	return out, nil
 }
 
-func (c *loginServiceClient) Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) Check(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_Check_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -184,9 +185,9 @@ func (c *loginServiceClient) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPReq
 	return out, nil
 }
 
-func (c *loginServiceClient) Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *loginServiceClient) Reset2FARecovery(ctx context.Context, in *Reset2FARecoveryRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, LoginService_Reset2FARecovery_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -210,17 +211,17 @@ func (c *loginServiceClient) CheckTOTP(ctx context.Context, in *ConfirmTOTPReque
 type LoginServiceServer interface {
 	Authorization(context.Context, *AuthRequest) (*AuthResponse, error)
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
-	Logout(context.Context, *emptypb.Empty) (*EmptyResponse, error)
+	Logout(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
 	VkStart(context.Context, *emptypb.Empty) (*VKStartResponse, error)
 	VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error)
-	VerifyEmailStart(context.Context, *emptypb.Empty) (*EmptyResponse, error)
-	ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error)
-	VerifyEmail(context.Context, *VerifyEmailRequest) (*EmptyResponse, error)
-	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
-	Check(context.Context, *emptypb.Empty) (*EmptyResponse, error)
+	VerifyEmailStart(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
+	ResetPasswordStart(context.Context, *WithEmailRequest) (*v1.WithTracing, error)
+	VerifyEmail(context.Context, *VerifyEmailRequest) (*v1.WithTracing, error)
+	ResetPassword(context.Context, *ResetPasswordRequest) (*v1.WithTracing, error)
+	Check(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
 	SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error)
 	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error)
-	Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error)
+	Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*v1.WithTracing, error)
 	CheckTOTP(context.Context, *ConfirmTOTPRequest) (*CheckTOTPResponse, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
@@ -238,7 +239,7 @@ func (UnimplementedLoginServiceServer) Authorization(context.Context, *AuthReque
 func (UnimplementedLoginServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedLoginServiceServer) Logout(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) Logout(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
 }
 func (UnimplementedLoginServiceServer) VkStart(context.Context, *emptypb.Empty) (*VKStartResponse, error) {
@@ -247,19 +248,19 @@ func (UnimplementedLoginServiceServer) VkStart(context.Context, *emptypb.Empty) 
 func (UnimplementedLoginServiceServer) VkCallback(context.Context, *VKCallbackRequest) (*VKCallbackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VkCallback not implemented")
 }
-func (UnimplementedLoginServiceServer) VerifyEmailStart(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) VerifyEmailStart(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyEmailStart not implemented")
 }
-func (UnimplementedLoginServiceServer) ResetPasswordStart(context.Context, *WithEmailRequest) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) ResetPasswordStart(context.Context, *WithEmailRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPasswordStart not implemented")
 }
-func (UnimplementedLoginServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyEmail not implemented")
 }
-func (UnimplementedLoginServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
 }
-func (UnimplementedLoginServiceServer) Check(context.Context, *emptypb.Empty) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) Check(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedLoginServiceServer) SetupTOTP(context.Context, *emptypb.Empty) (*SetupTOTPResponse, error) {
@@ -268,7 +269,7 @@ func (UnimplementedLoginServiceServer) SetupTOTP(context.Context, *emptypb.Empty
 func (UnimplementedLoginServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*ConfirmTOTPResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConfirmTOTP not implemented")
 }
-func (UnimplementedLoginServiceServer) Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*EmptyResponse, error) {
+func (UnimplementedLoginServiceServer) Reset2FARecovery(context.Context, *Reset2FARecoveryRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Reset2FARecovery not implemented")
 }
 func (UnimplementedLoginServiceServer) CheckTOTP(context.Context, *ConfirmTOTPRequest) (*CheckTOTPResponse, error) {

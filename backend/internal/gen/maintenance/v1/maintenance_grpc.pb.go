@@ -7,6 +7,7 @@
 package maintenance
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -36,10 +37,10 @@ type MaintenanceServiceClient interface {
 	IsActive(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsSomethingResponse, error)
 	IsPlanned(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsSomethingResponse, error)
 	Data(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DataResponse, error)
-	Start(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Response, error)
-	StartPlanned(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Response, error)
-	Edit(ctx context.Context, in *EditRequest, opts ...grpc.CallOption) (*Response, error)
-	Complete(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Response, error)
+	Start(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	StartPlanned(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Edit(ctx context.Context, in *EditRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Complete(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
 }
 
 type maintenanceServiceClient struct {
@@ -80,9 +81,9 @@ func (c *maintenanceServiceClient) Data(ctx context.Context, in *emptypb.Empty, 
 	return out, nil
 }
 
-func (c *maintenanceServiceClient) Start(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *maintenanceServiceClient) Start(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Response)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, MaintenanceService_Start_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -90,9 +91,9 @@ func (c *maintenanceServiceClient) Start(ctx context.Context, in *CreateRequest,
 	return out, nil
 }
 
-func (c *maintenanceServiceClient) StartPlanned(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *maintenanceServiceClient) StartPlanned(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Response)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, MaintenanceService_StartPlanned_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -100,9 +101,9 @@ func (c *maintenanceServiceClient) StartPlanned(ctx context.Context, in *CreateR
 	return out, nil
 }
 
-func (c *maintenanceServiceClient) Edit(ctx context.Context, in *EditRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *maintenanceServiceClient) Edit(ctx context.Context, in *EditRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Response)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, MaintenanceService_Edit_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -110,9 +111,9 @@ func (c *maintenanceServiceClient) Edit(ctx context.Context, in *EditRequest, op
 	return out, nil
 }
 
-func (c *maintenanceServiceClient) Complete(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Response, error) {
+func (c *maintenanceServiceClient) Complete(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Response)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, MaintenanceService_Complete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -127,10 +128,10 @@ type MaintenanceServiceServer interface {
 	IsActive(context.Context, *emptypb.Empty) (*IsSomethingResponse, error)
 	IsPlanned(context.Context, *emptypb.Empty) (*IsSomethingResponse, error)
 	Data(context.Context, *emptypb.Empty) (*DataResponse, error)
-	Start(context.Context, *CreateRequest) (*Response, error)
-	StartPlanned(context.Context, *CreateRequest) (*Response, error)
-	Edit(context.Context, *EditRequest) (*Response, error)
-	Complete(context.Context, *emptypb.Empty) (*Response, error)
+	Start(context.Context, *CreateRequest) (*v1.WithTracing, error)
+	StartPlanned(context.Context, *CreateRequest) (*v1.WithTracing, error)
+	Edit(context.Context, *EditRequest) (*v1.WithTracing, error)
+	Complete(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
 	mustEmbedUnimplementedMaintenanceServiceServer()
 }
 
@@ -150,16 +151,16 @@ func (UnimplementedMaintenanceServiceServer) IsPlanned(context.Context, *emptypb
 func (UnimplementedMaintenanceServiceServer) Data(context.Context, *emptypb.Empty) (*DataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Data not implemented")
 }
-func (UnimplementedMaintenanceServiceServer) Start(context.Context, *CreateRequest) (*Response, error) {
+func (UnimplementedMaintenanceServiceServer) Start(context.Context, *CreateRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Start not implemented")
 }
-func (UnimplementedMaintenanceServiceServer) StartPlanned(context.Context, *CreateRequest) (*Response, error) {
+func (UnimplementedMaintenanceServiceServer) StartPlanned(context.Context, *CreateRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartPlanned not implemented")
 }
-func (UnimplementedMaintenanceServiceServer) Edit(context.Context, *EditRequest) (*Response, error) {
+func (UnimplementedMaintenanceServiceServer) Edit(context.Context, *EditRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Edit not implemented")
 }
-func (UnimplementedMaintenanceServiceServer) Complete(context.Context, *emptypb.Empty) (*Response, error) {
+func (UnimplementedMaintenanceServiceServer) Complete(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Complete not implemented")
 }
 func (UnimplementedMaintenanceServiceServer) mustEmbedUnimplementedMaintenanceServiceServer() {}

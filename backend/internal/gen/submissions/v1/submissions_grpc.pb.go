@@ -7,6 +7,7 @@
 package submissions
 
 import (
+	v1 "Aesterial/backend/internal/gen/types/v1"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -32,8 +33,8 @@ const (
 type SubmissionsServiceClient interface {
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	Approve(ctx context.Context, in *ApproveRequest, opts ...grpc.CallOption) (*DataResponse, error)
-	Decline(ctx context.Context, in *DeclineRequest, opts ...grpc.CallOption) (*DataResponse, error)
+	Approve(ctx context.Context, in *ApproveRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Decline(ctx context.Context, in *DeclineRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 }
 
 type submissionsServiceClient struct {
@@ -64,9 +65,9 @@ func (c *submissionsServiceClient) Get(ctx context.Context, in *GetRequest, opts
 	return out, nil
 }
 
-func (c *submissionsServiceClient) Approve(ctx context.Context, in *ApproveRequest, opts ...grpc.CallOption) (*DataResponse, error) {
+func (c *submissionsServiceClient) Approve(ctx context.Context, in *ApproveRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DataResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, SubmissionsService_Approve_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -74,9 +75,9 @@ func (c *submissionsServiceClient) Approve(ctx context.Context, in *ApproveReque
 	return out, nil
 }
 
-func (c *submissionsServiceClient) Decline(ctx context.Context, in *DeclineRequest, opts ...grpc.CallOption) (*DataResponse, error) {
+func (c *submissionsServiceClient) Decline(ctx context.Context, in *DeclineRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DataResponse)
+	out := new(v1.WithTracing)
 	err := c.cc.Invoke(ctx, SubmissionsService_Decline_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -90,8 +91,8 @@ func (c *submissionsServiceClient) Decline(ctx context.Context, in *DeclineReque
 type SubmissionsServiceServer interface {
 	List(context.Context, *emptypb.Empty) (*ListResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
-	Approve(context.Context, *ApproveRequest) (*DataResponse, error)
-	Decline(context.Context, *DeclineRequest) (*DataResponse, error)
+	Approve(context.Context, *ApproveRequest) (*v1.WithTracing, error)
+	Decline(context.Context, *DeclineRequest) (*v1.WithTracing, error)
 	mustEmbedUnimplementedSubmissionsServiceServer()
 }
 
@@ -108,10 +109,10 @@ func (UnimplementedSubmissionsServiceServer) List(context.Context, *emptypb.Empt
 func (UnimplementedSubmissionsServiceServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedSubmissionsServiceServer) Approve(context.Context, *ApproveRequest) (*DataResponse, error) {
+func (UnimplementedSubmissionsServiceServer) Approve(context.Context, *ApproveRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Approve not implemented")
 }
-func (UnimplementedSubmissionsServiceServer) Decline(context.Context, *DeclineRequest) (*DataResponse, error) {
+func (UnimplementedSubmissionsServiceServer) Decline(context.Context, *DeclineRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Decline not implemented")
 }
 func (UnimplementedSubmissionsServiceServer) mustEmbedUnimplementedSubmissionsServiceServer() {}

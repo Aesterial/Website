@@ -1907,7 +1907,7 @@ export async function fetchSubmissionById(
     throw new Error("Submission id is required.");
   }
   const payload = await apiRequest<ApiSubmissionResponse | ApiSubmissionTarget>(
-    `/api/submissions/${id}`,
+    `/api/submissions/info/${id}`,
     {
       method: "GET",
       signal: options?.signal,
