@@ -255,6 +255,7 @@ func (s *ProjectService) GetTop(ctx context.Context, req *projpb.GetTopRequest) 
 	if s == nil || s.projects == nil {
 		return nil, apperrors.NotConfigured.AddErrDetails("projects service not configured")
 	}
+	req.City = strings.ToLower(req.City)
 	proj, err := s.projects.GetTopProjects(ctx, int(req.GetLimit()), req.GetCity())
 	if err != nil {
 		return nil, apperrors.ServerError.AddErrDetails("failed to get projects top list: " + err.Error() + "for city: " + req.GetCity())

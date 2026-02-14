@@ -1672,10 +1672,6 @@ func (p *ProjectsRepository) GetTopProjects(ctx context.Context, limit int, city
 		return projects[i].Likes < projects[j].Likes
 	})
 
-	if limit > 0 && len(projects) > limit {
-		projects = projects[:limit]
-	}
-
 	if city != "" {
 		filtered := make(projectdomain.Projects, 0, len(projects))
 		for _, proj := range projects {
@@ -1684,6 +1680,10 @@ func (p *ProjectsRepository) GetTopProjects(ctx context.Context, limit int, city
 			}
 		}
 		projects = filtered
+	}
+	
+	if limit > 0 && len(projects) > limit {
+		projects = projects[:limit]
 	}
 
 	return projects, nil
