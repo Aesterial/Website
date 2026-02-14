@@ -1558,10 +1558,35 @@ export const translations: Translations = {
     EN: "Export",
     KZ: "\u042d\u043a\u0441\u043f\u043e\u0440\u0442",
   },
+  adminExportExcel: {
+    RU: "Excel",
+    EN: "Excel",
+    KZ: "Excel",
+  },
+  adminExportJson: {
+    RU: "JSON",
+    EN: "JSON",
+    KZ: "JSON",
+  },
   adminExportHint: {
     RU: "\u0424\u043e\u0440\u043c\u0438\u0440\u0443\u0435\u043c \u043e\u0442\u0447\u0435\u0442 \u0434\u043b\u044f \u0432\u044b\u0433\u0440\u0443\u0437\u043a\u0438.",
     EN: "Preparing export report.",
     KZ: "\u0415\u0441\u0435\u043f \u0434\u0430\u0439\u044b\u043d\u0434\u0430\u043b\u0443\u0434\u0430.",
+  },
+  adminExportExcelReady: {
+    RU: "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 Excel \u0433\u043e\u0442\u043e\u0432.",
+    EN: "Excel export is ready.",
+    KZ: "Excel \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u044b \u0434\u0430\u0439\u044b\u043d.",
+  },
+  adminExportJsonReady: {
+    RU: "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 JSON \u0433\u043e\u0442\u043e\u0432.",
+    EN: "JSON export is ready.",
+    KZ: "JSON \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u044b \u0434\u0430\u0439\u044b\u043d.",
+  },
+  adminExportEmpty: {
+    RU: "\u041d\u0435\u0442 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0435\u0439 \u0434\u043b\u044f \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u0430.",
+    EN: "There are no users to export.",
+    KZ: "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u04af\u0448\u0456\u043d \u043f\u0430\u0439\u0434\u0430\u043b\u0430\u043d\u0443\u0448\u044b\u043b\u0430\u0440 \u0436\u043e\u049b.",
   },
   adminUsersEmpty: {
     RU: "\u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.",

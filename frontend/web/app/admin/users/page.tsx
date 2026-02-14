@@ -53,6 +53,8 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  FileJson2,
+  FileSpreadsheet,
   Globe,
   LogOut,
   MessageSquare,
@@ -107,6 +109,23 @@ const getUserInitials = (value: string) => {
   }
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
+
+const sanitizeFileNamePart = (value: string) =>
+  value.replace(/[^a-z0-9._-]+/gi, "-");
+
+const getExportTimestamp = () => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+};
+
+const xmlEscape = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 
 const resolveAvatarSrc = (
   avatar?: { url?: string; contentType?: string; data?: string } | null,
@@ -319,6 +338,130 @@ export default function AdminUsersPage() {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+
+  const downloadBlob = (
+    fileName: string,
+    mimeType: string,
+    content: string,
+  ) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildExportRows = () =>
+    users.map((item) => ({
+      id: item.id,
+      userId: item.userID,
+      name: item.name,
+      username: item.username,
+      email: item.email,
+      role: item.role,
+      status: item.status === "banned" ? t("statusBanned") : t("statusActive"),
+      lastActive: item.lastActive,
+      reports: item.reports,
+    }));
+
+  const exportUsersJson = () => {
+    const rows = buildExportRows();
+    if (rows.length === 0) {
+      toast.error(t("adminExportEmpty"));
+      return;
+    }
+    const fileName = sanitizeFileNamePart(
+      `users-export-${getExportTimestamp()}.json`,
+    );
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      total: rows.length,
+      users: rows,
+    };
+    downloadBlob(
+      fileName,
+      "application/json;charset=utf-8",
+      JSON.stringify(payload, null, 2),
+    );
+    toast.success(t("adminExportJsonReady"), {
+      description: `${rows.length} ${t("labelUsers").toLowerCase()}`,
+    });
+  };
+
+  const exportUsersExcel = () => {
+    const rows = buildExportRows();
+    if (rows.length === 0) {
+      toast.error(t("adminExportEmpty"));
+      return;
+    }
+    const columns: Array<{ key: keyof (typeof rows)[number]; title: string }> =
+      [
+        { key: "id", title: "ID" },
+        { key: "userId", title: "User ID" },
+        { key: "name", title: "Name" },
+        { key: "username", title: "Username" },
+        { key: "email", title: t("labelEmail") },
+        { key: "role", title: t("labelRole") },
+        { key: "status", title: t("labelStatus") },
+        { key: "lastActive", title: t("labelLastActive") },
+        { key: "reports", title: t("labelReports") },
+      ];
+
+    const headerRow = columns
+      .map(
+        (column) =>
+          `<Cell ss:StyleID="header"><Data ss:Type="String">${xmlEscape(column.title)}</Data></Cell>`,
+      )
+      .join("");
+    const bodyRows = rows
+      .map((row) => {
+        const cells = columns
+          .map((column) => {
+            const value = String(row[column.key] ?? "");
+            return `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
+          })
+          .join("");
+        return `<Row>${cells}</Row>`;
+      })
+      .join("");
+
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="header">
+   <Font ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Users">
+  <Table>
+   <Row>${headerRow}</Row>
+   ${bodyRows}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const fileName = sanitizeFileNamePart(
+      `users-export-${getExportTimestamp()}.xls`,
+    );
+    downloadBlob(
+      fileName,
+      "application/vnd.ms-excel;charset=utf-8",
+      xmlContent,
+    );
+    toast.success(t("adminExportExcelReady"), {
+      description: `${rows.length} ${t("labelUsers").toLowerCase()}`,
+    });
+  };
 
   const updateUserStatus = (userID: number, status: UserStatus) => {
     setUsers((prev) =>
@@ -632,14 +775,19 @@ export default function AdminUsersPage() {
                 </Link>
                 <button
                   type="button"
-                  className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/30"
-                  onClick={() =>
-                    toast.message(t("adminExport"), {
-                      description: t("adminExportHint"),
-                    })
-                  }
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-600/30"
+                  onClick={exportUsersExcel}
                 >
-                  {t("adminExport")}
+                  <FileSpreadsheet className="h-4 w-4" />
+                  {t("adminExportExcel")}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all duration-300 hover:-translate-y-0.5 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/30"
+                  onClick={exportUsersJson}
+                >
+                  <FileJson2 className="h-4 w-4" />
+                  {t("adminExportJson")}
                 </button>
               </div>
             </div>

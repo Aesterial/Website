@@ -48,6 +48,8 @@ const getInitials = (value: string) => {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
+const PROFILE_DESCRIPTION_MAX_LENGTH = 100;
+
 export default function AccountPage() {
   const router = useRouter();
   const {
@@ -224,7 +226,9 @@ export default function AccountPage() {
     }
 
     const nextName = draftDisplayName.trim();
-    const nextDescription = draftProfileDescription.trim();
+    const nextDescription = draftProfileDescription
+      .trim()
+      .slice(0, PROFILE_DESCRIPTION_MAX_LENGTH);
     const currentName = (user.displayName ?? "").trim();
     const currentDescription = (user.description ?? "").trim();
     const nameChanged = nextName !== currentName;
@@ -805,7 +809,7 @@ export default function AccountPage() {
                 Текущее состояние
               </p>
               <p className="mt-2 text-lg font-semibold">{nameForAvatar}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words">
                 {profileDescription.trim() ||
                   t("profileDescriptionPlaceholder")}
               </p>
@@ -875,12 +879,22 @@ export default function AccountPage() {
                 <textarea
                   value={draftProfileDescription}
                   onChange={(event) =>
-                    setDraftProfileDescription(event.target.value)
+                    setDraftProfileDescription(
+                      event.target.value.slice(
+                        0,
+                        PROFILE_DESCRIPTION_MAX_LENGTH,
+                      ),
+                    )
                   }
                   placeholder={t("profileDescriptionPlaceholder")}
                   rows={8}
-                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                  maxLength={PROFILE_DESCRIPTION_MAX_LENGTH}
+                  className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
                 />
+                <p className="text-xs text-muted-foreground text-right">
+                  {draftProfileDescription.length}/
+                  {PROFILE_DESCRIPTION_MAX_LENGTH}
+                </p>
               </div>
             </div>
 
@@ -917,7 +931,7 @@ export default function AccountPage() {
                     </span>
                   </div>
                 ) : null}
-                <p className="mt-4 text-sm text-muted-foreground">
+                <p className="mt-4 text-sm text-muted-foreground whitespace-pre-wrap break-words">
                   {previewDescription || t("profileDescriptionPlaceholder")}
                 </p>
               </div>
