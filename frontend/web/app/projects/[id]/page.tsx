@@ -1,12 +1,16 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Heart, MapPin, UserCircle2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/components/language-provider";
 import { fetchProjectById, type ApiProject, type ApiAvatar } from "@/lib/api";
-import { build2GisLink, formatCoordinates, resolveCoordinates } from "@/lib/location";
+import {
+  build2GisLink,
+  formatCoordinates,
+  resolveCoordinates,
+} from "@/lib/location";
 
 type ProjectPageProps = {
   params: Promise<{
@@ -67,11 +71,28 @@ const toImageSrc = (photo?: ApiAvatar | null) => {
   if (!photo) {
     return "";
   }
-  if (photo.url) {
-    return photo.url;
+  const raw = photo as ApiAvatar & {
+    image_url?: string;
+    imageUrl?: string;
+    signedUrl?: string;
+    presign?: string;
+  };
+  const directUrl =
+    raw.url ??
+    raw.image_url ??
+    raw.imageUrl ??
+    raw.signedUrl ??
+    raw.presign ??
+    "";
+  const normalizedUrl = typeof directUrl === "string" ? directUrl.trim() : "";
+  if (normalizedUrl) {
+    return normalizedUrl;
   }
-  if (photo.contentType && photo.data) {
-    return `data:${photo.contentType};base64,${photo.data}`;
+  const contentType =
+    typeof raw.contentType === "string" ? raw.contentType.trim() : "";
+  const base64 = typeof raw.data === "string" ? raw.data.trim() : "";
+  if (contentType && base64) {
+    return `data:${contentType};base64,${base64}`;
   }
   return "";
 };
@@ -95,6 +116,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const [project, setProject] = useState<ApiProject | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageReloadTick, setImageReloadTick] = useState(0);
+  const [didRetryImageLoad, setDidRetryImageLoad] = useState(false);
 
   const locale = useMemo(
     () => (language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US"),
@@ -121,6 +144,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     [t],
   );
 
+  const retryImageLoad = useCallback(() => {
+    if (didRetryImageLoad) {
+      return;
+    }
+    setDidRetryImageLoad(true);
+    window.setTimeout(() => {
+      setImageReloadTick((prev) => prev + 1);
+    }, 800);
+  }, [didRetryImageLoad]);
+
   useEffect(() => {
     const controller = new AbortController();
     setIsLoading(true);
@@ -143,7 +176,11 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         }
       });
     return () => controller.abort();
-  }, [id, t]);
+  }, [id, imageReloadTick, t]);
+
+  useEffect(() => {
+    setDidRetryImageLoad(false);
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -191,9 +228,10 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     : categoryLabels.other;
   const location = info?.location ?? null;
   const coordinates = resolveCoordinates(location);
-  const addressParts = [location?.street?.trim(), location?.house?.trim()].filter(
-    (part): part is string => Boolean(part),
-  );
+  const addressParts = [
+    location?.street?.trim(),
+    location?.house?.trim(),
+  ].filter((part): part is string => Boolean(part));
   const locationLabel = addressParts.length
     ? addressParts.join(" ")
     : coordinates
@@ -242,7 +280,13 @@ export default function ProjectPage({ params }: ProjectPageProps) {
             <div className="mt-5 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
               <div className="space-y-5">
                 <div className="relative h-64 overflow-hidden rounded-2xl">
-                  <img src={coverImage} alt={title} className="h-full w-full object-cover" />
+                  <img
+                    src={coverImage}
+                    alt={title}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={retryImageLoad}
+                  />
                 </div>
                 {images.length > 1 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -255,6 +299,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                           src={image}
                           alt={title}
                           className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={retryImageLoad}
                         />
                       </div>
                     ))}
@@ -266,7 +312,9 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                 <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   <span>{category}</span>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">{description}</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {description}
+                </p>
 
                 <div className="mt-5 space-y-3 text-sm">
                   <div className="flex items-center gap-2">
