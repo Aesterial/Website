@@ -902,7 +902,7 @@ export default function VotingPage() {
                           type="button"
                           className="rounded-full border border-foreground/30 bg-foreground/10 px-5 py-2 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-foreground hover:text-background"
                         >
-                          Проекты на модерации 🛡️
+                          Проекты на модерации
                         </button>
                       </Link>
                     ) : null}
