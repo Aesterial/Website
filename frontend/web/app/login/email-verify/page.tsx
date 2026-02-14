@@ -4,9 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
-import { GradientButton } from "@/components/gradient-button";
 import { useLanguage } from "@/components/language-provider";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
@@ -17,9 +16,7 @@ export default function EmailVerifyPage() {
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
-  const [token, setToken] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const autoVerificationTriggered = useRef(false);
 
@@ -38,11 +35,10 @@ export default function EmailVerifyPage() {
 
       setIsSubmitting(true);
       setErrorMessage(null);
-      setSuccessMessage(null);
 
       try {
         await verifyEmail({ token: normalizedToken });
-        setSuccessMessage(t("emailVerifySuccess"));
+        router.replace("/");
       } catch (err) {
         setErrorMessage(
           err instanceof Error ? err.message : t("emailVerifyError"),
@@ -51,7 +47,7 @@ export default function EmailVerifyPage() {
         setIsSubmitting(false);
       }
     },
-    [t],
+    [router, t],
   );
 
   useEffect(() => {
@@ -63,19 +59,12 @@ export default function EmailVerifyPage() {
     const nextToken =
       hashParams.get("token") || searchParams.get("token") || "";
     const normalizedToken = nextToken.trim();
-    setToken(normalizedToken);
     if (autoVerificationTriggered.current) {
       return;
     }
     autoVerificationTriggered.current = true;
     void runVerification(normalizedToken);
   }, [runVerification]);
-
-  const handleSubmit = async () => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    await runVerification(token);
-  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -133,28 +122,11 @@ export default function EmailVerifyPage() {
                 {errorMessage}
               </div>
             ) : null}
-            {successMessage ? (
-              <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
-                {successMessage}
+            {isSubmitting ? (
+              <div className="rounded-2xl border border-border/60 bg-card/60 px-4 py-3 text-sm text-muted-foreground">
+                Loading...
               </div>
             ) : null}
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="pt-2 sm:pt-4"
-            >
-              <GradientButton
-                type="button"
-                className="w-full flex items-center justify-center gap-3"
-                disabled={isSubmitting || !token}
-                onClick={() => void handleSubmit()}
-              >
-                {isSubmitting ? "Loading..." : t("emailVerifyAction")}
-                <ArrowRight className="w-5 h-5" />
-              </GradientButton>
-            </motion.div>
           </div>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
