@@ -180,49 +180,41 @@ export default function SubmissionsLandingPage() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background sm:hidden"
                 >
-                  <Globe className="h-4 w-4" />
-                  {language}
+                  <span>Menu</span>
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[90px]">
+              <DropdownMenuContent
+                align="end"
+                side="bottom"
+                className="w-52 sm:hidden"
+              >
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">
+                    <Settings className="h-4 w-4" />
+                    {t("adminPanel")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {languageOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.code}
-                    onClick={() => setLanguage(option.code)}
+                    onSelect={() => setLanguage(option.code)}
                   >
+                    <Globe className="h-4 w-4" />
                     {option.label}
+                    {language === option.code ? " (current)" : ""}
                   </DropdownMenuItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="text-xs font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-semibold">
-                    {displayName || user?.username || "admin"}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/account">
                     <Settings className="h-4 w-4" />
                     {t("accountSettings")}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={(event) => {
                     event.preventDefault();
@@ -234,12 +226,72 @@ export default function SubmissionsLandingPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link
-              href="/admin"
-              className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
-            >
-              {t("adminPanel")}
-            </Link>
+            <div className="hidden items-center gap-3 sm:flex">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                  >
+                    <Globe className="h-4 w-4" />
+                    {language}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[90px]">
+                  {languageOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.code}
+                      onClick={() => setLanguage(option.code)}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="text-xs font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-semibold">
+                      {displayName || user?.username || "admin"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                      <Settings className="h-4 w-4" />
+                      {t("accountSettings")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      void handleLogout();
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("logout")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Link
+                href="/admin"
+                className="rounded-full border border-border/70 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-foreground hover:text-background"
+              >
+                {t("adminPanel")}
+              </Link>
+            </div>
           </div>
         </div>
       </header>
