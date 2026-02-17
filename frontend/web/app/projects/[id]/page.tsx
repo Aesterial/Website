@@ -5,7 +5,12 @@ import Link from "next/link";
 import { CalendarDays, Heart, MapPin, UserCircle2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/components/language-provider";
-import { fetchProjectById, type ApiProject, type ApiAvatar } from "@/lib/api";
+import {
+  fetchProjectById,
+  fetchStoragePresignGet,
+  type ApiProject,
+  type ApiAvatar,
+} from "@/lib/api";
 import {
   build2GisLink,
   formatCoordinates,
@@ -97,6 +102,18 @@ const toImageSrc = (photo?: ApiAvatar | null) => {
   return "";
 };
 
+const toImageKey = (photo?: ApiAvatar | null) => {
+  if (!photo) {
+    return "";
+  }
+  const raw = photo as ApiAvatar & {
+    object_key?: string;
+    objectKey?: string;
+  };
+  const directKey = raw.key ?? raw.object_key ?? raw.objectKey ?? "";
+  return typeof directKey === "string" ? directKey.trim() : "";
+};
+
 const getProjectInfo = (project?: ApiProject | null) =>
   project?.details ?? project?.info ?? null;
 
@@ -118,6 +135,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [imageReloadTick, setImageReloadTick] = useState(0);
   const [didRetryImageLoad, setDidRetryImageLoad] = useState(false);
+  const [resolvedImages, setResolvedImages] = useState<string[]>([]);
 
   const locale = useMemo(
     () => (language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US"),
@@ -181,6 +199,47 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   useEffect(() => {
     setDidRetryImageLoad(false);
   }, [id]);
+
+  useEffect(() => {
+    if (!project) {
+      setResolvedImages([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const info = getProjectInfo(project);
+    const photos = Array.isArray(info?.photos) ? info.photos : [];
+    if (photos.length === 0) {
+      setResolvedImages([]);
+      return () => controller.abort();
+    }
+
+    Promise.all(
+      photos.map(async (photo) => {
+        const direct = toImageSrc(photo);
+        if (direct) {
+          return direct;
+        }
+        const key = toImageKey(photo);
+        if (!key) {
+          return "";
+        }
+        try {
+          return await fetchStoragePresignGet(key, {
+            signal: controller.signal,
+          });
+        } catch {
+          return "";
+        }
+      }),
+    ).then((images) => {
+      if (!controller.signal.aborted) {
+        setResolvedImages(images.filter(Boolean));
+      }
+    });
+
+    return () => controller.abort();
+  }, [project, imageReloadTick]);
 
   if (isLoading) {
     return (
@@ -250,9 +309,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     author?.settings?.displayName ??
     author?.username ??
     UNKNOWN_LABEL;
-  const photos = Array.isArray(info?.photos) ? info?.photos : [];
-  const images = photos.map(toImageSrc).filter(Boolean);
-  const coverImage = images[0] ?? "/placeholder.svg";
+  const coverImage = resolvedImages[0] ?? "/placeholder.svg";
 
   return (
     <div className="min-h-screen bg-background">
@@ -288,9 +345,9 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                     onError={retryImageLoad}
                   />
                 </div>
-                {images.length > 1 ? (
+                {resolvedImages.length > 1 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {images.slice(1).map((image) => (
+                    {resolvedImages.slice(1).map((image) => (
                       <div
                         key={image}
                         className="relative h-40 overflow-hidden rounded-2xl"

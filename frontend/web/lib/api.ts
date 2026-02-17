@@ -2159,6 +2159,42 @@ export async function uploadProjectPhotos(
   return Promise.all(uploads);
 }
 
+export async function fetchStoragePresignGet(
+  key: string,
+  options?: { signal?: AbortSignal },
+): Promise<string> {
+  const trimmedKey = key.trim();
+  if (!trimmedKey) {
+    return "";
+  }
+  const payload = await apiRequest<
+    | PresignResponse
+    | {
+        url?: string;
+        data?: { presign?: string; url?: string } | null;
+      }
+  >(`/api/storage/presign/get?key=${encodeURIComponent(trimmedKey)}`, {
+    method: "GET",
+    signal: options?.signal,
+  });
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+  const response = payload as {
+    presign?: string;
+    url?: string;
+    data?: { presign?: string; url?: string } | null;
+  };
+  return (
+    (typeof response.presign === "string" ? response.presign.trim() : "") ||
+    (typeof response.url === "string" ? response.url.trim() : "") ||
+    (typeof response.data?.presign === "string"
+      ? response.data.presign.trim()
+      : "") ||
+    (typeof response.data?.url === "string" ? response.data.url.trim() : "")
+  );
+}
+
 export async function fetchTicketInfo(
   id: string,
   options?: { signal?: AbortSignal; token?: string },
