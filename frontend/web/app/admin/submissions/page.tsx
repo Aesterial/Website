@@ -13,6 +13,7 @@ import {
   Settings,
   XCircle,
 } from "lucide-react";
+import { AdminNotificationsMenu } from "@/components/admin-notifications-menu";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
@@ -176,6 +177,7 @@ export default function SubmissionsLandingPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <AdminNotificationsMenu />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

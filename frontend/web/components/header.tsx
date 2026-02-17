@@ -7,6 +7,7 @@ import {
   useScroll,
 } from "framer-motion";
 import {
+  Bell,
   ChevronDown,
   Clock,
   Globe,
@@ -28,6 +29,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { useLanguage } from "./language-provider";
+import { useNotifications } from "./notifications-provider";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import {
@@ -76,10 +78,57 @@ const resolveAvatarSrc = (
   return "";
 };
 
+const formatNotificationDate = (
+  value: string | undefined,
+  language: string,
+) => {
+  if (!value) {
+    return "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  const locale =
+    language === "KZ" ? "kk-KZ" : language === "RU" ? "ru-RU" : "en-US";
+  return parsed.toLocaleString(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const resolveNotificationText = (
+  type: string | undefined,
+  body: string | undefined,
+  t: (key: string) => string,
+) => {
+  if (body) {
+    return body;
+  }
+  const normalized = type?.trim().toLowerCase() ?? "";
+  if (normalized === "message") {
+    return t("notificationsTypeMessage");
+  }
+  if (normalized === "notify") {
+    return t("notificationsTypeNotify");
+  }
+  return t("notificationsTypeDefault");
+};
+
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { user, status, hasAdminAccess, logout } = useAuth();
+  const {
+    notifications,
+    unreadCount,
+    isLoading: notificationsLoading,
+    refresh: refreshNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
 
   const [langOpen, setLangOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
@@ -98,6 +147,9 @@ export function Header() {
   const displayName = user?.displayName || user?.username || "";
   const avatarLabel = getInitials(displayName || user?.username || "User");
   const avatarSrc = resolveAvatarSrc(user?.avatar);
+  const visibleNotifications = notifications.slice(0, 8);
+  const mobileNotifications = notifications.slice(0, 3);
+  const unreadBadge = unreadCount > 99 ? "99+" : String(unreadCount);
 
   const handleLogout = async () => {
     await logout();
@@ -363,6 +415,81 @@ export function Header() {
                         ))}
                       </div>
                       {status === "authenticated" ? (
+                        <div className="rounded-2xl border border-border bg-card/60 p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                              {t("notificationsTitle")}
+                            </p>
+                            {unreadCount > 0 ? (
+                              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background">
+                                {unreadBadge}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            {notificationsLoading ? (
+                              <p className="text-xs text-muted-foreground">
+                                {t("notificationsLoading")}
+                              </p>
+                            ) : mobileNotifications.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                {t("notificationsEmpty")}
+                              </p>
+                            ) : (
+                              mobileNotifications.map((notification) => {
+                                const isUnread = !notification.readAt;
+                                return (
+                                  <button
+                                    key={notification.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isUnread) {
+                                        void markAsRead(notification.id);
+                                      }
+                                    }}
+                                    className="flex w-full items-start gap-2 rounded-xl border border-border/50 bg-background/70 px-3 py-2 text-left transition hover:bg-muted/60"
+                                  >
+                                    <span
+                                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                                        isUnread
+                                          ? "bg-foreground"
+                                          : "bg-muted-foreground/40"
+                                      }`}
+                                    />
+                                    <span className="min-w-0 flex-1">
+                                      <span className="block break-words text-xs font-medium">
+                                        {resolveNotificationText(
+                                          notification.type,
+                                          notification.body,
+                                          t,
+                                        )}
+                                      </span>
+                                      {notification.createdAt ? (
+                                        <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                                          {formatNotificationDate(
+                                            notification.createdAt,
+                                            language,
+                                          )}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                          {unreadCount > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => void markAllAsRead()}
+                              className="mt-3 inline-flex rounded-full border border-border/70 px-3 py-1.5 text-xs font-semibold transition hover:bg-foreground hover:text-background"
+                            >
+                              {t("notificationsMarkAllRead")}
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {status === "authenticated" ? (
                         <SheetClose asChild>
                           <button
                             type="button"
@@ -586,6 +713,107 @@ export function Header() {
                 <span className="block h-4 w-4" aria-hidden="true" />
               )}
             </motion.button>
+
+            {status === "authenticated" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-muted/60 transition"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={t("notificationsTitle")}
+                  >
+                    <Bell className="h-4 w-4" />
+                    {unreadCount > 0 ? (
+                      <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background">
+                        {unreadBadge}
+                      </span>
+                    ) : null}
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-80 shadow-none p-0 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      {t("notificationsTitle")}
+                    </p>
+                    {unreadCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => void markAllAsRead()}
+                        className="text-xs font-semibold text-foreground/80 hover:text-foreground transition"
+                      >
+                        {t("notificationsMarkAllRead")}
+                      </button>
+                    ) : null}
+                  </div>
+                  <DropdownMenuSeparator />
+                  {notificationsLoading ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">
+                      {t("notificationsLoading")}
+                    </div>
+                  ) : visibleNotifications.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">
+                      {t("notificationsEmpty")}
+                    </div>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto">
+                      {visibleNotifications.map((notification) => {
+                        const isUnread = !notification.readAt;
+                        return (
+                          <DropdownMenuItem
+                            key={notification.id}
+                            className="flex items-start gap-2 py-3"
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              if (isUnread) {
+                                void markAsRead(notification.id);
+                              }
+                            }}
+                          >
+                            <span
+                              className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                                isUnread
+                                  ? "bg-foreground"
+                                  : "bg-muted-foreground/40"
+                              }`}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block break-words text-sm font-medium leading-snug">
+                                {resolveNotificationText(
+                                  notification.type,
+                                  notification.body,
+                                  t,
+                                )}
+                              </span>
+                              {notification.createdAt ? (
+                                <span className="mt-1 block text-[11px] text-muted-foreground">
+                                  {formatNotificationDate(
+                                    notification.createdAt,
+                                    language,
+                                  )}
+                                </span>
+                              ) : null}
+                            </span>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      void refreshNotifications({ silent: true });
+                    }}
+                  >
+                    {t("notificationsRefresh")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
 
             {status === "authenticated" && user ? (
               <DropdownMenu>

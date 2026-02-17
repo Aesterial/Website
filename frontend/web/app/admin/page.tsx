@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
 import { AdminRanksDialog } from "@/components/admin-ranks-dialog";
+import { AdminNotificationsMenu } from "@/components/admin-notifications-menu";
 import {
   AdminUserSettingsDialog,
   type AdminUserSettingsTarget,
@@ -1821,6 +1822,8 @@ export default function AdminPage() {
                       )
                     ) : null}
                   </motion.button>
+
+                  <AdminNotificationsMenu />
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

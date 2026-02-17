@@ -234,6 +234,38 @@ export function AdminRanksDialog({
     };
   }, [open, reloadKey, t]);
 
+  const activeRank = useMemo(
+    () => ranks.find((rank) => rank.name === activeId) ?? null,
+    [activeId, ranks],
+  );
+  const isCreating = !activeRank || activeId === "new";
+  const requestorRankWeight = useMemo(() => {
+    const requestorRank = normalizeRankName(user?.rank?.name);
+    if (!requestorRank) {
+      return null;
+    }
+    const requestorItem = ranks.find(
+      (rank) => normalizeRankName(rank.name) === requestorRank,
+    );
+    return typeof requestorItem?.weight === "number"
+      ? requestorItem.weight
+      : null;
+  }, [ranks, user?.rank?.name]);
+  const canEditActiveRank = useMemo(() => {
+    if (isCreating || !activeRank) {
+      return true;
+    }
+    if (
+      requestorRankWeight == null ||
+      typeof activeRank.weight !== "number" ||
+      !Number.isFinite(activeRank.weight)
+    ) {
+      return true;
+    }
+    return requestorRankWeight > activeRank.weight;
+  }, [activeRank, isCreating, requestorRankWeight]);
+  const detailsLocked = !isCreating && !canEditActiveRank;
+
   useEffect(() => {
     if (
       !open ||
@@ -332,38 +364,6 @@ export function AdminRanksDialog({
       color: toHexColor(current.color),
     });
   }, [activeId, open, ranks]);
-
-  const activeRank = useMemo(
-    () => ranks.find((rank) => rank.name === activeId) ?? null,
-    [activeId, ranks],
-  );
-  const isCreating = !activeRank || activeId === "new";
-  const requestorRankWeight = useMemo(() => {
-    const requestorRank = normalizeRankName(user?.rank?.name);
-    if (!requestorRank) {
-      return null;
-    }
-    const requestorItem = ranks.find(
-      (rank) => normalizeRankName(rank.name) === requestorRank,
-    );
-    return typeof requestorItem?.weight === "number"
-      ? requestorItem.weight
-      : null;
-  }, [ranks, user?.rank?.name]);
-  const canEditActiveRank = useMemo(() => {
-    if (isCreating || !activeRank) {
-      return true;
-    }
-    if (
-      requestorRankWeight == null ||
-      typeof activeRank.weight !== "number" ||
-      !Number.isFinite(activeRank.weight)
-    ) {
-      return true;
-    }
-    return requestorRankWeight > activeRank.weight;
-  }, [activeRank, isCreating, requestorRankWeight]);
-  const detailsLocked = !isCreating && !canEditActiveRank;
 
   const previewColor = isValidHex(draft.color) ? draft.color : "#64748b";
 

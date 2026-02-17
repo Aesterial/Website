@@ -154,6 +154,16 @@ export type ApiSubmissionTarget = {
   reason?: string | null;
 };
 
+export type ApiNotification = {
+  id: string;
+  type?: string;
+  scope?: string;
+  body?: string;
+  createdAt?: string;
+  expiresAt?: string | null;
+  readAt?: string | null;
+};
+
 type ApiUser = {
   uid?: number;
   userID?: number;
@@ -463,6 +473,118 @@ const toRankAdded = (value: ApiRankListEntry["added"]): string | undefined => {
     return undefined;
   }
   return new Date(seconds * 1000).toISOString();
+};
+
+const toIsoTimestamp = (value: unknown): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+  }
+  const payload = toRecord(value);
+  if (!payload) {
+    return undefined;
+  }
+  const secondsRaw = payload.seconds;
+  const nanosRaw = payload.nanos;
+  const seconds =
+    typeof secondsRaw === "number"
+      ? secondsRaw
+      : typeof secondsRaw === "string"
+        ? Number(secondsRaw)
+        : NaN;
+  if (!Number.isFinite(seconds)) {
+    return undefined;
+  }
+  const nanos =
+    typeof nanosRaw === "number"
+      ? nanosRaw
+      : typeof nanosRaw === "string"
+        ? Number(nanosRaw)
+        : 0;
+  const millis = seconds * 1000 + (Number.isFinite(nanos) ? nanos / 1e6 : 0);
+  const date = new Date(millis);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+};
+
+const toNotification = (value: unknown): ApiNotification | null => {
+  const record = toRecord(value);
+  if (!record) {
+    return null;
+  }
+  const id = pickString(record, ["id", "notification_id", "notificationId"]);
+  if (!id) {
+    return null;
+  }
+
+  const type = pickString(record, ["type"]);
+  const scope = pickString(record, ["scope"]);
+  const body = pickString(record, [
+    "body",
+    "message",
+    "content",
+    "text",
+    "title",
+  ]);
+  const createdAt =
+    toIsoTimestamp(
+      record.created ?? record.created_at ?? record.createdAt ?? null,
+    ) ?? undefined;
+  const expiresAt =
+    toIsoTimestamp(
+      record.expires ?? record.expires_at ?? record.expiresAt ?? null,
+    ) ?? null;
+  const readAt =
+    toIsoTimestamp(record.readed ?? record.read_at ?? record.readAt ?? null) ??
+    null;
+
+  return {
+    id,
+    ...(type ? { type } : {}),
+    ...(scope ? { scope } : {}),
+    ...(body ? { body } : {}),
+    ...(createdAt ? { createdAt } : {}),
+    ...(expiresAt ? { expiresAt } : {}),
+    ...(readAt ? { readAt } : {}),
+  };
+};
+
+const toNotifications = (payload: unknown): ApiNotification[] => {
+  const root = toRecord(payload);
+  const items: unknown[] = [];
+
+  const pushCandidate = (value: unknown) => {
+    if (Array.isArray(value)) {
+      items.push(...value);
+      return;
+    }
+    if (value && typeof value === "object") {
+      items.push(value);
+    }
+  };
+
+  pushCandidate(payload);
+  pushCandidate(root?.data);
+  pushCandidate(root?.notifications);
+  pushCandidate(root?.items);
+  pushCandidate(root?.list);
+
+  const map = new Map<string, ApiNotification>();
+  for (const item of items) {
+    const notification = toNotification(item);
+    if (!notification) {
+      continue;
+    }
+    map.set(notification.id, notification);
+  }
+
+  return [...map.values()].sort((a, b) => {
+    const left = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const right = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return right - left;
+  });
 };
 
 const toRankListItem = (value: ApiRankListEntry): ApiRankListItem | null => {
@@ -1928,6 +2050,33 @@ export async function fetchSubmissionById(
     return (payload as ApiSubmissionResponse).data ?? null;
   }
   return payload as ApiSubmissionTarget;
+}
+
+export async function fetchUserNotifications(options?: {
+  shown?: boolean;
+  signal?: AbortSignal;
+}): Promise<ApiNotification[]> {
+  const params = new URLSearchParams();
+  if (typeof options?.shown === "boolean") {
+    params.set("shown", String(options.shown));
+  }
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const payload = await apiRequest<unknown>(`/api/user/notifications${query}`, {
+    method: "GET",
+    signal: options?.signal,
+  });
+  return toNotifications(payload);
+}
+
+export async function markNotificationAsRead(id: string): Promise<void> {
+  const trimmed = id.trim();
+  if (!trimmed) {
+    throw new Error("Notification id is required.");
+  }
+  await apiRequest(`/api/notifications/mark/${encodeURIComponent(trimmed)}`, {
+    method: "POST",
+    body: JSON.stringify({ id: trimmed }),
+  });
 }
 
 export async function approveSubmission(id: number): Promise<void> {

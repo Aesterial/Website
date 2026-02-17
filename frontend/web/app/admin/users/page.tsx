@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
+import { AdminNotificationsMenu } from "@/components/admin-notifications-menu";
 import { useLanguage } from "@/components/language-provider";
 import { AdminRanksDialog } from "@/components/admin-ranks-dialog";
 import {
@@ -681,6 +682,7 @@ export default function AdminUsersPage() {
               ) : null}
               {t("adminThemeToggle")}
             </button>
+            <AdminNotificationsMenu />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

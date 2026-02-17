@@ -17,6 +17,7 @@ import {
   UserCircle2,
   XCircle,
 } from "lucide-react";
+import { AdminNotificationsMenu } from "@/components/admin-notifications-menu";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
@@ -321,6 +322,7 @@ export default function SubmissionDetailPage({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <AdminNotificationsMenu />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

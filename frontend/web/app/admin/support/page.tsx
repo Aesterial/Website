@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/components/auth-provider";
+import { AdminNotificationsMenu } from "@/components/admin-notifications-menu";
 import { useLanguage } from "@/components/language-provider";
 import {
   acceptTicket,
@@ -289,7 +290,9 @@ export default function AdminSupportPage() {
         const mapped = list
           .map((item) => mapTicket(item))
           .filter((item): item is Ticket => Boolean(item));
-        setTickets((prev) => (areTicketListsEqual(prev, mapped) ? prev : mapped));
+        setTickets((prev) =>
+          areTicketListsEqual(prev, mapped) ? prev : mapped,
+        );
       } catch (err) {
         if (!signal?.aborted && !silent) {
           setError("Не удалось загрузить обращения.");
@@ -953,7 +956,8 @@ export default function AdminSupportPage() {
   };
 
   if (isDialogView) {
-    const showDialogSkeleton = loadingList || (loadingDetails && messages.length === 0);
+    const showDialogSkeleton =
+      loadingList || (loadingDetails && messages.length === 0);
     return (
       <div className="min-h-screen bg-background text-foreground px-4 py-6">
         <div className="mx-auto w-full max-w-4xl">
@@ -993,6 +997,7 @@ export default function AdminSupportPage() {
             </div>
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
+            <AdminNotificationsMenu />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
