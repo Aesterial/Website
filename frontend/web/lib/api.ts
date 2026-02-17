@@ -38,6 +38,7 @@ export type ApiRankListItem = {
   description?: string;
   color?: number;
   added?: string;
+  weight?: number;
 };
 
 export type ApiAvatar = {
@@ -185,6 +186,7 @@ type ApiRankListEntry = {
   description?: string;
   color?: number;
   added?: string | { seconds?: number | string; nanos?: number } | null;
+  weight?: number;
 };
 
 type ApiRankListResponse = {
@@ -473,11 +475,16 @@ const toRankListItem = (value: ApiRankListEntry): ApiRankListItem | null => {
       ? value.description.trim() || undefined
       : undefined;
   const color = typeof value.color === "number" ? value.color : undefined;
+  const weight =
+    typeof value.weight === "number" && Number.isFinite(value.weight)
+      ? value.weight
+      : undefined;
   return {
     name,
     description,
     color,
     added: toRankAdded(value.added),
+    weight,
   };
 };
 

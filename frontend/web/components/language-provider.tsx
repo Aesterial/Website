@@ -815,6 +815,16 @@ export const translations: Translations = {
     EN: "Edit rank",
     KZ: "Рангты өңдеу",
   },
+  adminRanksEditDenied: {
+    RU: "You cannot edit this rank.",
+    EN: "You cannot edit this rank.",
+    KZ: "You cannot edit this rank.",
+  },
+  adminRanksEditDeniedHint: {
+    RU: "Your rank level is not high enough to edit this role.",
+    EN: "Your rank level is not high enough to edit this role.",
+    KZ: "Your rank level is not high enough to edit this role.",
+  },
   adminRanksNameLabel: {
     RU: "Название",
     EN: "Name",

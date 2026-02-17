@@ -27,6 +27,37 @@ type RanksService struct {
 	storage *storageapp.Service
 }
 
+func (s *RanksService) ensureCanEditRank(ctx context.Context, requestorUID uint, targetRank string) error {
+	if s == nil || s.ranks == nil || s.users == nil {
+		return apperrors.NotConfigured.AddErrDetails("ranks service not configured")
+	}
+	targetRank = strings.TrimSpace(targetRank)
+	if targetRank == "" {
+		return apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
+	}
+
+	requestor, err := s.users.GetByID(ctx, requestorUID)
+	if err != nil {
+		return apperrors.Wrap(err)
+	}
+	currentRank := ""
+	if requestor != nil && requestor.Rank != nil {
+		currentRank = strings.TrimSpace(requestor.Rank.Name)
+	}
+	if currentRank == "" {
+		return apperrors.AccessDenied.AddErrDetails("requestor rank is empty")
+	}
+
+	canEdit, err := s.ranks.CanEdit(ctx, currentRank, targetRank)
+	if err != nil {
+		return apperrors.Wrap(err)
+	}
+	if !canEdit {
+		return apperrors.AccessDenied.AddErrDetails("target rank is not editable")
+	}
+	return nil
+}
+
 func NewRanksService(ranks *rankapp.Service, sess *sessionsapp.Service, users *userapp.Service, storage *storageapp.Service) *RanksService {
 	return &RanksService{
 		ranks:   ranks,
@@ -94,6 +125,9 @@ func (s *RanksService) Patch(ctx context.Context, req *rankpb.PatchRequest) (*ty
 	if name == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
+	if err := s.ensureCanEditRank(ctx, requestor.UID, name); err != nil {
+		return nil, err
+	}
 
 	if err := s.ranks.Edit(ctx, name, req.GetTarget(), req.GetValue()); err != nil {
 		logger.Debug("error on edit ranks: "+err.Error(), "")
@@ -122,6 +156,9 @@ func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*ty
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
+	}
+	if err := s.ensureCanEditRank(ctx, requestor.UID, name); err != nil {
+		return nil, err
 	}
 	if err := s.ranks.Delete(ctx, name); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -250,6 +287,9 @@ func (s *RanksService) Perms(ctx context.Context, req *rankpb.NameRequest) (*per
 	if name == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
 	}
+	if err := s.ensureCanEditRank(ctx, requestor.UID, name); err != nil {
+		return nil, err
+	}
 	perms, err := s.ranks.Perms(ctx, name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -279,6 +319,9 @@ func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchReq
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("rank name is empty")
+	}
+	if err := s.ensureCanEditRank(ctx, requestor.UID, name); err != nil {
+		return nil, err
 	}
 	perm := strings.TrimSpace(req.GetPerm())
 	if perm == "" {

@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/components/auth-provider";
 import { useLanguage } from "@/components/language-provider";
 import {
   createRank,
@@ -146,11 +147,15 @@ const getUserInitials = (value: string) => {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
+const normalizeRankName = (value?: string | null) =>
+  value?.trim().toLowerCase() ?? "";
+
 export function AdminRanksDialog({
   open,
   onOpenChange,
 }: AdminRanksDialogProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [ranks, setRanks] = useState<ApiRankListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,7 +235,13 @@ export function AdminRanksDialog({
   }, [open, reloadKey, t]);
 
   useEffect(() => {
-    if (!open || panel !== "permissions" || !activeId || activeId === "new") {
+    if (
+      !open ||
+      panel !== "permissions" ||
+      !activeId ||
+      activeId === "new" ||
+      !canEditActiveRank
+    ) {
       setPermissions(null);
       setPermissionsError(null);
       setPermissionsLoading(false);
@@ -264,7 +275,7 @@ export function AdminRanksDialog({
       active = false;
       controller.abort();
     };
-  }, [activeId, open, panel, permissionsReloadKey, t]);
+  }, [activeId, canEditActiveRank, open, panel, permissionsReloadKey, t]);
 
   useEffect(() => {
     if (!usersOpen || !activeId || activeId === "new") {
@@ -327,6 +338,32 @@ export function AdminRanksDialog({
     [activeId, ranks],
   );
   const isCreating = !activeRank || activeId === "new";
+  const requestorRankWeight = useMemo(() => {
+    const requestorRank = normalizeRankName(user?.rank?.name);
+    if (!requestorRank) {
+      return null;
+    }
+    const requestorItem = ranks.find(
+      (rank) => normalizeRankName(rank.name) === requestorRank,
+    );
+    return typeof requestorItem?.weight === "number"
+      ? requestorItem.weight
+      : null;
+  }, [ranks, user?.rank?.name]);
+  const canEditActiveRank = useMemo(() => {
+    if (isCreating || !activeRank) {
+      return true;
+    }
+    if (
+      requestorRankWeight == null ||
+      typeof activeRank.weight !== "number" ||
+      !Number.isFinite(activeRank.weight)
+    ) {
+      return true;
+    }
+    return requestorRankWeight > activeRank.weight;
+  }, [activeRank, isCreating, requestorRankWeight]);
+  const detailsLocked = !isCreating && !canEditActiveRank;
 
   const previewColor = isValidHex(draft.color) ? draft.color : "#64748b";
 
@@ -401,6 +438,10 @@ export function AdminRanksDialog({
     if (!activeId || permissionsUpdating.has(entry.key)) {
       return;
     }
+    if (!canEditActiveRank) {
+      toast.error(t("adminRanksEditDenied"));
+      return;
+    }
     const nextValue = !entry.value;
     setPermissionsUpdating((prev) => new Set(prev).add(entry.key));
     try {
@@ -429,6 +470,10 @@ export function AdminRanksDialog({
 
   const handleSave = async () => {
     if (saving) {
+      return;
+    }
+    if (detailsLocked) {
+      toast.error(t("adminRanksEditDenied"));
       return;
     }
     const payload = validateDraft();
@@ -504,6 +549,10 @@ export function AdminRanksDialog({
 
   const handleDelete = async () => {
     if (!activeRank || deleting) {
+      return;
+    }
+    if (!canEditActiveRank) {
+      toast.error(t("adminRanksEditDenied"));
       return;
     }
     setDeleting(true);
@@ -674,7 +723,13 @@ export function AdminRanksDialog({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPanel("permissions")}
+                  onClick={() => {
+                    if (!isCreating && !canEditActiveRank) {
+                      toast.error(t("adminRanksEditDenied"));
+                      return;
+                    }
+                    setPanel("permissions");
+                  }}
                   className={cn(
                     "rounded-full border px-3 py-1 text-[11px] font-semibold transition",
                     panel === "permissions"
@@ -719,6 +774,11 @@ export function AdminRanksDialog({
 
             {panel === "details" ? (
               <>
+                {detailsLocked ? (
+                  <div className="mt-5 rounded-2xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
+                    {t("adminRanksEditDeniedHint")}
+                  </div>
+                ) : null}
                 <div className="mt-5 space-y-4">
                   <div>
                     <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -734,7 +794,7 @@ export function AdminRanksDialog({
                       }
                       placeholder={t("adminRanksNamePlaceholder")}
                       className="mt-2 w-full rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm"
-                      disabled={saving || deleting}
+                      disabled={saving || deleting || detailsLocked}
                     />
                   </div>
                   <div>
@@ -752,7 +812,7 @@ export function AdminRanksDialog({
                       placeholder={t("adminRanksDescriptionPlaceholder")}
                       rows={4}
                       className="mt-2 w-full rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm"
-                      disabled={saving || deleting}
+                      disabled={saving || deleting || detailsLocked}
                     />
                   </div>
                   <div>
@@ -774,7 +834,7 @@ export function AdminRanksDialog({
                         }
                         placeholder={t("adminRanksColorPlaceholder")}
                         className="min-w-[140px] flex-1 rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm"
-                        disabled={saving || deleting}
+                        disabled={saving || deleting || detailsLocked}
                       />
                       <input
                         type="color"
@@ -786,7 +846,7 @@ export function AdminRanksDialog({
                           }))
                         }
                         className="h-9 w-12 cursor-pointer rounded-2xl border border-border/60 bg-background p-1"
-                        disabled={saving || deleting}
+                        disabled={saving || deleting || detailsLocked}
                       />
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
@@ -801,7 +861,7 @@ export function AdminRanksDialog({
                       type="button"
                       onClick={() => setDeleteOpen(true)}
                       className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
-                      disabled={saving || deleting}
+                      disabled={saving || deleting || detailsLocked}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       {t("adminRanksDelete")}
@@ -810,7 +870,9 @@ export function AdminRanksDialog({
                   <button
                     type="button"
                     onClick={handleSave}
-                    disabled={!hasChanges || saving || deleting}
+                    disabled={
+                      !hasChanges || saving || deleting || detailsLocked
+                    }
                     className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:shadow-lg hover:shadow-foreground/20 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {saving ? t("adminRanksSaving") : t("adminRanksSave")}
@@ -819,11 +881,16 @@ export function AdminRanksDialog({
               </>
             ) : (
               <div className="mt-5 space-y-4">
+                {!isCreating && !canEditActiveRank ? (
+                  <div className="rounded-2xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
+                    {t("adminRanksEditDeniedHint")}
+                  </div>
+                ) : null}
                 {activeId === "new" ? (
                   <div className="rounded-2xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
                     {t("adminRanksPermissionsCreateHint")}
                   </div>
-                ) : permissionsLoading ? (
+                ) : !canEditActiveRank ? null : permissionsLoading ? (
                   <div className="rounded-2xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
                     {t("adminRanksPermissionsLoading")}
                   </div>
@@ -901,9 +968,10 @@ export function AdminRanksDialog({
                                     </div>
                                     <Switch
                                       checked={entry.value}
-                                      disabled={permissionsUpdating.has(
-                                        entry.key,
-                                      )}
+                                      disabled={
+                                        permissionsUpdating.has(entry.key) ||
+                                        !canEditActiveRank
+                                      }
                                       onCheckedChange={() =>
                                         void handlePermissionToggle(entry)
                                       }

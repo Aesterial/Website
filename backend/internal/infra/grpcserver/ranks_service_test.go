@@ -12,11 +12,14 @@ import (
 	apperrors "Aesterial/backend/internal/shared/errors"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type rankRepoStub struct {
-	createErr error
-	list      []*rank.Rank
+	createErr  error
+	list       []*rank.Rank
+	canEdit    bool
+	canEditErr error
 }
 
 func (r *rankRepoStub) Create(ctx context.Context, name string, color int, description string, perms ...permissions.Permissions) error {
@@ -56,7 +59,10 @@ func (r *rankRepoStub) IsExists(context.Context, string) (bool, error) {
 }
 
 func (r *rankRepoStub) CanEdit(context.Context, string, string) (bool, error) {
-	return true, nil
+	if r.canEditErr != nil {
+		return false, r.canEditErr
+	}
+	return r.canEdit, nil
 }
 
 func (r *rankRepoStub) CreateActivations(ctx context.Context, list []rank.ActivationData) error {
@@ -65,7 +71,7 @@ func (r *rankRepoStub) CreateActivations(ctx context.Context, list []rank.Activa
 
 func TestRanksServiceCreateMissingName(t *testing.T) {
 	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
-	repo := &rankRepoStub{}
+	repo := &rankRepoStub{canEdit: true}
 	ranksSvc := rankapp.New(repo)
 	svc := grpcserver.NewRanksService(ranksSvc, sessionsSvc, userSvc, nil)
 
@@ -75,7 +81,7 @@ func TestRanksServiceCreateMissingName(t *testing.T) {
 
 func TestRanksServiceListSuccess(t *testing.T) {
 	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
-	repo := &rankRepoStub{list: []*rank.Rank{{Name: "member", Color: 1, Description: "desc"}}}
+	repo := &rankRepoStub{list: []*rank.Rank{{Name: "member", Color: 1, Description: "desc"}}, canEdit: true}
 	ranksSvc := rankapp.New(repo)
 	svc := grpcserver.NewRanksService(ranksSvc, sessionsSvc, userSvc, nil)
 
@@ -86,4 +92,18 @@ func TestRanksServiceListSuccess(t *testing.T) {
 	if resp == nil || len(resp.Ranks) != 1 {
 		t.Fatalf("unexpected response: %+v", resp)
 	}
+}
+
+func TestRanksServicePatchDeniedByRankHierarchy(t *testing.T) {
+	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
+	repo := &rankRepoStub{canEdit: false}
+	ranksSvc := rankapp.New(repo)
+	svc := grpcserver.NewRanksService(ranksSvc, sessionsSvc, userSvc, nil)
+
+	_, err := svc.Patch(ctx, &rankpb.PatchRequest{
+		Name:   "root",
+		Target: "description",
+		Value:  structpb.NewStringValue("updated"),
+	})
+	assertAppError(t, err, apperrors.AccessDenied)
 }
