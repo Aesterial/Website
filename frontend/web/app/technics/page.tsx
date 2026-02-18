@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   ApiError,
+  fetchMaintenanceActive,
   fetchMaintenanceData,
   type ApiMaintenanceData,
 } from "@/lib/api";
@@ -13,18 +14,18 @@ import { useAuth } from "@/components/auth-provider";
 export const dynamic = "force-static";
 
 const DEFAULT_DESCRIPTION =
-  "РњС‹ РѕР±РЅРѕРІР»СЏРµРј СЃР°Р№С‚, С‡С‚РѕР±С‹ РѕРЅ СЂР°Р±РѕС‚Р°Р» Р±С‹СЃС‚СЂРµРµ Рё СЃС‚Р°Р±РёР»СЊРЅРµРµ. РџРѕРїСЂРѕР±СѓР№ Р·Р°Р№С‚Рё С‡СѓС‚СЊ РїРѕР·Р¶Рµ вЂ” РІСЃС‘ РІРµСЂРЅС‘Рј РєР°Рє РјРѕР¶РЅРѕ СЃРєРѕСЂРµРµ.";
+  "Мы обновляем сайт, чтобы он работал быстрее и стабильнее. Попробуй зайти чуть позже — всё вернём как можно скорее.";
 const DEFAULT_REQUEST_ID = "MAINTENANCE_MODE_0";
 
 const pluralRules = new Intl.PluralRules("ru");
 type PluralForm = "one" | "few" | "many" | "other";
 const unitLabels = {
-  second: { one: "СЃРµРєСѓРЅРґСѓ", few: "СЃРµРєСѓРЅРґС‹", many: "СЃРµРєСѓРЅРґ", other: "СЃРµРєСѓРЅРґС‹" },
-  minute: { one: "РјРёРЅСѓС‚Сѓ", few: "РјРёРЅСѓС‚С‹", many: "РјРёРЅСѓС‚", other: "РјРёРЅСѓС‚С‹" },
-  hour: { one: "С‡Р°СЃ", few: "С‡Р°СЃР°", many: "С‡Р°СЃРѕРІ", other: "С‡Р°СЃР°" },
-  day: { one: "РґРµРЅСЊ", few: "РґРЅСЏ", many: "РґРЅРµР№", other: "РґРЅСЏ" },
-  month: { one: "РјРµСЃСЏС†", few: "РјРµСЃСЏС†Р°", many: "РјРµСЃСЏС†РµРІ", other: "РјРµСЃСЏС†Р°" },
-  year: { one: "РіРѕРґ", few: "РіРѕРґР°", many: "Р»РµС‚", other: "РіРѕРґР°" },
+  second: { one: "секунду", few: "секунды", many: "секунд", other: "секунды" },
+  minute: { one: "минуту", few: "минуты", many: "минут", other: "минуты" },
+  hour: { one: "час", few: "часа", many: "часов", other: "часа" },
+  day: { one: "день", few: "дня", many: "дней", other: "дня" },
+  month: { one: "месяц", few: "месяца", many: "месяцев", other: "месяца" },
+  year: { one: "год", few: "года", many: "лет", other: "года" },
 };
 
 const formatUnit = (value: number, unit: keyof typeof unitLabels) => {
@@ -40,15 +41,15 @@ const formatUnit = (value: number, unit: keyof typeof unitLabels) => {
 const formatTimeLeft = (value?: string) => {
   const trimmed = value?.trim();
   if (!trimmed) {
-    return "СЃРєРѕСЂРѕ";
+    return "скоро";
   }
   const end = new Date(trimmed);
   if (Number.isNaN(end.getTime())) {
-    return "СЃРєРѕСЂРѕ";
+    return "скоро";
   }
   const diffMs = end.getTime() - Date.now();
   if (diffMs <= 0) {
-    return "СЃРєРѕСЂРѕ";
+    return "скоро";
   }
   const seconds = Math.ceil(diffMs / 1000);
   if (seconds < 60) {
@@ -93,6 +94,14 @@ export default function MaintenancePage() {
     const controller = new AbortController();
     const load = async () => {
       try {
+        const isActive = await fetchMaintenanceActive({
+          signal: controller.signal,
+        });
+        if (!isActive) {
+          setMaintenance(null);
+          setHasMaintenance(false);
+          return;
+        }
         const data = await fetchMaintenanceData({ signal: controller.signal });
         setMaintenance(data);
         setHasMaintenance(true);
@@ -142,11 +151,11 @@ export default function MaintenancePage() {
           <section className="order-2 lg:order-1">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
-              Maintenance
+              Техработы
             </div>
 
             <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              РўРµС…РЅРёС‡РµСЃРєРёРµ СЂР°Р±РѕС‚С‹
+              Технические работы
             </h1>
 
             <p className="mt-4 max-w-xl text-base text-foreground/70 sm:text-lg">
@@ -166,7 +175,7 @@ export default function MaintenancePage() {
                 }}
                 className="inline-flex items-center justify-center rounded-full border border-foreground bg-foreground px-5 py-3 text-sm font-semibold text-background transition hover:opacity-90"
               >
-                РћР±РЅРѕРІРёС‚СЊ СЃС‚СЂР°РЅРёС†Сѓ
+                Обновить страницу
               </button>
               {hasAdminAccess ? (
                 <Link
@@ -179,7 +188,7 @@ export default function MaintenancePage() {
             </div>
 
             <p className="mt-6 text-xs text-foreground/55">
-              ID Р·Р°РїСЂРѕСЃР°:{" "}
+              ID запроса:{" "}
               <span className="font-mono text-foreground/70">{requestId}</span>
             </p>
           </section>
@@ -191,7 +200,7 @@ export default function MaintenancePage() {
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.6rem] border border-border bg-background">
                 <Image
                   src="/animated.gif"
-                  alt="РўРµС…РЅРёС‡РµСЃРєРёРµ СЂР°Р±РѕС‚С‹"
+                  alt="Технические работы"
                   fill
                   unoptimized
                   priority
@@ -202,12 +211,12 @@ export default function MaintenancePage() {
               <div className="relative mt-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">
-                    РњС‹ СЃРєРѕСЂРѕ РІРµСЂРЅС‘РјСЃСЏ рџ‘‹
+                    Мы скоро вернёмся
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    РРґС‘С‚ РѕР±РЅРѕРІР»РµРЅРёРµ. РЎРїР°СЃРёР±Рѕ Р·Р° С‚РµСЂРїРµРЅРёРµ.
+                    Идёт обновление. Спасибо за терпение.
                     <br />
-                    Р—Р°РєРѕРЅС‡РёРј РїСЂРёРјРµСЂРЅРѕ С‡РµСЂРµР·: {timeLeft}
+                    Закончим примерно через: {timeLeft}
                   </p>
                 </div>
               </div>
@@ -218,5 +227,3 @@ export default function MaintenancePage() {
     </main>
   );
 }
-
-

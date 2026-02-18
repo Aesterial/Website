@@ -2,15 +2,9 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const DEV_API_BASE_URL = "http://127.0.0.1:8080";
-const CACHE_TTL_MS = 0.5 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 1500;
 const REFRESH_PARAM = "maintenanceRefresh";
 const LOGIN_CHECK_PATH = "/api/login/check";
-
-let cachedActive: boolean | null = null;
-let cachedAt = 0;
-let pendingRequest: Promise<boolean> | null = null;
-let requestToken = 0;
 
 const DISABLE_MAINTENANCE_CHECKS = false;
 
@@ -119,6 +113,7 @@ const fetchMaintenanceActive = async (request: NextRequest) => {
       method: "GET",
       headers: {
         Accept: "application/json",
+        Cookie: request.headers.get("cookie") ?? "",
       },
       cache: "no-store",
       signal: controller.signal,
@@ -151,34 +146,8 @@ const fetchMaintenanceActive = async (request: NextRequest) => {
   }
 };
 
-const getMaintenanceActive = async (
-  request: NextRequest,
-  forceRefresh = false,
-) => {
-  const now = Date.now();
-  if (!forceRefresh && cachedActive !== null && now - cachedAt < CACHE_TTL_MS) {
-    return cachedActive;
-  }
-  if (!forceRefresh && pendingRequest) {
-    return pendingRequest;
-  }
-  const token = ++requestToken;
-  const requestPromise = fetchMaintenanceActive(request)
-    .then((result) => {
-      if (token === requestToken) {
-        cachedActive = result;
-        cachedAt = Date.now();
-      }
-      return result;
-    })
-    .finally(() => {
-      if (token === requestToken) {
-        pendingRequest = null;
-      }
-    });
-  pendingRequest = requestPromise;
-  return requestPromise;
-};
+const getMaintenanceActive = async (request: NextRequest) =>
+  fetchMaintenanceActive(request);
 
 const isMaintenanceBypassPath = (pathname: string) => {
   if (pathname === "/technics" || pathname.startsWith("/technics/")) {
@@ -210,7 +179,7 @@ export async function proxy(request: NextRequest) {
   const forceRefresh = searchParams.has(REFRESH_PARAM);
   if (isMaintenanceBypassPath(pathname)) {
     if (forceRefresh) {
-      const isActive = await getMaintenanceActive(request, true);
+      const isActive = await getMaintenanceActive(request);
       if (
         (pathname === "/technics" || pathname.startsWith("/technics/")) &&
         !isActive
@@ -229,7 +198,7 @@ export async function proxy(request: NextRequest) {
     response.headers.set("x-mfa-required", requiresMfa ? "1" : "0");
     return response;
   }
-  const isActive = await getMaintenanceActive(request, forceRefresh);
+  const isActive = await getMaintenanceActive(request);
   if (isActive) {
     const url = request.nextUrl.clone();
     url.searchParams.delete(REFRESH_PARAM);
