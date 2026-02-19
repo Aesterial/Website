@@ -14,6 +14,7 @@ import (
 	"Aesterial/backend/internal/domain/tickets"
 	"Aesterial/backend/internal/domain/verification"
 	userpb "Aesterial/backend/internal/gen/user/v1"
+	notifypb "Aesterial/backend/internal/gen/notifications/v1"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -1590,10 +1591,7 @@ func hydrateProjectsByIDs(ctx context.Context, db *sql.DB, ids []uuid.UUID) (pro
 	}
 
 	maxWorkers, hydrationTimeout := projectHydrationSettings()
-	workers := len(ids)
-	if workers > maxWorkers {
-		workers = maxWorkers
-	}
+	workers := min(len(ids), maxWorkers)
 	if workers < 1 {
 		workers = 1
 	}
@@ -1608,10 +1606,7 @@ func hydrateProjectsByIDs(ctx context.Context, db *sql.DB, ids []uuid.UUID) (pro
 	var firstErr error
 
 	for i, id := range ids {
-		i, id := i, id
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			select {
 			case sem <- struct{}{}:
 			case <-ctx.Done():
@@ -1631,7 +1626,7 @@ func hydrateProjectsByIDs(ctx context.Context, db *sql.DB, ids []uuid.UUID) (pro
 			}
 			project.Info.Location.Normalize()
 			projects[i] = project
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -2165,7 +2160,7 @@ func (s *StatisticsRepository) MediaCoverage(ctx context.Context, limit int) ([]
 	defer rows.Close()
 
 	list := make([]*statpb.MediaCoverageResponseMedia, limit)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		list[i] = &statpb.MediaCoverageResponseMedia{}
 	}
 
@@ -3428,55 +3423,174 @@ func (r *RanksRepository) CreateActivations(ctx context.Context, list []rank.Act
 	return nil
 }
 
-/*
- *
- type Repository interface {
-	GetAll(ctx context.Context) (Notifications, error)
-	ForUser(ctx context.Context, id uint) (*Notification, error)
-	Create(ctx context.Context, scope string, body string, receiver *string, expires *time.Time) error
-	Mark(ctx context.Context, id uuid.UUID) error
- }
-
-*/
-
 func (n *NotificationsRepository) GetAll(ctx context.Context) (notifications.Notifications, error) {
-	rows, err := n.DB.QueryContext(ctx, "SELECT id, type, body, createdAt, scope, expires FROM notifications")
+	rows, err := n.DB.QueryContext(ctx, "SELECT id, body, createdAt, scope, targetUserID, targetSegment, expiresAt FROM notifications ORDER BY createdAt DESC")
 	if err != nil {
 		return nil, err
 	}
-	var list notifications.Notifications
 	defer rows.Close()
+
+	var list notifications.Notifications
 	for rows.Next() {
 		var notify notifications.Notification
-		if err := rows.Scan(&notify.ID, &notify.Type, &notify.Body, &notify.Created, &notify.Created, &notify.Scope, &notify.Expires); err != nil {
+		var targetUserID sql.NullInt64
+		var targetSegment sql.NullString
+		var expiresAt sql.NullTime
+		var scope string
+
+		if err := rows.Scan(&notify.ID, &notify.Body, &notify.Created, &scope, &targetUserID, &targetSegment, &expiresAt); err != nil {
 			return nil, err
 		}
-		switch notify.Scope {
-		case notifications.User:
-			var id sql.NullInt64
-			var readAt sql.NullTime
-			if err := n.DB.QueryRowContext(ctx, "SELECT userID, readAt FROM notification_receipts WHERE notify_id = $1", notify.ID).Scan(&id, &readAt); err != nil {
-				return nil, err
-			}
-			var readed *time.Time
-			var ID uint
-			if readAt.Valid {
-				readed = &readAt.Time
-			}
-			if id.Valid {
-				ID = uint(id.Int64)
-			}
-			notify.Readed = readed
-			notify.Target.User = &ID
-		case notifications.Segment:
-			var rank sql.NullString
-			var readAt sql.NullTime
-			if err := n.DB.QueryRowContext(ctx, "SELECT rank, readAt FROM notification_receipts WHERE notify_id = $1", notify.ID).Scan(&rank, &readAt); err != nil {
-				return nil, err
-			}
 
+		notify.Scope = notifications.Scope(scope)
+
+		if targetUserID.Valid {
+			id := uint(targetUserID.Int64)
+			notify.Target.User = &id
 		}
+		if targetSegment.Valid {
+			rk := targetSegment.String
+			notify.Target.Rank = &rk
+		}
+		if expiresAt.Valid {
+			t := expiresAt.Time
+			notify.Expires = &t
+		}
+
 		list = append(list, &notify)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return list, nil
+}
+
+func (n *NotificationsRepository) ForUser(ctx context.Context, id uint, rank string, shown bool) (notifications.Notifications, error) {
+	if id == 0 {
+		return nil, apperrors.InvalidArguments
+	}
+
+	filter := "AND nr.readAt IS NULL"
+	if shown {
+		filter = ""
+	}
+
+	rows, err := n.DB.QueryContext(ctx,
+		fmt.Sprintf(
+			`SELECT n.id, n.body, n.createdAt, n.scope, n.expiresAt, nr.readAt
+			 FROM notifications n
+			 LEFT JOIN notification_receipts nr
+			   ON nr.notify_id = n.id AND nr.userID = $1
+			 WHERE
+			   (n.expiresAt IS NULL OR n.expiresAt > now())
+			   AND (
+			     n.scope = 'broadcast'
+			     OR (n.scope = 'user' AND n.targetUserID = $1)
+			     OR (n.scope = 'segment' AND n.targetSegment = $2)
+			   )
+			   %s
+			 ORDER BY n.createdAt DESC`,
+			filter,
+		),
+		id, rank,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list notifications.Notifications
+	for rows.Next() {
+		var notify notifications.Notification
+		var scope string
+		var readAt sql.NullTime
+		var expiresAt sql.NullTime
+
+		if err := rows.Scan(&notify.ID, &notify.Body, &notify.Created, &scope, &expiresAt, &readAt); err != nil {
+			return nil, err
+		}
+
+		notify.Scope = notifications.Scope(scope)
+		if readAt.Valid {
+			t := readAt.Time
+			notify.Readed = &t
+		}
+		if expiresAt.Valid {
+			t := expiresAt.Time
+			notify.Expires = &t
+		}
+		fmt.Println(notify)
+		list = append(list, &notify)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+
+func (n *NotificationsRepository) Create(ctx context.Context, scope notifypb.Scope, body string, receiver *string, expires *time.Time) error {
+	if scope == notifypb.Scope_SCOPE_UNSPECIFIED || body == "" {
+		return apperrors.InvalidArguments
+	}
+
+	var targetUserID sql.NullInt64
+	var targetSegment sql.NullString
+	var scopeSTR string
+
+	switch scope {
+	case notifypb.Scope_SCOPE_USER:
+		if receiver == nil {
+			return apperrors.InvalidArguments
+		}
+		uid, err := strconv.ParseInt(*receiver, 10, 64)
+		if err != nil || uid <= 0 {
+			return apperrors.InvalidArguments
+		}
+		scopeSTR = "user"
+		targetUserID = sql.NullInt64{Int64: uid, Valid: true}
+
+	case notifypb.Scope_SCOPE_SEGMENT:
+		if receiver == nil || *receiver == "" {
+			return apperrors.InvalidArguments
+		}
+		scopeSTR = "segment"
+		targetSegment = sql.NullString{String: *receiver, Valid: true}
+
+	case notifypb.Scope_SCOPE_BROADCAST:
+		scopeSTR = "broadcast"
+		return n.insertNotification(ctx, body, scopeSTR, targetUserID, targetSegment, expires)
+
+	default:
+		return apperrors.InvalidArguments
+	}
+
+	return n.insertNotification(ctx, body, scopeSTR, targetUserID, targetSegment, expires)
+}
+
+func (n *NotificationsRepository) insertNotification(ctx context.Context, body, scope string, targetUserID sql.NullInt64, targetSegment sql.NullString, expires *time.Time) error {
+	var id uuid.UUID
+	if err := n.DB.QueryRowContext(
+		ctx,
+		"INSERT INTO notifications (body, scope, targetUserID, targetSegment, expiresAt) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		body, scope, targetUserID, targetSegment, expires,
+	).Scan(&id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (n *NotificationsRepository) Mark(ctx context.Context, id uuid.UUID, uid uint) error {
+	if uid == 0 {
+		return apperrors.InvalidArguments
+	}
+
+	_, err := n.DB.ExecContext(ctx,
+		`INSERT INTO notification_receipts (notify_id, userID, readAt)
+		 VALUES ($1, $2, now())
+		 ON CONFLICT (notify_id, userID)
+		 DO UPDATE SET readAt = EXCLUDED.readAt`,
+		id, uid,
+	)
+	return err
 }

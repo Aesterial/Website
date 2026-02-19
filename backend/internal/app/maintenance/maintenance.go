@@ -71,3 +71,11 @@ func (s *Service) Complete(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (s *Service) List(ctx context.Context) (maintenance.Informations, error) {
+	list, err := s.repo.GetList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}

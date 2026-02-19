@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aesterial_postgres
+    restart: unless-stopped
+    networks: [appnet]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  aesterial_backend:
+    image: ivanskem/aesterial-jcup:backend-latest
+    volumes:
+      - ./db.ca.crt:/certs/ca.crt:ro   
+    restart: unless-stopped
+    networks: [appnet]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+
+      COOKIES_NAME: ${COOKIES_NAME}
+      COOKIES_SECRET: ${COOKIES_SECRET}
+      COOKIES_SAMESITE: ${COOKIES_SAMESITE}
+      COOKIES_SECURE: ${COOKIES_SECURE}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      START_PORT: ${START_PORT}
+      SERVICES_IP: ${SERVICES_IP}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_REGION: ${STORAGE_REGION}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_USE_SSL: ${STORAGE_USE_SSL}
+      STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      MAILER_DOMAIN: ${MAILER_DOMAIN}
+      MAIL_PROXY_ADDR: ${MAIL_PROXY_ADDR}
+      MAIL_PROXY_TLS: ${MAIL_PROXY_TLS}
+      MAIL_PROXY_SERVER_NAME: ${MAIL_PROXY_SERVER_NAME}
+      MAIL_PROXY_INSECURE_SKIP_VERIFY: ${MAIL_PROXY_INSECURE_SKIP_VERIFY}
+      MAIL_PROXY_DIAL_TIMEOUT_SECONDS: ${MAIL_PROXY_DIAL_TIMEOUT_SECONDS}
+      MAIL_PROXY_REQUEST_TIMEOUT_SECONDS: ${MAIL_PROXY_REQUEST_TIMEOUT_SECONDS}
+      VK_CLIENT_ID: ${VK_CLIENT_ID}
+      VK_CLIENT_SECRET: ${VK_CLIENT_SECRET}
+      VK_REDIRECT_URI: ${VK_REDIRECT_URI}
+      VK_SUCCESS_REDIRECT_URL: ${VK_SUCCESS_REDIRECT_URL}
+      ASYNC_SUBMISSIONS_HYDRATION_WORKERS: ${ASYNC_SUBMISSIONS_HYDRATION_WORKERS}
+      ASYNC_SUBMISSIONS_HYDRATION_TIMEOUT_SECONDS: ${ASYNC_SUBMISSIONS_HYDRATION_TIMEOUT_SECONDS}
+      ASYNC_PROJECTS_HYDRATION_WORKERS: ${ASYNC_PROJECTS_HYDRATION_WORKERS}
+      ASYNC_PROJECTS_HYDRATION_TIMEOUT_SECONDS: ${ASYNC_PROJECTS_HYDRATION_TIMEOUT_SECONDS}
+      ASYNC_MEDIA_PRESIGN_WORKERS: ${ASYNC_MEDIA_PRESIGN_WORKERS}
+
+  aesterial_frontend:
+    image: ivanskem/aesterial-jcup:frontend-latest
+    restart: unless-stopped
+    networks: [appnet]
+
+  aesterial_backend_mail:
+    image: aesterial_backend_mail:latest
+    profiles:
+      - build-only
+
+networks:
+  appnet:
+
+volumes:
+  pgdata:

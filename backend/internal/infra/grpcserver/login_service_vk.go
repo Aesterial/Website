@@ -264,7 +264,7 @@ func (s *LoginService) registerVKUser(ctx context.Context, baseUsername string, 
 	}
 
 	var lastErr error
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		uid, err := s.login.Register(ctx, require)
 		if err == nil {
 			return uid, nil
@@ -308,10 +308,7 @@ func (s *LoginService) storeVKAvatar(ctx context.Context, uid uint, profile vkUs
 		return err
 	}
 	contentType := strings.TrimSpace(resp.Header.Get("Content-Type"))
-	sizeBytes := resp.ContentLength
-	if sizeBytes < 0 {
-		sizeBytes = 0
-	}
+	sizeBytes := max(resp.ContentLength, 0)
 	if err := s.storage.PutObject(ctx, key, resp.Body, contentType, sizeBytes); err != nil {
 		return err
 	}
@@ -662,7 +659,7 @@ func verifyVKState(secret string, ttl time.Duration, state string) (string, erro
 		if len(s) != 10 {
 			return false
 		}
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			c := s[i]
 			if c < '0' || c > '9' {
 				return false

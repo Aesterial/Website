@@ -2,6 +2,7 @@ go 1.26
 
 use (
 	./internal
+	./mail-proxy
 	./starter
 )
 

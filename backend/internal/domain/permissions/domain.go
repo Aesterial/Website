@@ -81,6 +81,19 @@ const (
 	RanksAdd               Permission = "ranks.add"
 	RanksDelete            Permission = "ranks.delete"
 	RanksEdit              Permission = "ranks.edit"
+
+	MaintenanceAll      Permission = "maintenance.all"
+	MaintenanceStart    Permission = "maintenance.start"
+	MaintenanceEdit     Permission = "maintenance.edit"
+	MaintenanceComplete Permission = "maintenance.complete"
+	MaintenanceHistory  Permission = "maintenance.history"
+
+	NotificationsAll             Permission = "notifications.all"
+	NotificationsViewAll         Permission = "notifications.view.all"
+	NotificationsCreateAll       Permission = "notifications.create.all"
+	NotificationsCreateUser      Permission = "notifications.create.user"
+	NotificationsCreateSegment   Permission = "notifications.create.segment"
+	NotificationsCreateBroadcast Permission = "notifications.create.broadcast"
 )
 
 func (p Permission) String() string {
@@ -135,6 +148,31 @@ type ProjectsPermissions struct {
 	Update  ProjectsUpdatePermissions  `json:"update"`
 	Archive ProjectsArchivePermissions `json:"archive"`
 	Delete  ProjectsDeletePermissions  `json:"delete"`
+}
+
+type MaintenancePermissions struct {
+	All      bool `json:"all"`
+	Start    bool `json:"start"`
+	Edit     bool `json:"edit"`
+	Complete bool `json:"complete"`
+	History  bool `json:"history"`
+}
+
+type NotificationsViewPermissions struct {
+	All bool `json:"all"`
+}
+
+type NotificationsCreatePermissions struct {
+	All       bool `json:"all"`
+	User      bool `json:"user"`
+	Segment   bool `json:"segment"`
+	Broadcast bool `json:"broadcast"`
+}
+
+type NotificationsPermissions struct {
+	All    bool                           `json:"all"`
+	View   NotificationsViewPermissions   `json:"view"`
+	Create NotificationsCreatePermissions `json:"create"`
 }
 
 type TicketsViewListPermissions struct {
@@ -301,13 +339,15 @@ type RanksPermissions struct {
 }
 
 type Permissions struct {
-	All         bool                   `json:"all"`
-	Projects    ProjectsPermissions    `json:"projects"`
-	Tickets     TicketsPermissions     `json:"tickets"`
-	Submissions SubmissionsPermissions `json:"submissions"`
-	Statistics  StatisticsPermissions  `json:"statistics"`
-	Users       UsersPermissions       `json:"users"`
-	Ranks       RanksPermissions       `json:"ranks"`
+	All           bool                     `json:"all"`
+	Projects      ProjectsPermissions      `json:"projects"`
+	Tickets       TicketsPermissions       `json:"tickets"`
+	Submissions   SubmissionsPermissions   `json:"submissions"`
+	Statistics    StatisticsPermissions    `json:"statistics"`
+	Users         UsersPermissions         `json:"users"`
+	Ranks         RanksPermissions         `json:"ranks"`
+	Maintenance   MaintenancePermissions   `json:"maintenance"`
+	Notifications NotificationsPermissions `json:"notifications"`
 }
 
 func (p *Permissions) Allowed(perm Permission) bool {

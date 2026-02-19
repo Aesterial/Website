@@ -28,6 +28,7 @@ const (
 	MaintenanceService_StartPlanned_FullMethodName = "/maintenance.v1.MaintenanceService/StartPlanned"
 	MaintenanceService_Edit_FullMethodName         = "/maintenance.v1.MaintenanceService/Edit"
 	MaintenanceService_Complete_FullMethodName     = "/maintenance.v1.MaintenanceService/Complete"
+	MaintenanceService_History_FullMethodName      = "/maintenance.v1.MaintenanceService/History"
 )
 
 // MaintenanceServiceClient is the client API for MaintenanceService service.
@@ -41,6 +42,7 @@ type MaintenanceServiceClient interface {
 	StartPlanned(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Edit(ctx context.Context, in *EditRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Complete(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	History(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HistoryResponse, error)
 }
 
 type maintenanceServiceClient struct {
@@ -121,6 +123,16 @@ func (c *maintenanceServiceClient) Complete(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
+func (c *maintenanceServiceClient) History(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HistoryResponse)
+	err := c.cc.Invoke(ctx, MaintenanceService_History_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MaintenanceServiceServer is the server API for MaintenanceService service.
 // All implementations must embed UnimplementedMaintenanceServiceServer
 // for forward compatibility.
@@ -132,6 +144,7 @@ type MaintenanceServiceServer interface {
 	StartPlanned(context.Context, *CreateRequest) (*v1.WithTracing, error)
 	Edit(context.Context, *EditRequest) (*v1.WithTracing, error)
 	Complete(context.Context, *emptypb.Empty) (*v1.WithTracing, error)
+	History(context.Context, *emptypb.Empty) (*HistoryResponse, error)
 	mustEmbedUnimplementedMaintenanceServiceServer()
 }
 
@@ -162,6 +175,9 @@ func (UnimplementedMaintenanceServiceServer) Edit(context.Context, *EditRequest)
 }
 func (UnimplementedMaintenanceServiceServer) Complete(context.Context, *emptypb.Empty) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method Complete not implemented")
+}
+func (UnimplementedMaintenanceServiceServer) History(context.Context, *emptypb.Empty) (*HistoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method History not implemented")
 }
 func (UnimplementedMaintenanceServiceServer) mustEmbedUnimplementedMaintenanceServiceServer() {}
 func (UnimplementedMaintenanceServiceServer) testEmbeddedByValue()                            {}
@@ -310,6 +326,24 @@ func _MaintenanceService_Complete_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MaintenanceService_History_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MaintenanceServiceServer).History(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MaintenanceService_History_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MaintenanceServiceServer).History(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MaintenanceService_ServiceDesc is the grpc.ServiceDesc for MaintenanceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -344,6 +378,10 @@ var MaintenanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Complete",
 			Handler:    _MaintenanceService_Complete_Handler,
+		},
+		{
+			MethodName: "History",
+			Handler:    _MaintenanceService_History_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

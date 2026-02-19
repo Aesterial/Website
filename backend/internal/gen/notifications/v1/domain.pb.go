@@ -25,22 +25,25 @@ const (
 type Scope int32
 
 const (
-	Scope_SCOPE_USER      Scope = 0
-	Scope_SCOPE_BROADCAST Scope = 1
-	Scope_SCOPE_SEGMENT   Scope = 2
+	Scope_SCOPE_UNSPECIFIED Scope = 0
+	Scope_SCOPE_USER        Scope = 1
+	Scope_SCOPE_BROADCAST   Scope = 2
+	Scope_SCOPE_SEGMENT     Scope = 3
 )
 
 // Enum value maps for Scope.
 var (
 	Scope_name = map[int32]string{
-		0: "SCOPE_USER",
-		1: "SCOPE_BROADCAST",
-		2: "SCOPE_SEGMENT",
+		0: "SCOPE_UNSPECIFIED",
+		1: "SCOPE_USER",
+		2: "SCOPE_BROADCAST",
+		3: "SCOPE_SEGMENT",
 	}
 	Scope_value = map[string]int32{
-		"SCOPE_USER":      0,
-		"SCOPE_BROADCAST": 1,
-		"SCOPE_SEGMENT":   2,
+		"SCOPE_UNSPECIFIED": 0,
+		"SCOPE_USER":        1,
+		"SCOPE_BROADCAST":   2,
+		"SCOPE_SEGMENT":     3,
 	}
 )
 
@@ -118,11 +121,13 @@ func (x *ForUserRequest) GetShown() bool {
 type Notification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Scope         string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	Scope         string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	Created       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
 	Expires       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires,proto3" json:"expires,omitempty"`
 	Readed        *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=readed,proto3,oneof" json:"readed,omitempty"`
+	UserId        *uint64                `protobuf:"varint,7,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`
+	Rank          *string                `protobuf:"bytes,8,opt,name=rank,proto3,oneof" json:"rank,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -164,16 +169,16 @@ func (x *Notification) GetId() string {
 	return ""
 }
 
-func (x *Notification) GetType() string {
+func (x *Notification) GetScope() string {
 	if x != nil {
-		return x.Type
+		return x.Scope
 	}
 	return ""
 }
 
-func (x *Notification) GetScope() string {
+func (x *Notification) GetBody() string {
 	if x != nil {
-		return x.Scope
+		return x.Body
 	}
 	return ""
 }
@@ -199,9 +204,23 @@ func (x *Notification) GetReaded() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Notification) GetUserId() uint64 {
+	if x != nil && x.UserId != nil {
+		return *x.UserId
+	}
+	return 0
+}
+
+func (x *Notification) GetRank() string {
+	if x != nil && x.Rank != nil {
+		return *x.Rank
+	}
+	return ""
+}
+
 type ForUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *Notification          `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data          []*Notification        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	Tracing       string                 `protobuf:"bytes,2,opt,name=tracing,proto3" json:"tracing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -237,7 +256,7 @@ func (*ForUserResponse) Descriptor() ([]byte, []int) {
 	return file_notifications_domain_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ForUserResponse) GetData() *Notification {
+func (x *ForUserResponse) GetData() []*Notification {
 	if x != nil {
 		return x.Data
 	}
@@ -347,7 +366,7 @@ func (x *CreateRequest) GetScope() Scope {
 	if x != nil {
 		return x.Scope
 	}
-	return Scope_SCOPE_USER
+	return Scope_SCOPE_UNSPECIFIED
 }
 
 func (x *CreateRequest) GetBody() string {
@@ -421,17 +440,22 @@ const file_notifications_domain_proto_rawDesc = "" +
 	"\n" +
 	"\x1anotifications/domain.proto\x12\x10notifications.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"&\n" +
 	"\x0eForUserRequest\x12\x14\n" +
-	"\x05shown\x18\x01 \x01(\bR\x05shown\"\xf8\x01\n" +
+	"\x05shown\x18\x01 \x01(\bR\x05shown\"\xc4\x02\n" +
 	"\fNotification\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05scope\x18\x03 \x01(\tR\x05scope\x124\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x124\n" +
 	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x124\n" +
 	"\aexpires\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aexpires\x127\n" +
-	"\x06readed\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x06readed\x88\x01\x01B\t\n" +
-	"\a_readed\"_\n" +
+	"\x06readed\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x06readed\x88\x01\x01\x12\x1c\n" +
+	"\auser_id\x18\a \x01(\x04H\x01R\x06userId\x88\x01\x01\x12\x17\n" +
+	"\x04rank\x18\b \x01(\tH\x02R\x04rank\x88\x01\x01B\t\n" +
+	"\a_readedB\n" +
+	"\n" +
+	"\b_user_idB\a\n" +
+	"\x05_rank\"_\n" +
 	"\x0fForUserResponse\x122\n" +
-	"\x04data\x18\x01 \x01(\v2\x1e.notifications.v1.NotificationR\x04data\x12\x18\n" +
+	"\x04data\x18\x01 \x03(\v2\x1e.notifications.v1.NotificationR\x04data\x12\x18\n" +
 	"\atracing\x18\x02 \x01(\tR\atracing\"[\n" +
 	"\vAllResponse\x122\n" +
 	"\x04data\x18\x01 \x03(\v2\x1e.notifications.v1.NotificationR\x04data\x12\x18\n" +
@@ -445,12 +469,13 @@ const file_notifications_domain_proto_rawDesc = "" +
 	"\n" +
 	"\b_expires\"\x1f\n" +
 	"\rWithIDRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id*?\n" +
-	"\x05Scope\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id*V\n" +
+	"\x05Scope\x12\x15\n" +
+	"\x11SCOPE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
-	"SCOPE_USER\x10\x00\x12\x13\n" +
-	"\x0fSCOPE_BROADCAST\x10\x01\x12\x11\n" +
-	"\rSCOPE_SEGMENT\x10\x02B?Z=Aesterial/backend/internal/gen/notifications/v1;notificationsb\x06proto3"
+	"SCOPE_USER\x10\x01\x12\x13\n" +
+	"\x0fSCOPE_BROADCAST\x10\x02\x12\x11\n" +
+	"\rSCOPE_SEGMENT\x10\x03B?Z=Aesterial/backend/internal/gen/notifications/v1;notificationsb\x06proto3"
 
 var (
 	file_notifications_domain_proto_rawDescOnce sync.Once

@@ -114,6 +114,13 @@ func ensure() {
 			Secure:   parseBool("SMTP_SECURE", false),
 			StartTLS: parseBool("SMTP_STARTTLS", false),
 			Domain:   envValue("MAILER_DOMAIN"),
+
+			ProxyAddr:                  envValue("MAIL_PROXY_ADDR", "MAILER_PROXY_ADDR"),
+			ProxyTLSEnabled:            parseBool("MAIL_PROXY_TLS", true),
+			ProxyTLSServerName:         envValue("MAIL_PROXY_SERVER_NAME"),
+			ProxyTLSInsecureSkipVerify: parseBool("MAIL_PROXY_INSECURE_SKIP_VERIFY", false),
+			ProxyDialTimeoutSeconds:    parseInt(8, "MAIL_PROXY_DIAL_TIMEOUT_SECONDS"),
+			ProxyRequestTimeoutSeconds: parseInt(15, "MAIL_PROXY_REQUEST_TIMEOUT_SECONDS"),
 		},
 		VK: domain.VK{
 			ClientID:           envValue("VK_CLIENT_ID"),
@@ -138,6 +145,14 @@ func ensure() {
 			MediaPresignWorkers:                parseInt(16, "ASYNC_MEDIA_PRESIGN_WORKERS"),
 		},
 	}
+
+	if strings.TrimSpace(env.Mailer.ProxyAddr) == "" {
+		env.Mailer.ProxyAddr = "proxy.mail.aesterial.xyz:443"
+	}
+	if strings.TrimSpace(env.Mailer.ProxyTLSServerName) == "" {
+		env.Mailer.ProxyTLSServerName = "proxy.mail.aesterial.xyz"
+	}
+
 	env.MarkLoaded()
 }
 

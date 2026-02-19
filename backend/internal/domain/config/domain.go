@@ -65,6 +65,13 @@ type Mailer struct {
 	Secure   bool
 	StartTLS bool
 	Domain   string
+
+	ProxyAddr                  string
+	ProxyTLSEnabled            bool
+	ProxyTLSServerName         string
+	ProxyTLSInsecureSkipVerify bool
+	ProxyDialTimeoutSeconds    int
+	ProxyRequestTimeoutSeconds int
 }
 
 type VK struct {

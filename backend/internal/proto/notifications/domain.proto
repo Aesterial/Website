@@ -12,15 +12,19 @@ message ForUserRequest {
 
 message Notification {
   string id = 1;
-  string type = 2;
-  string scope = 3;
+  string scope = 2;
+  string body = 3;
+
   google.protobuf.Timestamp created = 4;
   google.protobuf.Timestamp expires = 5;
   optional google.protobuf.Timestamp readed = 6;
+
+  optional uint64 user_id = 7;
+  optional string rank = 8;
 }
 
 message ForUserResponse {
-  Notification data = 1;
+  repeated Notification data = 1;
   string tracing = 2;
 }
 
@@ -30,9 +34,10 @@ message AllResponse {
 }
 
 enum Scope {
-  SCOPE_USER = 0;
-  SCOPE_BROADCAST = 1;
-  SCOPE_SEGMENT = 2;
+  SCOPE_UNSPECIFIED = 0;
+  SCOPE_USER = 1;
+  SCOPE_BROADCAST = 2;
+  SCOPE_SEGMENT = 3;
 }
 
 message CreateRequest {

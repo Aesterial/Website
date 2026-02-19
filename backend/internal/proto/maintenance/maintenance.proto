@@ -40,4 +40,7 @@ service MaintenanceService {
   rpc Complete(google.protobuf.Empty) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/maintenance/complete"};
   }
+  rpc History(google.protobuf.Empty) returns (HistoryResponse) {
+    option (google.api.http) = {get: "/api/maintenance/list"};
+  }
 }

@@ -5,6 +5,7 @@ const DEV_API_BASE_URL = "http://127.0.0.1:8080";
 const REQUEST_TIMEOUT_MS = 1500;
 const REFRESH_PARAM = "maintenanceRefresh";
 const LOGIN_CHECK_PATH = "/api/login/check";
+const ALLOW_SERVER_ACTIONS = process.env.NEXT_ALLOW_SERVER_ACTIONS === "1";
 
 const DISABLE_MAINTENANCE_CHECKS = false;
 
@@ -166,6 +167,16 @@ const isMaintenanceBypassPath = (pathname: string) => {
 };
 
 export async function proxy(request: NextRequest) {
+  const nextActionId = request.headers.get("next-action");
+  if (nextActionId && !ALLOW_SERVER_ACTIONS) {
+    return new NextResponse("Server action not found.", {
+      status: 404,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const authStatus = await fetchAuthStatus(request);
   const requiresMfa = authStatus === "mfa_required";
 

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package mailproxy.v1;
+
+option go_package = "Aesterial/backend/internal/gen/mailproxy/v1;mailproxyv1";
+
+service MailProxyService {
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+}
+
+message SendEmailRequest {
+  string request_id = 1;
+  string to = 2;
+  string subject = 3;
+  string html_body = 4;
+  string text_body = 5;
+  map<string, string> headers = 6;
+}
+
+message SendEmailResponse {
+  string message_id = 1;
+}
