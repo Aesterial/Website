@@ -239,7 +239,7 @@ func main() {
 	checkerpb.RegisterCheckerServiceServer(grpcServer, healthServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
-	handler := buildHTTPHandler(grpcServer, gateway, cors)
+	handler := buildHTTPHandler(grpcServer, gateway, cors, ticketsServer)
 	httpAddr := "0.0.0.0:" + httpPort
 	grpcAddr := "0.0.0.0:" + grpcPort
 

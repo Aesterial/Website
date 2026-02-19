@@ -421,7 +421,7 @@ create table rank_activations (
     code uuid not null unique,
     rank text not null default 'user',
     createdAt timestamptz not null default now(),
-    activated timestamptz, 
+    activated timestamptz,
     activated_by bigint
 );
 
@@ -792,6 +792,9 @@ create table ticket_messages (
     author_email text,
     content text not null,
     at timestamptz not null default now(),
+    edited_at timestamptz,
+    deleted_at timestamptz,
+    deleted_by bigint,
     constraint ticket_messages_author_check
       check (
         (author_type in ('user','staff') and author_email is not null)
@@ -807,6 +810,7 @@ create index tickets_created_idx  on tickets (created);
 create index ticket_messages_ticket_at_idx on ticket_messages (ticket, at);
 create index ticket_messages_ticket_id_idx on ticket_messages (ticket, id);
 create index ticket_messages_author_uid_idx on ticket_messages (author_uid);
+create index ticket_messages_deleted_at_idx on ticket_messages (deleted_at);
 
 create unique index tickets_requestor_token_uq
   on tickets (requestor_token)
@@ -1128,8 +1132,3 @@ do $$
               and (rank).name is distinct from 'root';
         end if;
     end $$;
-
-
-
-
-

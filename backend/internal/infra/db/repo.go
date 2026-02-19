@@ -2787,7 +2787,21 @@ func (t *TicketsRepository) parseMessage(scanner scanner) (*tickets.TicketMessag
 	var authorType string
 	var authorName, authorEmail sql.NullString
 	var authorUID sql.NullInt64
-	if err := scanner.Scan(&message.ID, &message.TicketID, &authorType, &authorUID, &authorName, &authorEmail, &message.Content, &message.At); err != nil {
+	var editedAt, deletedAt sql.NullTime
+	var deletedBy sql.NullInt64
+	if err := scanner.Scan(
+		&message.ID,
+		&message.TicketID,
+		&authorType,
+		&authorUID,
+		&authorName,
+		&authorEmail,
+		&message.Content,
+		&message.At,
+		&editedAt,
+		&deletedAt,
+		&deletedBy,
+	); err != nil {
 		return nil, err
 	}
 	var author tickets.TicketMessageAuthor
@@ -2821,13 +2835,53 @@ func (t *TicketsRepository) parseMessage(scanner scanner) (*tickets.TicketMessag
 		email := authorEmail.String
 		author.AuthorEmail = &email
 	}
+	if editedAt.Valid {
+		v := editedAt.Time
+		message.EditedAt = &v
+	}
+	if deletedAt.Valid {
+		v := deletedAt.Time
+		message.DeletedAt = &v
+	}
+	if deletedBy.Valid {
+		v := uint(deletedBy.Int64)
+		message.DeletedByUID = &v
+	}
 	message.Author = &author
 	return &message, nil
 }
 
 func (t *TicketsRepository) Messages(ctx context.Context, id uuid.UUID) (tickets.TicketMessages, error) {
+	return t.messages(ctx, id, false)
+}
+
+func (t *TicketsRepository) MessagesAll(ctx context.Context, id uuid.UUID) (tickets.TicketMessages, error) {
+	return t.messages(ctx, id, true)
+}
+
+func (t *TicketsRepository) messages(ctx context.Context, id uuid.UUID, includeDeleted bool) (tickets.TicketMessages, error) {
 	var messages tickets.TicketMessages
-	rows, err := t.DB.QueryContext(ctx, "SELECT m.* FROM ticket_messages m WHERE m.ticket = $1 ORDER BY m.at ASC, m.id ASC", id)
+	query := `
+		SELECT
+			m.id,
+			m.ticket,
+			m.author_type,
+			m.author_uid,
+			m.author_name,
+			m.author_email,
+			m.content,
+			m.at,
+			m.edited_at,
+			m.deleted_at,
+			m.deleted_by
+		FROM ticket_messages m
+		WHERE m.ticket = $1
+	`
+	if !includeDeleted {
+		query += " AND m.deleted_at IS NULL"
+	}
+	query += " ORDER BY m.at ASC, m.id ASC"
+	rows, err := t.DB.QueryContext(ctx, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -2844,19 +2898,180 @@ func (t *TicketsRepository) Messages(ctx context.Context, id uuid.UUID) (tickets
 	return messages, nil
 }
 
-func (t *TicketsRepository) GetLatestMessage(ctx context.Context, id uuid.UUID) (*tickets.TicketMessage, error) {
-	rows, err := t.DB.QueryContext(ctx, "SELECT * FROM ticket_messages WHERE ticket = $1 ORDER BY at DESC, id DESC LIMIT 1", id)
+func (t *TicketsRepository) MessageByID(ctx context.Context, id uuid.UUID, messageID int64, includeDeleted bool) (*tickets.TicketMessage, error) {
+	if messageID <= 0 {
+		return nil, apperrors.InvalidArguments.AddErrDetails("message id is incorrect")
+	}
+	query := `
+		SELECT
+			m.id,
+			m.ticket,
+			m.author_type,
+			m.author_uid,
+			m.author_name,
+			m.author_email,
+			m.content,
+			m.at,
+			m.edited_at,
+			m.deleted_at,
+			m.deleted_by
+		FROM ticket_messages m
+		WHERE m.ticket = $1 AND m.id = $2
+	`
+	if !includeDeleted {
+		query += " AND m.deleted_at IS NULL"
+	}
+	msg, err := t.parseMessage(t.DB.QueryRowContext(ctx, query, id, messageID))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.RecordNotFound
+		}
 		return nil, err
 	}
-	var message *tickets.TicketMessage
-	for rows.Next() {
-		message, err = t.parseMessage(rows)
-		if err != nil {
-			return nil, err
-		}
+	return msg, nil
+}
+
+func (t *TicketsRepository) IsMessageOwner(ctx context.Context, id uuid.UUID, messageID int64, req tickets.TicketDataReq) (bool, error) {
+	if req.UID == nil && req.Token == nil {
+		return false, apperrors.InvalidArguments.AddErrDetails("requestor is required")
 	}
-	return message, nil
+	msg, err := t.MessageByID(ctx, id, messageID, true)
+	if err != nil {
+		return false, err
+	}
+	if msg == nil || msg.Author == nil || msg.Author.Type == tickets.AuthorSystem {
+		return false, nil
+	}
+	if req.UID != nil && msg.Author.UID != nil && uint(*msg.Author.UID) == *req.UID {
+		return true, nil
+	}
+	if req.Token == nil {
+		return false, nil
+	}
+	if msg.Author.Type != tickets.AuthorUser {
+		return false, nil
+	}
+	requestor, err := t.User(ctx, id, tickets.TicketDataReq{Token: req.Token})
+	if err != nil {
+		return false, err
+	}
+	if requestor == nil {
+		return false, apperrors.AccessDenied
+	}
+	authorEmail := ""
+	if msg.Author.AuthorEmail != nil {
+		authorEmail = strings.TrimSpace(*msg.Author.AuthorEmail)
+	}
+	return authorEmail != "" && strings.EqualFold(authorEmail, strings.TrimSpace(requestor.Email)), nil
+}
+
+func (t *TicketsRepository) EditMessage(ctx context.Context, id uuid.UUID, messageID int64, content string, req tickets.TicketDataReq) error {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return apperrors.RequiredDataMissing.AddErrDetails("content is empty")
+	}
+	msg, err := t.MessageByID(ctx, id, messageID, true)
+	if err != nil {
+		return err
+	}
+	if msg == nil || msg.Author == nil || msg.Author.Type != tickets.AuthorUser {
+		return apperrors.AccessDenied
+	}
+	if msg.DeletedAt != nil {
+		return apperrors.Conflict.AddErrDetails("message already deleted")
+	}
+	owner, err := t.IsMessageOwner(ctx, id, messageID, req)
+	if err != nil {
+		return err
+	}
+	if !owner {
+		return apperrors.AccessDenied
+	}
+	res, err := t.DB.ExecContext(
+		ctx,
+		"UPDATE ticket_messages SET content = $1, edited_at = NOW() WHERE ticket = $2 AND id = $3 AND deleted_at IS NULL",
+		trimmed,
+		id,
+		messageID,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		return nil
+	}
+	return apperrors.RecordNotFound
+}
+
+func (t *TicketsRepository) DeleteMessage(ctx context.Context, id uuid.UUID, messageID int64, deleterUID *uint) error {
+	if messageID <= 0 {
+		return apperrors.InvalidArguments.AddErrDetails("message id is incorrect")
+	}
+	var deletedBy any
+	if deleterUID != nil {
+		deletedBy = int64(*deleterUID)
+	}
+	res, err := t.DB.ExecContext(
+		ctx,
+		"UPDATE ticket_messages SET deleted_at = NOW(), deleted_by = $1 WHERE ticket = $2 AND id = $3 AND deleted_at IS NULL",
+		deletedBy,
+		id,
+		messageID,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		return nil
+	}
+	msg, err := t.MessageByID(ctx, id, messageID, true)
+	if err != nil {
+		return err
+	}
+	if msg != nil && msg.DeletedAt != nil {
+		return apperrors.Conflict.AddErrDetails("message already deleted")
+	}
+	return apperrors.RecordNotFound
+}
+
+func (t *TicketsRepository) GetLatestMessage(ctx context.Context, id uuid.UUID) (*tickets.TicketMessage, error) {
+	msg, err := t.parseMessage(t.DB.QueryRowContext(
+		ctx,
+		`
+		SELECT
+			m.id,
+			m.ticket,
+			m.author_type,
+			m.author_uid,
+			m.author_name,
+			m.author_email,
+			m.content,
+			m.at,
+			m.edited_at,
+			m.deleted_at,
+			m.deleted_by
+		FROM ticket_messages m
+		WHERE m.ticket = $1
+		ORDER BY m.at DESC, m.id DESC
+		LIMIT 1
+		`,
+		id,
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return msg, nil
 }
 
 func (t *TicketsRepository) IsReqValid(ctx context.Context, id uuid.UUID, token tickets.TicketDataReq) (bool, error) {

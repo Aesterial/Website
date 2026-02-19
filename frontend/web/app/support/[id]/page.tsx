@@ -7,8 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   closeTicket,
   createTicketMessage,
+  deleteTicketMessage,
   fetchTicketInfo,
   fetchTicketMessages,
+  updateTicketMessage,
 } from "@/lib/api";
 import {
   mapTicket,
@@ -27,8 +29,10 @@ import {
   Lock,
   Maximize2,
   MessageSquare,
+  Pencil,
   Send,
   ShieldCheck,
+  Trash2,
   UserCircle2,
   X,
 } from "lucide-react";
@@ -55,6 +59,8 @@ const copyByLanguage = {
     newSupportMessageTitle: "Новое сообщение от поддержки",
     newSupportMessageFallback: "Проверьте диалог",
     messageSendError: "Не удалось отправить сообщение.",
+    messageUpdateError: "Не удалось сохранить изменения сообщения.",
+    messageDeleteError: "Не удалось удалить сообщение.",
     closeError: "Не удалось закрыть обращение.",
     supportAuthorName: "Поддержка",
     userAuthorName: "Пользователь",
@@ -73,6 +79,12 @@ const copyByLanguage = {
     messagePlaceholder: "Напишите уточнение или ответ",
     sendingAction: "Отправляем...",
     sendAction: "Отправить",
+    editAction: "Редактировать",
+    deleteAction: "Удалить",
+    saveAction: "Сохранить",
+    cancelAction: "Отмена",
+    deletedMessage: "Сообщение удалено",
+    editedMark: "изменено",
     backToForm: "Назад к форме",
     supportHistory: "История обращений",
     ticketLabel: "Обращение",
@@ -103,6 +115,8 @@ const copyByLanguage = {
     newSupportMessageTitle: "New message from support",
     newSupportMessageFallback: "Check the conversation",
     messageSendError: "Failed to send the message.",
+    messageUpdateError: "Failed to update the message.",
+    messageDeleteError: "Failed to delete the message.",
     closeError: "Failed to close the ticket.",
     supportAuthorName: "Support",
     userAuthorName: "User",
@@ -121,6 +135,12 @@ const copyByLanguage = {
     messagePlaceholder: "Write an update or reply",
     sendingAction: "Sending...",
     sendAction: "Send",
+    editAction: "Edit",
+    deleteAction: "Delete",
+    saveAction: "Save",
+    cancelAction: "Cancel",
+    deletedMessage: "Message deleted",
+    editedMark: "edited",
     backToForm: "Back to form",
     supportHistory: "Support history",
     ticketLabel: "Ticket",
@@ -150,6 +170,8 @@ const copyByLanguage = {
     newSupportMessageTitle: "Қолдаудан жаңа хабар",
     newSupportMessageFallback: "Диалогты тексеріңіз",
     messageSendError: "Хабарды жіберу мүмкін болмады.",
+    messageUpdateError: "Хабарламаны өзгерту мүмкін болмады.",
+    messageDeleteError: "Хабарламаны жою мүмкін болмады.",
     closeError: "Өтінішті жабу мүмкін болмады.",
     supportAuthorName: "Қолдау",
     userAuthorName: "Пайдаланушы",
@@ -168,6 +190,12 @@ const copyByLanguage = {
     messagePlaceholder: "Нақтылау немесе жауап жазыңыз",
     sendingAction: "Жіберілуде...",
     sendAction: "Жіберу",
+    editAction: "Өңдеу",
+    deleteAction: "Жою",
+    saveAction: "Сақтау",
+    cancelAction: "Бас тарту",
+    deletedMessage: "Хабарлама жойылды",
+    editedMark: "өзгертілген",
     backToForm: "Формаға оралу",
     supportHistory: "Қолдау тарихы",
     ticketLabel: "Өтініш",
@@ -229,6 +257,14 @@ export default function SupportTicketPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [updatingMessageId, setUpdatingMessageId] = useState<string | null>(
+    null,
+  );
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
+    null,
+  );
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingMessageText, setEditingMessageText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -338,6 +374,10 @@ export default function SupportTicketPage() {
     }
     bootstrappedMessagesRef.current = false;
     messageIdsRef.current = new Set();
+    setEditingMessageId(null);
+    setEditingMessageText("");
+    setUpdatingMessageId(null);
+    setDeletingMessageId(null);
   }, [ticketId]);
 
   useEffect(() => {
@@ -408,6 +448,68 @@ export default function SupportTicketPage() {
       setError(copy.messageSendError);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleStartEdit = (message: TicketMessage) => {
+    if (message.isDeleted) {
+      return;
+    }
+    setEditingMessageId(message.id);
+    setEditingMessageText(message.message);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingMessageText("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!ticketId || !editingMessageId) {
+      return;
+    }
+    const trimmed = editingMessageText.trim();
+    if (!trimmed) {
+      return;
+    }
+    setUpdatingMessageId(editingMessageId);
+    setError(null);
+    try {
+      await updateTicketMessage(
+        ticketId,
+        editingMessageId,
+        trimmed,
+        ticketToken ? { token: ticketToken } : undefined,
+      );
+      handleCancelEdit();
+      await loadTicket(undefined, { silent: true });
+    } catch {
+      setError(copy.messageUpdateError);
+    } finally {
+      setUpdatingMessageId(null);
+    }
+  };
+
+  const handleDeleteMessage = async (message: TicketMessage) => {
+    if (!ticketId || message.isDeleted) {
+      return;
+    }
+    setDeletingMessageId(message.id);
+    setError(null);
+    try {
+      await deleteTicketMessage(
+        ticketId,
+        message.id,
+        ticketToken ? { token: ticketToken } : undefined,
+      );
+      if (editingMessageId === message.id) {
+        handleCancelEdit();
+      }
+      await loadTicket(undefined, { silent: true });
+    } catch {
+      setError(copy.messageDeleteError);
+    } finally {
+      setDeletingMessageId(null);
     }
   };
 
@@ -577,10 +679,15 @@ export default function SupportTicketPage() {
           ) : messages.length ? (
             <AnimatePresence initial={false}>
               {messages.map((message) => {
-                const isMine =
+                const isMineByUser =
                   currentUserId != null && message.authorId != null
                     ? String(currentUserId) === String(message.authorId)
                     : false;
+                const isMineByToken =
+                  currentUserId == null &&
+                  Boolean(ticketToken) &&
+                  !message.isStaff;
+                const isMine = isMineByUser || isMineByToken;
                 const authorLabel = resolveAuthorName(message);
                 const roleLabel = resolveAuthorRole(message);
                 const initials = getInitials(authorLabel);
@@ -588,6 +695,9 @@ export default function SupportTicketPage() {
                   message.authorId != null ? String(message.authorId) : "";
                 const canLinkAuthor = Boolean(authorId) && !message.isStaff;
                 const avatarSrc = resolveAvatarSrc(message.avatar);
+                const isEditing = editingMessageId === message.id;
+                const canEdit = isMine && !message.isDeleted && !isClosed;
+                const canDelete = isMine && !message.isDeleted;
                 const bubbleClass = isMine
                   ? "bg-foreground text-background"
                   : message.isStaff
@@ -669,10 +779,100 @@ export default function SupportTicketPage() {
                         <span>
                           {formatTime(message.createdAt, timeFormatter)}
                         </span>
+                        {message.editedAt ? (
+                          <span>{copy.editedMark}</span>
+                        ) : null}
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(message)}
+                            disabled={
+                              isEditing ||
+                              Boolean(updatingMessageId) ||
+                              Boolean(deletingMessageId)
+                            }
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                              isMine
+                                ? "border border-background/30 hover:bg-background/10"
+                                : "border border-border/60 hover:bg-muted",
+                            )}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            {copy.editAction}
+                          </button>
+                        ) : null}
+                        {canDelete ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteMessage(message)}
+                            disabled={
+                              deletingMessageId === message.id ||
+                              Boolean(updatingMessageId)
+                            }
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                              isMine
+                                ? "border border-background/30 hover:bg-background/10"
+                                : "border border-border/60 hover:bg-muted",
+                            )}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {copy.deleteAction}
+                          </button>
+                        ) : null}
                       </div>
-                      <p className="mt-2 whitespace-pre-wrap text-sm">
-                        {message.message}
-                      </p>
+                      {isEditing ? (
+                        <div className="mt-2 space-y-2">
+                          <textarea
+                            rows={3}
+                            value={editingMessageText}
+                            onChange={(event) =>
+                              setEditingMessageText(event.target.value)
+                            }
+                            className={cn(
+                              "w-full resize-none rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2",
+                              isMine
+                                ? "border-background/40 bg-background/10 text-background focus:ring-background/20"
+                                : "border-border bg-background text-foreground focus:ring-foreground/20",
+                            )}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveEdit()}
+                              disabled={
+                                updatingMessageId === message.id ||
+                                !editingMessageText.trim()
+                              }
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                                isMine
+                                  ? "border-background/40 hover:bg-background/10"
+                                  : "border-border hover:bg-muted",
+                              )}
+                            >
+                              {copy.saveAction}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelEdit}
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                                isMine
+                                  ? "border-background/40 hover:bg-background/10"
+                                  : "border-border hover:bg-muted",
+                              )}
+                            >
+                              {copy.cancelAction}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-2 whitespace-pre-wrap text-sm">
+                          {message.message || copy.deletedMessage}
+                        </p>
+                      )}
                     </div>
                     {isMine ? (
                       <Avatar className="h-9 w-9">

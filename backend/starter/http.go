@@ -121,7 +121,7 @@ func gatewayOutgoingHeaderMatcher(key string) (string, bool) {
 	}
 }
 
-func buildHTTPHandler(grpcServer *grpc.Server, gateway *runtime.ServeMux, cors corsConfig) http.Handler {
+func buildHTTPHandler(grpcServer *grpc.Server, gateway *runtime.ServeMux, cors corsConfig, ticketsHandler *grpcserver.TicketsService) http.Handler {
 	grpcWebServer := grpcweb.WrapServer(
 		grpcServer,
 		grpcweb.WithOriginFunc(cors.originAllowed),
@@ -149,14 +149,25 @@ func buildHTTPHandler(grpcServer *grpc.Server, gateway *runtime.ServeMux, cors c
 			grpcServer.ServeHTTP(w, r)
 			return
 		}
-		if gateway != nil {
-			traceID := grpcserver.NewTraceID()
-			ctx := grpcserver.WithTraceID(r.Context(), traceID)
-			w.Header().Set(grpcserver.TraceHeader, traceID)
-			rec := &statusWriter{ResponseWriter: w, status: http.StatusOK, startedAt: time.Now()}
+		traceID := grpcserver.NewTraceID()
+		ctx := grpcserver.WithTraceID(r.Context(), traceID)
+		w.Header().Set(grpcserver.TraceHeader, traceID)
+		rec := &statusWriter{ResponseWriter: w, status: http.StatusOK, startedAt: time.Now()}
+		cors.apply(rec, r)
 
-			cors.apply(rec, r)
+		loggedStart := false
+		if ticketsHandler != nil {
 			logGatewayStart(r, traceID)
+			loggedStart = true
+			if ticketsHandler.ServeDiscussionHTTP(rec, r.WithContext(ctx)) {
+				logGatewayFinish(r, traceID, rec.status, time.Since(rec.startedAt))
+				return
+			}
+		}
+		if gateway != nil {
+			if !loggedStart {
+				logGatewayStart(r, traceID)
+			}
 			gateway.ServeHTTP(rec, r.WithContext(ctx))
 			logGatewayFinish(r, traceID, rec.status, time.Since(rec.startedAt))
 			return

@@ -16,6 +16,11 @@ type Repository interface {
 	IsReqValid(context.Context, uuid.UUID, TicketDataReq) (bool, error)
 	List(context.Context, bool, *uint, *string) (Tickets, error)
 	Messages(context.Context, uuid.UUID) (TicketMessages, error)
+	MessagesAll(context.Context, uuid.UUID) (TicketMessages, error)
+	MessageByID(context.Context, uuid.UUID, int64, bool) (*TicketMessage, error)
+	IsMessageOwner(context.Context, uuid.UUID, int64, TicketDataReq) (bool, error)
+	EditMessage(context.Context, uuid.UUID, int64, string, TicketDataReq) error
+	DeleteMessage(context.Context, uuid.UUID, int64, *uint) error
 	GetLatestMessage(context.Context, uuid.UUID) (*TicketMessage, error)
 	User(context.Context, uuid.UUID, TicketDataReq) (*TicketUserData, error)
 	Close(context.Context, uuid.UUID, TicketClosedBy, string) error

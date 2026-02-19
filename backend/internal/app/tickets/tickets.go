@@ -96,6 +96,52 @@ func (s *Service) Messages(ctx context.Context, id uuid.UUID) (tickets.TicketMes
 	return list, nil
 }
 
+func (s *Service) MessagesAll(ctx context.Context, id uuid.UUID) (tickets.TicketMessages, error) {
+	if s == nil || s.repo == nil {
+		return nil, apperrors.NotConfigured
+	}
+	list, err := s.repo.MessagesAll(ctx, id)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "tickets.messages_all")
+		return nil, apperrors.Wrap(err)
+	}
+	return list, nil
+}
+
+func (s *Service) IsMessageOwner(ctx context.Context, id uuid.UUID, messageID int64, req tickets.TicketDataReq) (bool, error) {
+	if s == nil || s.repo == nil {
+		return false, apperrors.NotConfigured
+	}
+	owner, err := s.repo.IsMessageOwner(ctx, id, messageID, req)
+	if err != nil {
+		logger.Debug("error appeared: "+err.Error(), "tickets.is_message_owner")
+		return false, apperrors.Wrap(err)
+	}
+	return owner, nil
+}
+
+func (s *Service) EditMessage(ctx context.Context, id uuid.UUID, messageID int64, content string, req tickets.TicketDataReq) error {
+	if s == nil || s.repo == nil {
+		return apperrors.NotConfigured
+	}
+	if err := s.repo.EditMessage(ctx, id, messageID, content, req); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "tickets.edit_message")
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Service) DeleteMessage(ctx context.Context, id uuid.UUID, messageID int64, deleterUID *uint) error {
+	if s == nil || s.repo == nil {
+		return apperrors.NotConfigured
+	}
+	if err := s.repo.DeleteMessage(ctx, id, messageID, deleterUID); err != nil {
+		logger.Debug("error appeared: "+err.Error(), "tickets.delete_message")
+		return apperrors.Wrap(err)
+	}
+	return nil
+}
+
 func (s *Service) Close(ctx context.Context, id uuid.UUID, by tickets.TicketClosedBy, reason string) error {
 	if s == nil || s.repo == nil {
 		return apperrors.NotConfigured

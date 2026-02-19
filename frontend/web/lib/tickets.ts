@@ -27,6 +27,9 @@ export type TicketMessage = {
   id: string;
   message: string;
   createdAt?: string;
+  editedAt?: string;
+  deletedAt?: string;
+  isDeleted?: boolean;
   authorName?: string;
   authorRole?: string;
   authorId?: string | number;
@@ -412,6 +415,11 @@ const mapTicketMessage = (
       record.sent_at ??
       record.timestamp,
   );
+  const editedAt = toDateString(record.editedAt ?? record.edited_at);
+  const deletedAt = toDateString(record.deletedAt ?? record.deleted_at);
+  const isDeleted = Boolean(
+    record.deleted ?? record.isDeleted ?? record.is_deleted ?? deletedAt,
+  );
 
   const authorRecord = pickRecord(record, [
     "author",
@@ -476,6 +484,9 @@ const mapTicketMessage = (
     id,
     message,
     createdAt: createdAt || undefined,
+    editedAt: editedAt || undefined,
+    deletedAt: deletedAt || undefined,
+    isDeleted,
     authorName: authorName || undefined,
     authorRole: authorRole || undefined,
     authorId,

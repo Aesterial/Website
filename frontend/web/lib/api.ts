@@ -2595,19 +2595,23 @@ export async function fetchTicketInfo(
 
 export async function fetchTicketMessages(
   id: string,
-  options?: { signal?: AbortSignal; token?: string },
+  options?: {
+    signal?: AbortSignal;
+    token?: string;
+    includeDeleted?: boolean;
+  },
 ): Promise<ApiTicketMessage[]> {
   const encoded = encodeURIComponent(id);
   const query = options?.token
     ? `?token=${encodeURIComponent(options.token)}`
     : "";
-  const payload = await apiRequest<unknown>(
-    `/api/tickets/${encoded}/messages/list${query}`,
-    {
-      method: "GET",
-      signal: options?.signal,
-    },
-  );
+  const listPath = options?.includeDeleted
+    ? `/api/tickets/${encoded}/messages/list/all${query}`
+    : `/api/tickets/${encoded}/messages/list${query}`;
+  const payload = await apiRequest<unknown>(listPath, {
+    method: "GET",
+    signal: options?.signal,
+  });
   const record = toTicketRecord(payload);
   const resolveList = (value: unknown): ApiTicketMessage[] | null => {
     if (Array.isArray(value)) {
@@ -2633,6 +2637,50 @@ export async function fetchTicketMessages(
     [];
 
   return messages;
+}
+
+export async function updateTicketMessage(
+  id: string,
+  messageId: string,
+  message: string,
+  options?: { token?: string },
+): Promise<void> {
+  const trimmed = message.trim();
+  if (!trimmed) {
+    throw new Error("Ticket message is required.");
+  }
+  const encodedTicket = encodeURIComponent(id);
+  const encodedMessage = encodeURIComponent(messageId);
+  const body: Record<string, unknown> = { content: trimmed };
+  if (options?.token) {
+    body.token = options.token;
+  }
+  await apiRequest(`/api/tickets/${encodedTicket}/messages/${encodedMessage}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteTicketMessage(
+  id: string,
+  messageId: string,
+  options?: { token?: string },
+): Promise<void> {
+  const encodedTicket = encodeURIComponent(id);
+  const encodedMessage = encodeURIComponent(messageId);
+  const body = options?.token
+    ? JSON.stringify({ token: options.token })
+    : undefined;
+  const query = options?.token
+    ? `?token=${encodeURIComponent(options.token)}`
+    : "";
+  await apiRequest(
+    `/api/tickets/${encodedTicket}/messages/${encodedMessage}${query}`,
+    {
+      method: "DELETE",
+      body,
+    },
+  );
 }
 
 export async function createTicketMessage(

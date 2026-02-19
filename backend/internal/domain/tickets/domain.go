@@ -162,11 +162,14 @@ func (t Tickets) ToProto() []*tickpb.TicketInfo {
 }
 
 type TicketMessage struct {
-	ID       int
-	TicketID uuid.UUID
-	Author   *TicketMessageAuthor
-	Content  string
-	At       time.Time
+	ID           int
+	TicketID     uuid.UUID
+	Author       *TicketMessageAuthor
+	Content      string
+	At           time.Time
+	EditedAt     *time.Time
+	DeletedAt    *time.Time
+	DeletedByUID *uint
 }
 
 type TicketMessageAuthor struct {

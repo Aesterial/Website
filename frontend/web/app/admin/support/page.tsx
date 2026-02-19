@@ -15,8 +15,10 @@ import {
   LogOut,
   Maximize2,
   MessageSquare,
+  Pencil,
   Send,
   ShieldCheck,
+  Trash2,
   UserCheck,
   UserCircle2,
   X,
@@ -29,9 +31,11 @@ import {
   acceptTicket,
   closeTicket,
   createTicketMessage,
+  deleteTicketMessage,
   fetchTicketInfo,
   fetchTicketMessages,
   fetchTicketsALL,
+  updateTicketMessage,
   ApiError,
 } from "@/lib/api";
 import {
@@ -110,6 +114,9 @@ const areMessagesEqual = (prev: TicketMessage[], next: TicketMessage[]) => {
       a.id !== b.id ||
       a.message !== b.message ||
       a.createdAt !== b.createdAt ||
+      a.editedAt !== b.editedAt ||
+      a.deletedAt !== b.deletedAt ||
+      a.isDeleted !== b.isDeleted ||
       a.authorId !== b.authorId ||
       a.authorName !== b.authorName ||
       a.authorRole !== b.authorRole ||
@@ -181,6 +188,14 @@ export default function AdminSupportPage() {
   const [sending, setSending] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [updatingMessageId, setUpdatingMessageId] = useState<string | null>(
+    null,
+  );
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
+    null,
+  );
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingMessageText, setEditingMessageText] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshingList, setRefreshingList] = useState(false);
   const [refreshingDetails, setRefreshingDetails] = useState(false);
@@ -207,6 +222,20 @@ export default function AdminSupportPage() {
   const currentName = displayName || user?.username || "";
   const currentUserId = user?.uid;
   const canViewAllAccepted = user?.rank?.name === "developer";
+  const canModerateDelete = useMemo(() => {
+    const role = user?.rank?.name?.trim().toLowerCase();
+    if (!role) {
+      return false;
+    }
+    return [
+      "developer",
+      "support",
+      "admin",
+      "root",
+      "moderator",
+      "operator",
+    ].includes(role);
+  }, [user?.rank?.name]);
 
   const languageOptions = [
     { code: "RU" as const, label: "RU" },
@@ -326,7 +355,7 @@ export default function AdminSupportPage() {
       try {
         const [info, list] = await Promise.all([
           fetchTicketInfo(id, { signal }),
-          fetchTicketMessages(id, { signal }),
+          fetchTicketMessages(id, { signal, includeDeleted: true }),
         ]);
         if (signal?.aborted) {
           return;
@@ -368,6 +397,10 @@ export default function AdminSupportPage() {
     bootstrappedMessagesRef.current = false;
     messageIdsRef.current = new Set();
     pendingScrollRef.current = true;
+    setEditingMessageId(null);
+    setEditingMessageText("");
+    setUpdatingMessageId(null);
+    setDeletingMessageId(null);
   }, [selectedId]);
 
   useEffect(() => {
@@ -562,6 +595,65 @@ export default function AdminSupportPage() {
       setError("Не удалось отправить сообщение.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleStartEdit = (message: TicketMessage) => {
+    if (message.isDeleted) {
+      return;
+    }
+    setEditingMessageId(message.id);
+    setEditingMessageText(message.message);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingMessageText("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedTicket || !editingMessageId) {
+      return;
+    }
+    const trimmed = editingMessageText.trim();
+    if (!trimmed) {
+      return;
+    }
+    setUpdatingMessageId(editingMessageId);
+    setError(null);
+    try {
+      await updateTicketMessage(selectedTicket.id, editingMessageId, trimmed);
+      handleCancelEdit();
+      await Promise.all([
+        loadTickets(undefined, { silent: true }),
+        loadDetails(selectedTicket.id, undefined, { silent: true }),
+      ]);
+    } catch {
+      setError("Не удалось изменить сообщение.");
+    } finally {
+      setUpdatingMessageId(null);
+    }
+  };
+
+  const handleDeleteMessage = async (message: TicketMessage) => {
+    if (!selectedTicket || message.isDeleted) {
+      return;
+    }
+    setDeletingMessageId(message.id);
+    setError(null);
+    try {
+      await deleteTicketMessage(selectedTicket.id, message.id);
+      if (editingMessageId === message.id) {
+        handleCancelEdit();
+      }
+      await Promise.all([
+        loadTickets(undefined, { silent: true }),
+        loadDetails(selectedTicket.id, undefined, { silent: true }),
+      ]);
+    } catch {
+      setError("Не удалось удалить сообщение.");
+    } finally {
+      setDeletingMessageId(null);
     }
   };
 
@@ -794,6 +886,10 @@ export default function AdminSupportPage() {
                 currentUserId != null && message.authorId != null
                   ? String(currentUserId) === String(message.authorId)
                   : false;
+              const isEditing = editingMessageId === message.id;
+              const canEdit = isMine && !message.isDeleted;
+              const canDelete =
+                (isMine || canModerateDelete) && !message.isDeleted;
               const authorLabel = resolveAuthorName(message);
               const roleLabel = resolveAuthorRole(message);
               const initials = getInitials(authorLabel);
@@ -875,10 +971,98 @@ export default function AdminSupportPage() {
                       <span>
                         {formatTime(message.createdAt, timeFormatter)}
                       </span>
+                      {message.editedAt ? <span>изменено</span> : null}
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(message)}
+                          disabled={
+                            isEditing ||
+                            Boolean(updatingMessageId) ||
+                            Boolean(deletingMessageId)
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                            isMine
+                              ? "border border-background/30 hover:bg-background/10"
+                              : "border border-border/60 hover:bg-muted",
+                          )}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Редактировать
+                        </button>
+                      ) : null}
+                      {canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteMessage(message)}
+                          disabled={
+                            deletingMessageId === message.id ||
+                            Boolean(updatingMessageId)
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                            isMine
+                              ? "border border-background/30 hover:bg-background/10"
+                              : "border border-border/60 hover:bg-muted",
+                          )}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Удалить
+                        </button>
+                      ) : null}
                     </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm">
-                      {message.message}
-                    </p>
+                    {isEditing ? (
+                      <div className="mt-2 space-y-2">
+                        <textarea
+                          rows={3}
+                          value={editingMessageText}
+                          onChange={(event) =>
+                            setEditingMessageText(event.target.value)
+                          }
+                          className={cn(
+                            "w-full resize-none rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2",
+                            isMine
+                              ? "border-background/40 bg-background/10 text-background focus:ring-background/20"
+                              : "border-border bg-background text-foreground focus:ring-foreground/20",
+                          )}
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleSaveEdit()}
+                            disabled={
+                              updatingMessageId === message.id ||
+                              !editingMessageText.trim()
+                            }
+                            className={cn(
+                              "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                              isMine
+                                ? "border-background/40 hover:bg-background/10"
+                                : "border-border hover:bg-muted",
+                            )}
+                          >
+                            Сохранить
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className={cn(
+                              "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                              isMine
+                                ? "border-background/40 hover:bg-background/10"
+                                : "border-border hover:bg-muted",
+                            )}
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-2 whitespace-pre-wrap text-sm">
+                        {message.message || "Сообщение удалено"}
+                      </p>
+                    )}
                   </div>
                   {isMine ? (
                     <Avatar className="h-9 w-9">

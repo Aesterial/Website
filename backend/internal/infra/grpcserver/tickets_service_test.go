@@ -52,6 +52,26 @@ func (t *ticketsRepoStub) Messages(context.Context, uuid.UUID) (ticketsdomain.Ti
 	return nil, nil
 }
 
+func (t *ticketsRepoStub) MessagesAll(context.Context, uuid.UUID) (ticketsdomain.TicketMessages, error) {
+	return nil, nil
+}
+
+func (t *ticketsRepoStub) MessageByID(context.Context, uuid.UUID, int64, bool) (*ticketsdomain.TicketMessage, error) {
+	return nil, nil
+}
+
+func (t *ticketsRepoStub) IsMessageOwner(context.Context, uuid.UUID, int64, ticketsdomain.TicketDataReq) (bool, error) {
+	return true, nil
+}
+
+func (t *ticketsRepoStub) EditMessage(context.Context, uuid.UUID, int64, string, ticketsdomain.TicketDataReq) error {
+	return nil
+}
+
+func (t *ticketsRepoStub) DeleteMessage(context.Context, uuid.UUID, int64, *uint) error {
+	return nil
+}
+
 func (t *ticketsRepoStub) GetLatestMessage(context.Context, uuid.UUID) (*ticketsdomain.TicketMessage, error) {
 	return nil, nil
 }
