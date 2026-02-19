@@ -74,7 +74,7 @@ func (s *NotificationService) Create(ctx context.Context, req *notifypb.CreateRe
 	}
 	requestor, err := s.auth.RequireUser(ctx)
 	if err != nil {
-		logger.Debug("error on getting user: " + err.Error(), "")
+		logger.Debug("error on getting user: "+err.Error(), "")
 		return nil, err
 	}
 	if err := s.auth.RequirePermissions(ctx, requestor.UID, func() permsdomain.Permission {

@@ -13,8 +13,8 @@ import (
 	"Aesterial/backend/internal/domain/submissions"
 	"Aesterial/backend/internal/domain/tickets"
 	"Aesterial/backend/internal/domain/verification"
-	userpb "Aesterial/backend/internal/gen/user/v1"
 	notifypb "Aesterial/backend/internal/gen/notifications/v1"
+	userpb "Aesterial/backend/internal/gen/user/v1"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -3527,7 +3527,6 @@ func (n *NotificationsRepository) ForUser(ctx context.Context, id uint, rank str
 	}
 	return list, nil
 }
-
 
 func (n *NotificationsRepository) Create(ctx context.Context, scope notifypb.Scope, body string, receiver *string, expires *time.Time) error {
 	if scope == notifypb.Scope_SCOPE_UNSPECIFIED || body == "" {

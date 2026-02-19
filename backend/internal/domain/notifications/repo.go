@@ -1,9 +1,9 @@
 package notifications
 
 import (
+	notifypb "Aesterial/backend/internal/gen/notifications/v1"
 	"context"
 	"time"
-	notifypb "Aesterial/backend/internal/gen/notifications/v1"
 
 	"github.com/google/uuid"
 )

@@ -65,25 +65,25 @@ type Information struct {
 type Informations []*Information
 
 func (i Information) ToProto() *maintenance.Maintenace {
-	var planned = func () *maintenance.MaintenaceStamp {
+	var planned = func() *maintenance.MaintenaceStamp {
 		if i.Planned == nil {
 			return nil
 		}
 		return &maintenance.MaintenaceStamp{Start: timestamppb.New(i.Planned.Start), End: timestamppb.New(i.Planned.End)}
 	}()
 	return &maintenance.Maintenace{
-		Id: i.ID.String(),
+		Id:          i.ID.String(),
 		Description: i.Description,
-		Status: i.Status.String(),
-		Scope: i.Scope.String(),
-		Type: i.Type.String(),
-		Planned: planned,
+		Status:      i.Status.String(),
+		Scope:       i.Scope.String(),
+		Type:        i.Type.String(),
+		Planned:     planned,
 		Actual: &maintenance.MaintenaceStamp{
 			Start: timestamppb.New(i.Actual.Start),
-			End: timestamppb.New(i.Actual.End),
+			End:   timestamppb.New(i.Actual.End),
 		},
 		CreatedAt: timestamppb.New(i.CreatedAt),
-		Creator: i.CalledBy.ToPublic(),
+		Creator:   i.CalledBy.ToPublic(),
 	}
 }
 

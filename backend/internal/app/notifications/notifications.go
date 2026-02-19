@@ -6,8 +6,8 @@ import (
 	"context"
 	"time"
 
-	apperrors "Aesterial/backend/internal/shared/errors"
 	notifypb "Aesterial/backend/internal/gen/notifications/v1"
+	apperrors "Aesterial/backend/internal/shared/errors"
 
 	"github.com/google/uuid"
 )
