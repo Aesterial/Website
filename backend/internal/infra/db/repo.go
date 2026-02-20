@@ -1439,11 +1439,7 @@ func (s *SessionsRepository) GetSession(ctx context.Context, sessionID uuid.UUID
 
 func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) (*sessions.Sessions, error) {
 	var sess sessions.Sessions
-	rows, err := s.DB.QueryContext(
-		ctx,
-		"SELECT id FROM sessions s WHERE s.uid = $1 AND s.revoked = false AND s.expires > NOW() ORDER BY s.last_seen_at DESC NULLS LAST, s.created DESC",
-		uid,
-	)
+	rows, err := s.DB.QueryContext(ctx, "SELECT id FROM sessions s WHERE s.uid = $1", uid)
 	if err != nil {
 		return nil, err
 	}
