@@ -2445,6 +2445,11 @@ export const translations: Translations = {
     EN: "Refreshing...",
     KZ: "Жаңартылуда...",
   },
+  accountSessionsOpen: {
+    RU: "Открыть сессии",
+    EN: "Open sessions",
+    KZ: "Сессияларды ашу",
+  },
   accountSessionsCreated: {
     RU: "Создана",
     EN: "Created",
@@ -2479,6 +2484,11 @@ export const translations: Translations = {
     RU: "Сессия успешно завершена.",
     EN: "Session revoked.",
     KZ: "Сессия сәтті тоқтатылды.",
+  },
+  accountSessionsEnded: {
+    RU: "Сессия завершена",
+    EN: "Session ended",
+    KZ: "Сессия тоқтатылды",
   },
   accountSessionsRevokeError: {
     RU: "Не удалось завершить сессию.",

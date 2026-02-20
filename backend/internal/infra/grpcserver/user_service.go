@@ -83,6 +83,13 @@ func (s *UserService) RevokeSession(ctx context.Context, req *userpb.RevokeSessi
 	if err != nil {
 		return nil, apperrors.InvalidArguments
 	}
+	uid, err := s.sessions.GetUID(ctx, id)
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	if uid == nil || *uid != requestor.UID {
+		return nil, apperrors.AccessDenied.AddErrDetails("session does not belong to current user")
+	}
 	err = s.sessions.SetRevoked(ctx, id)
 	if err != nil {
 		return nil, apperrors.Wrap(err)
