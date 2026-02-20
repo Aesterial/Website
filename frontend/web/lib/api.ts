@@ -324,6 +324,13 @@ export type TotpConfirmResult = {
   recoveryCodes: string[];
 };
 
+export type UserSession = {
+  id: string;
+  createdAt?: string;
+  lastSeenAt?: string;
+  hash?: string;
+};
+
 export type UserListItem = {
   userID: number;
   username: string;
@@ -684,6 +691,87 @@ const toNotifications = (payload: unknown): ApiNotification[] => {
     const left = a.createdAt ? Date.parse(a.createdAt) : 0;
     const right = b.createdAt ? Date.parse(b.createdAt) : 0;
     return right - left;
+  });
+};
+
+const toUserSession = (value: unknown): UserSession | null => {
+  const record = toRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const id = pickString(record, [
+    "uuid",
+    "id",
+    "sessionId",
+    "sessionID",
+    "session_id",
+  ]);
+  if (!id) {
+    return null;
+  }
+
+  const createdAt =
+    toIsoTimestamp(
+      record.created ?? record.created_at ?? record.createdAt ?? null,
+    ) ?? undefined;
+  const lastSeenAt =
+    toIsoTimestamp(
+      record.lastSeen ??
+        record.last_seen ??
+        record.last_seen_at ??
+        record.lastSeenAt ??
+        null,
+    ) ?? undefined;
+  const hash = pickString(record, ["hash", "userAgentHash", "user_agent_hash"]);
+
+  return {
+    id,
+    ...(createdAt ? { createdAt } : {}),
+    ...(lastSeenAt ? { lastSeenAt } : {}),
+    ...(hash ? { hash } : {}),
+  };
+};
+
+const toUserSessions = (payload: unknown): UserSession[] => {
+  const root = toRecord(payload);
+  const data = toRecord(root?.data);
+
+  const candidates: unknown[] = [
+    payload,
+    root?.data,
+    root?.sessions,
+    root?.list,
+    data?.sessions,
+    data?.data,
+    data?.list,
+  ];
+
+  const items: unknown[] = [];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      items.push(...candidate);
+    }
+  }
+
+  const sessionMap = new Map<string, UserSession>();
+  for (const item of items) {
+    const session = toUserSession(item);
+    if (!session) {
+      continue;
+    }
+    sessionMap.set(session.id, session);
+  }
+
+  return [...sessionMap.values()].sort((left, right) => {
+    const leftLast = left.lastSeenAt ? Date.parse(left.lastSeenAt) : 0;
+    const rightLast = right.lastSeenAt ? Date.parse(right.lastSeenAt) : 0;
+    if (rightLast !== leftLast) {
+      return rightLast - leftLast;
+    }
+    const leftCreated = left.createdAt ? Date.parse(left.createdAt) : 0;
+    const rightCreated = right.createdAt ? Date.parse(right.createdAt) : 0;
+    return rightCreated - leftCreated;
   });
 };
 
@@ -1538,6 +1626,30 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
     method: "GET",
   });
   return toAuthUser(payload);
+}
+
+export async function fetchUserSessions(options?: {
+  signal?: AbortSignal;
+}): Promise<UserSession[]> {
+  const payload = await apiRequest<unknown>("/api/user/sessions", {
+    method: "GET",
+    signal: options?.signal,
+  });
+  return toUserSessions(payload);
+}
+
+export async function revokeUserSession(id: string): Promise<void> {
+  const trimmedId = id.trim();
+  if (!trimmedId) {
+    throw new Error("Session id is required.");
+  }
+  await apiRequest(
+    `/api/user/sessions/revoke/${encodeURIComponent(trimmedId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ id: trimmedId }),
+    },
+  );
 }
 
 export async function fetchUserPublic(

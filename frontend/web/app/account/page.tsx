@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -31,11 +32,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  fetchUserSessions,
   confirmTotpEnrollment,
   disableTotp,
+  revokeUserSession,
   requestEmailVerification,
   startTotpEnrollment,
   type TotpEnrollment,
+  type UserSession,
 } from "@/lib/api";
 
 const getInitials = (value: string) => {
@@ -50,6 +54,30 @@ const getInitials = (value: string) => {
 };
 
 const PROFILE_DESCRIPTION_MAX_LENGTH = 100;
+const SESSION_HASH_TRIMMED_LENGTH = 30;
+
+const getLocaleByLanguage = (language: string) => {
+  if (language === "RU") {
+    return "ru-RU";
+  }
+  if (language === "KZ") {
+    return "kk-KZ";
+  }
+  return "en-US";
+};
+
+const formatSessionHash = (hash?: string) => {
+  if (!hash) {
+    return null;
+  }
+  if (hash.length <= SESSION_HASH_TRIMMED_LENGTH) {
+    return hash;
+  }
+  return `${hash.slice(0, 14)}...${hash.slice(-8)}`;
+};
+
+const isAbortError = (error: unknown) =>
+  error instanceof Error && error.name === "AbortError";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -103,6 +131,11 @@ export default function AccountPage() {
   const [totpError, setTotpError] = useState<string | null>(null);
   const [totpSuccess, setTotpSuccess] = useState<string | null>(null);
   const [totpDisableOpen, setTotpDisableOpen] = useState(false);
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [sessionsSuccess, setSessionsSuccess] = useState<string | null>(null);
+  const [sessionActionId, setSessionActionId] = useState<string | null>(null);
   const isAvatarSaving = avatarAction !== null;
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const roleGlowStyle = getRankGlowStyle(user?.rank?.name);
@@ -142,6 +175,68 @@ export default function AccountPage() {
       setTotpEnableCode("");
     }
   }, [user?.totpEnabled, totpRecoveryCodes.length]);
+
+  const loadUserSessions = useCallback(
+    async (options?: { signal?: AbortSignal }) => {
+      setSessionsLoading(true);
+      setSessionsError(null);
+      try {
+        const list = await fetchUserSessions({ signal: options?.signal });
+        if (options?.signal?.aborted) {
+          return;
+        }
+        setSessions(list);
+      } catch (err) {
+        if (isAbortError(err) || options?.signal?.aborted) {
+          return;
+        }
+        setSessionsError(
+          err instanceof Error ? err.message : t("accountSessionsLoadError"),
+        );
+      } finally {
+        if (!options?.signal?.aborted) {
+          setSessionsLoading(false);
+        }
+      }
+    },
+    [t],
+  );
+
+  const handleSessionRevoke = useCallback(
+    async (sessionId: string) => {
+      setSessionsError(null);
+      setSessionsSuccess(null);
+      setSessionActionId(sessionId);
+      try {
+        await revokeUserSession(sessionId);
+        setSessions((prev) =>
+          prev.filter((session) => session.id !== sessionId),
+        );
+        setSessionsSuccess(t("accountSessionsRevokeSuccess"));
+      } catch (err) {
+        setSessionsError(
+          err instanceof Error ? err.message : t("accountSessionsRevokeError"),
+        );
+      } finally {
+        setSessionActionId(null);
+      }
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    if (!user || status !== "authenticated") {
+      setSessions([]);
+      setSessionsError(null);
+      setSessionsSuccess(null);
+      setSessionActionId(null);
+      setSessionsLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    void loadUserSessions({ signal: controller.signal });
+    return () => controller.abort();
+  }, [user?.uid, status, loadUserSessions]);
 
   const handleAvatarSelect = () => {
     avatarInputRef.current?.click();
@@ -460,6 +555,22 @@ export default function AccountPage() {
       ? totpQrBase64
       : `data:image/png;base64,${totpQrBase64}`
     : null;
+  const sessionLocale = getLocaleByLanguage(language);
+  const sessionDateFormatter = new Intl.DateTimeFormat(sessionLocale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const formatSessionDate = (value?: string) => {
+    if (!value) {
+      return t("accountSessionsUnknown");
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return t("accountSessionsUnknown");
+    }
+    return sessionDateFormatter.format(parsed);
+  };
+  const sessionsBusy = sessionsLoading || sessionActionId !== null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -781,10 +892,132 @@ export default function AccountPage() {
           </motion.div>
 
           <motion.div
+            className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.45)]"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <div className="rounded-2xl border border-border/60 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    {t("accountSessionsTitle")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t("accountSessionsSubtitle")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-semibold text-foreground">
+                    {t("accountSessionsActiveLabel")}: {sessions.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border/70 px-4 py-2 text-xs font-semibold transition-colors duration-300 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => void loadUserSessions()}
+                    disabled={sessionsBusy}
+                  >
+                    {sessionsLoading
+                      ? t("accountSessionsRefreshing")
+                      : t("accountSessionsRefresh")}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t("accountSessionsCurrentHint")}
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {sessionsLoading && sessions.length === 0
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={`session-skeleton-${index}`}
+                      className="h-24 animate-pulse rounded-2xl border border-border/60 bg-background/60"
+                    />
+                  ))
+                : null}
+
+              {!sessionsLoading && sessions.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-4 py-6 text-center text-sm text-muted-foreground">
+                  {t("accountSessionsEmpty")}
+                </div>
+              ) : null}
+
+              {sessions.map((session) => {
+                const isRevoking = sessionActionId === session.id;
+                const hash = formatSessionHash(session.hash);
+
+                return (
+                  <div
+                    key={session.id}
+                    className="rounded-2xl border border-border/60 bg-background/70 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <code className="block truncate text-xs font-semibold text-foreground">
+                          {session.id}
+                        </code>
+                        <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1">
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                            {t("accountSessionsDeviceHash")}
+                          </span>
+                          <code
+                            className="truncate text-[11px] font-semibold text-foreground"
+                            title={session.hash}
+                          >
+                            {hash ?? t("accountSessionsUnknown")}
+                          </code>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-full border border-destructive/40 px-4 py-2 text-xs font-semibold text-destructive transition-colors duration-300 hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={() => void handleSessionRevoke(session.id)}
+                        disabled={isRevoking || sessionsLoading}
+                      >
+                        {isRevoking
+                          ? t("accountSessionsRevoking")
+                          : t("accountSessionsRevoke")}
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-xl border border-border/60 bg-card/80 px-3 py-2">
+                        <span className="text-muted-foreground">
+                          {t("accountSessionsCreated")}
+                        </span>
+                        <p className="mt-1 font-semibold text-foreground">
+                          {formatSessionDate(session.createdAt)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-card/80 px-3 py-2">
+                        <span className="text-muted-foreground">
+                          {t("accountSessionsLastSeen")}
+                        </span>
+                        <p className="mt-1 font-semibold text-foreground">
+                          {formatSessionDate(session.lastSeenAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {sessionsError ? (
+              <p className="mt-3 text-xs text-destructive">{sessionsError}</p>
+            ) : null}
+            {sessionsSuccess ? (
+              <p className="mt-3 text-xs text-foreground">{sessionsSuccess}</p>
+            ) : null}
+          </motion.div>
+
+          <motion.div
             className="rounded-3xl border border-border/70 bg-card/90 p-6"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>

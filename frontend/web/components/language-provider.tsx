@@ -2415,6 +2415,86 @@ export const translations: Translations = {
     EN: "Add an email to your profile.",
     KZ: "Профильге email қосыңыз.",
   },
+  accountSessionsTitle: {
+    RU: "Активные сессии",
+    EN: "Active sessions",
+    KZ: "Белсенді сессиялар",
+  },
+  accountSessionsSubtitle: {
+    RU: "Управляйте устройствами, где выполнен вход в аккаунт.",
+    EN: "Manage devices where your account is signed in.",
+    KZ: "Аккаунтыңыз кірілген құрылғыларды басқарыңыз.",
+  },
+  accountSessionsCurrentHint: {
+    RU: "Текущую сессию нельзя отозвать на сервере.",
+    EN: "The current session cannot be revoked on the server.",
+    KZ: "Ағымдағы сессияны серверде кері қайтару мүмкін емес.",
+  },
+  accountSessionsActiveLabel: {
+    RU: "Сессий",
+    EN: "Sessions",
+    KZ: "Сессия",
+  },
+  accountSessionsRefresh: {
+    RU: "Обновить",
+    EN: "Refresh",
+    KZ: "Жаңарту",
+  },
+  accountSessionsRefreshing: {
+    RU: "Обновление...",
+    EN: "Refreshing...",
+    KZ: "Жаңартылуда...",
+  },
+  accountSessionsCreated: {
+    RU: "Создана",
+    EN: "Created",
+    KZ: "Құрылған",
+  },
+  accountSessionsLastSeen: {
+    RU: "Последняя активность",
+    EN: "Last seen",
+    KZ: "Соңғы белсенділік",
+  },
+  accountSessionsDeviceHash: {
+    RU: "Отпечаток устройства",
+    EN: "Device fingerprint",
+    KZ: "Құрылғы ізі",
+  },
+  accountSessionsUnknown: {
+    RU: "Нет данных",
+    EN: "No data",
+    KZ: "Дерек жоқ",
+  },
+  accountSessionsRevoke: {
+    RU: "Завершить сессию",
+    EN: "Revoke session",
+    KZ: "Сессияны тоқтату",
+  },
+  accountSessionsRevoking: {
+    RU: "Завершаем...",
+    EN: "Revoking...",
+    KZ: "Тоқтатылуда...",
+  },
+  accountSessionsRevokeSuccess: {
+    RU: "Сессия успешно завершена.",
+    EN: "Session revoked.",
+    KZ: "Сессия сәтті тоқтатылды.",
+  },
+  accountSessionsRevokeError: {
+    RU: "Не удалось завершить сессию.",
+    EN: "Failed to revoke session.",
+    KZ: "Сессияны тоқтату мүмкін болмады.",
+  },
+  accountSessionsLoadError: {
+    RU: "Не удалось загрузить сессии.",
+    EN: "Failed to load sessions.",
+    KZ: "Сессияларды жүктеу мүмкін болмады.",
+  },
+  accountSessionsEmpty: {
+    RU: "Активные сессии не найдены.",
+    EN: "No active sessions found.",
+    KZ: "Белсенді сессиялар табылмады.",
+  },
   accountTotpTitle: {
     RU: "Двухфакторная защита (TOTP)",
     EN: "Two-factor authentication (TOTP)",
