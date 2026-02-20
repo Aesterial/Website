@@ -2499,32 +2499,42 @@ func (m *MaintenanceRepository) Complete(ctx context.Context) error {
 
 func (m *MaintenanceRepository) GetList(ctx context.Context) (maintenance.Informations, error) {
 	var list maintenance.Informations
+
 	rows, err := m.DB.QueryContext(ctx, "SELECT * FROM maintenance")
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer rows.Close()
+
 	for rows.Next() {
-		var r maintenance.Information
+		r := &maintenance.Information{Planned: &maintenance.PlannedAt{}}
 		var actualStart, actualEnd sql.NullTime
 		var calledby uint
-		if err := rows.Scan(&r.ID, &r.Description, &r.Status, &r.Scope, &r.Type, &r.Planned.Start, &r.Planned.End, &actualStart, &actualEnd, &r.CreatedAt, &calledby); err != nil {
+
+		if err := rows.Scan(
+			&r.ID, &r.Description, &r.Status, &r.Scope, &r.Type,
+			&r.Planned.Start, &r.Planned.End,
+			&actualStart, &actualEnd,
+			&r.CreatedAt, &calledby,
+		); err != nil {
 			return nil, err
 		}
+
 		r.CalledBy, err = getAuthor(ctx, calledby, m.DB)
 		if err != nil {
 			return nil, err
 		}
+
 		if actualStart.Valid {
 			r.Actual.Start = actualStart.Time
 		}
 		if actualEnd.Valid {
 			r.Actual.End = actualEnd.Time
 		}
-		list = append(list, &r)
+
+		list = append(list, r)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
