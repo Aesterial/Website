@@ -33,6 +33,13 @@ services:
       SMTP_SECURE: ${SMTP_SECURE}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME}
       MAILER_DOMAIN: ${MAILER_DOMAIN}
+      MAIL_PROXY_ADDR: ${MAIL_PROXY_ADDR}
+      MAIL_PROXY_TLS: ${MAIL_PROXY_TLS}
+      MAIL_PROXY_SERVER_NAME: ${MAIL_PROXY_SERVER_NAME}
+      MAIL_PROXY_INSECURE_SKIP_VERIFY: ${MAIL_PROXY_INSECURE_SKIP_VERIFY}
+      MAIL_PROXY_DIAL_TIMEOUT_SECONDS: ${MAIL_PROXY_DIAL_TIMEOUT_SECONDS}
+      MAIL_PROXY_REQUEST_TIMEOUT_SECONDS: ${MAIL_PROXY_REQUEST_TIMEOUT_SECONDS}
+      MAIL_PROXY_AUTH_TOKEN: ${MAIL_PROXY_AUTH_TOKEN}
       VK_CLIENT_ID: ${VK_CLIENT_ID}
       VK_CLIENT_SECRET: ${VK_CLIENT_SECRET}
       VK_REDIRECT_URI: ${VK_REDIRECT_URI}
@@ -73,6 +80,13 @@ services:
     depends_on:
       - aesterial_frontend
       - aesterial_backend
+
+  aesterial_backend_mail:
+    image: aesterial_backend_mail:latest
+    environment:
+      MAIL_PROXY_AUTH_TOKEN: ${MAIL_PROXY_AUTH_TOKEN}
+    profiles:
+      - build-only
 
 networks:
   appnet:

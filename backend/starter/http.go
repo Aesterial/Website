@@ -250,7 +250,7 @@ func clientAddr(r *http.Request) string {
 }
 
 func firstForwardedIP(value string) string {
-	for _, part := range strings.Split(value, ",") {
+	for part := range strings.SplitSeq(value, ",") {
 		if ip := normalizeClientHost(part); ip != "" {
 			return ip
 		}
@@ -260,8 +260,8 @@ func firstForwardedIP(value string) string {
 
 func firstForwardedHeaderIP(values []string) string {
 	for _, value := range values {
-		for _, entry := range strings.Split(value, ",") {
-			for _, attr := range strings.Split(entry, ";") {
+		for entry := range strings.SplitSeq(value, ",") {
+			for attr := range strings.SplitSeq(entry, ";") {
 				kv := strings.SplitN(strings.TrimSpace(attr), "=", 2)
 				if len(kv) != 2 || !strings.EqualFold(kv[0], "for") {
 					continue

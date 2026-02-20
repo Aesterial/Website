@@ -48,3 +48,4 @@ generated/
 /backend/third_party/
 *.crt
 /certs
+.zed/

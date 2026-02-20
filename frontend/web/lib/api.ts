@@ -2279,7 +2279,7 @@ export async function fetchUserNotifications(options?: {
     params.set("shown", String(options.shown));
   }
   const query = params.toString() ? `?${params.toString()}` : "";
-  const payload = await apiRequest<unknown>(`/api/user/notifications${query}`, {
+  const payload = await apiRequest<unknown>(`/api/notifications/user${query}`, {
     method: "GET",
     signal: options?.signal,
   });

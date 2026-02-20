@@ -32,6 +32,15 @@ create type project_info_t as (
     location project_location_t
 );
 
+-- maintenance.*
+create type maintenance_permissions_t as (
+    "all"      boolean,
+    "start"    boolean,
+    "edit"     boolean,
+    "complete" boolean,
+    "history"  boolean
+);
+
 -- projects.*
 create type projects_update_permissions_t as ("all" boolean, own boolean, "any" boolean);
 create type projects_archive_permissions_t as (own boolean, "any" boolean);
@@ -725,33 +734,31 @@ create index maintenance_status_idx on maintenance (status);
 create index maintenance_planned_start_at_idx on maintenance (planned_start_at);
 create index maintenance_planned_end_at_idx on maintenance (planned_end_at);
 
-create type notification_type as enum ('message', 'notify');
 create type notification_scope as enum ('user', 'broadcast', 'segment');
 
 create table notifications (
     id uuid primary key default pg_catalog.gen_random_uuid(),
-    type notification_type not null,
     body text not null default '',
     createdAt timestamptz not null default now(),
-    scope notification_scope not null,
+    scope notification_scope not null, 
+    targetUserID bigint references users(uid) on delete cascade,
+    targetSegment varchar(64) references ranks(name) on delete cascade,
     expiresAt timestamptz
 );
 
+create index notifications_scope_created_at on notifications (scope, createdAt desc);
+create index notifications_target_user on notifications (targetUserID);
+create index notifications_target_segment on notifications (targetSegment);
+
 create table notification_receipts (
-    notify_id uuid not null references notifications (id) on delete cascade,
-    userID bigint references users (uid) on delete cascade,
-    segment varchar(64) references ranks (name) on delete cascade,
+    notify_id uuid not null references notifications(id) on delete cascade,
+    userID bigint not null references users(uid) on delete cascade,
     readAt timestamptz,
     primary key (notify_id, userID)
 );
 
 create index notification_receipts_user_id on notification_receipts (userID);
-create index notification_receipts_user_unread
-    on notification_receipts (userID)
-    where readAt is null;
-
-create index notifications_created_at on notifications (createdAt desc);
-create index notifications_scope_created_at on notifications (scope, createdAt desc);
+create index notification_receipts_user_unread on notification_receipts (userID) where readAt is null;
 
 create type ticket_status as enum ('в обработке', 'закрыт', 'ожидает');
 create type ticket_topic as enum ('аккаунт и доступ', 'проект и заявка', 'техническая проблема', 'другое');

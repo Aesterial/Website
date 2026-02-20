@@ -3,12 +3,34 @@ syntax = "proto3";
 package maintenance.v1;
 
 import "google/protobuf/timestamp.proto";
+import "user/domain.proto";
 
 option go_package = "Aesterial/backend/internal/gen/maintenance/v1;maintenance";
 
 message IsSomethingResponse {
   bool has = 1;
   string tracing = 2;
+}
+
+message Maintenace {
+    message stamp {
+        google.protobuf.Timestamp start = 1;
+        google.protobuf.Timestamp end = 2;
+    }
+    string id = 1;
+    string description = 2;
+    string status = 3;
+    string scope = 4;
+    string type = 5;
+    optional stamp planned = 6;
+    stamp actual = 7;
+    google.protobuf.Timestamp createdAt = 8;
+    user.v1.UserPublic creator = 9;
+}
+
+message HistoryResponse {
+    repeated Maintenace list = 1;
+    string tracing = 2;
 }
 
 message DataResponse {

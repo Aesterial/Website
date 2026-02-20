@@ -46,10 +46,7 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.Target, error) {
 	}
 
 	maxWorkers, hydrationTimeout := submissionsHydrationSettings()
-	workers := len(data)
-	if workers > maxWorkers {
-		workers = maxWorkers
-	}
+	workers := min(len(data), maxWorkers)
 
 	response := make([]*submpb.Target, len(data))
 	sem := make(chan struct{}, workers)
@@ -72,10 +69,7 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.Target, error) {
 	}
 
 	for i, v := range data {
-		i, v := i, v
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			select {
 			case sem <- struct{}{}:
 			case <-ctx.Done():
@@ -124,7 +118,7 @@ func (s *Service) GetList(ctx context.Context) ([]*submpb.Target, error) {
 				return
 			}
 			response[i] = target
-		}()
+		})
 	}
 
 	wg.Wait()

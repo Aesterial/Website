@@ -11,8 +11,22 @@ import (
 )
 
 type Status string
+
+func (s Status) String() string {
+	return string(s)
+}
+
 type Scope string
+
+func (s Scope) String() string {
+	return string(s)
+}
+
 type Type string
+
+func (t Type) String() string {
+	return string(t)
+}
 
 const (
 	ScheduledStatus Status = "scheduled"
@@ -42,7 +56,7 @@ type Information struct {
 	Status      Status
 	Scope       Scope
 	Type        Type
-	Planned     PlannedAt
+	Planned     *PlannedAt
 	Actual      Actual
 	CreatedAt   time.Time
 	CalledBy    *user.User
@@ -50,16 +64,31 @@ type Information struct {
 
 type Informations []*Information
 
-func (i Information) ToProto() *maintenance.DataResponse {
-	return &maintenance.DataResponse{
+func (i Information) ToProto() *maintenance.Maintenace {
+	var planned = func() *maintenance.MaintenaceStamp {
+		if i.Planned == nil {
+			return nil
+		}
+		return &maintenance.MaintenaceStamp{Start: timestamppb.New(i.Planned.Start), End: timestamppb.New(i.Planned.End)}
+	}()
+	return &maintenance.Maintenace{
 		Id:          i.ID.String(),
 		Description: i.Description,
-		WillEnd:     timestamppb.New(i.Planned.End),
+		Status:      i.Status.String(),
+		Scope:       i.Scope.String(),
+		Type:        i.Type.String(),
+		Planned:     planned,
+		Actual: &maintenance.MaintenaceStamp{
+			Start: timestamppb.New(i.Actual.Start),
+			End:   timestamppb.New(i.Actual.End),
+		},
+		CreatedAt: timestamppb.New(i.CreatedAt),
+		Creator:   i.CalledBy.ToPublic(),
 	}
 }
 
-func (i Informations) ToProto() []*maintenance.DataResponse {
-	var list []*maintenance.DataResponse
+func (i Informations) ToProto() []*maintenance.Maintenace {
+	var list []*maintenance.Maintenace
 	for _, element := range i {
 		list = append(list, element.ToProto())
 	}

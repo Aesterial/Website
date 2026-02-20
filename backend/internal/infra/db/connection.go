@@ -2,7 +2,6 @@ package db
 
 import (
 	"Aesterial/backend/internal/app/config"
-	"Aesterial/backend/internal/infra/logger"
 	"database/sql"
 	"fmt"
 	"net/url"
@@ -18,7 +17,6 @@ func NewConnection() (*sql.DB, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid DATABASE_URL: %w", err)
 		}
-		logger.Debug("connecting to db: "+dsn, "")
 		return sql.Open("postgres", dsn)
 	}
 	dburl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name)

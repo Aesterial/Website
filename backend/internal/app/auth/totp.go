@@ -38,7 +38,7 @@ func (s *Service) generateRecoveryCodes() ([]string, []string, error) {
 	recovery := make([]string, 0, 8)
 	hashes := make([]string, 0, 8)
 
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		raw := make([]byte, 10)
 		if _, err := rand.Read(raw); err != nil {
 			return nil, nil, err

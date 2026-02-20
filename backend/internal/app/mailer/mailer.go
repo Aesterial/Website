@@ -3,56 +3,78 @@ package mailer
 import (
 	"Aesterial/backend/internal/app/config"
 	"Aesterial/backend/internal/domain/mailer"
+	mailproxyv1 "Aesterial/backend/internal/gen/mailproxy/v1"
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
-	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net"
-	"net/smtp"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	transactionalFrom = "no-reply@aesterial.xyz"
-	replyToEmail      = "support@aesterial.xyz"
+	defaultProxyAddr      = "proxy.mail.aesterial.xyz:443"
+	defaultProxyServerTLS = "proxy.mail.aesterial.xyz"
 )
 
 type Config struct {
-	Host     string
-	Port     int
-	User     string
-	Pass     string
-	FromName string
-	Secure   bool
-	StartTLS bool
+	ProxyAddr                  string
+	ProxyTLSEnabled            bool
+	ProxyTLSServerName         string
+	ProxyTLSInsecureSkipVerify bool
+	DialTimeout                time.Duration
+	RequestTimeout             time.Duration
+	AuthToken                  string
 }
 
 type Service struct {
-	host     string
-	port     int
-	user     string
-	pass     string
-	fromName string
-	secure   bool
-	startTLS bool
+	proxyAddr                  string
+	proxyTLSEnabled            bool
+	proxyTLSServerName         string
+	proxyTLSInsecureSkipVerify bool
+	dialTimeout                time.Duration
+	requestTimeout             time.Duration
+	authToken                  string
 }
 
 func New(cfg Config) *Service {
+	proxyAddr := strings.TrimSpace(cfg.ProxyAddr)
+	if proxyAddr == "" {
+		proxyAddr = defaultProxyAddr
+	}
+
+	proxyServerName := strings.TrimSpace(cfg.ProxyTLSServerName)
+	if proxyServerName == "" {
+		proxyServerName = defaultProxyServerTLS
+	}
+
+	dialTimeout := cfg.DialTimeout
+	if dialTimeout <= 0 {
+		dialTimeout = 8 * time.Second
+	}
+
+	requestTimeout := cfg.RequestTimeout
+	if requestTimeout <= 0 {
+		requestTimeout = 15 * time.Second
+	}
+
 	return &Service{
-		host:     strings.TrimSpace(cfg.Host),
-		port:     cfg.Port,
-		user:     strings.TrimSpace(cfg.User),
-		pass:     cfg.Pass,
-		fromName: strings.TrimSpace(cfg.FromName),
-		secure:   cfg.Secure,
-		startTLS: cfg.StartTLS,
+		proxyAddr:                  proxyAddr,
+		proxyTLSEnabled:            cfg.ProxyTLSEnabled,
+		proxyTLSServerName:         proxyServerName,
+		proxyTLSInsecureSkipVerify: cfg.ProxyTLSInsecureSkipVerify,
+		dialTimeout:                dialTimeout,
+		requestTimeout:             requestTimeout,
+		authToken:                  strings.TrimSpace(cfg.AuthToken),
 	}
 }
 
@@ -146,172 +168,105 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 		return "", err
 	}
 
-	messageID := fmt.Sprintf("<%s@aesterial.xyz>", uuid.New().String())
-	contentType, body := buildBody(htmlBody, textBody)
-
-	headers := []string{
-		"From: " + formatAddress(s.fromName, s.user),
-		"To: " + to,
-		"Subject: " + subject,
-		"Message-ID: " + messageID,
-		"Date: " + time.Now().Format(time.RFC1123Z),
-		"Reply-To: " + replyToEmail,
-		"MIME-Version: 1.0",
-		"Content-Type: " + contentType,
-	}
-
-	var msg bytes.Buffer
-	for _, header := range headers {
-		msg.WriteString(header)
-		msg.WriteString("\r\n")
-	}
-	msg.WriteString("\r\n")
-	msg.WriteString(body)
-
-	logger.Debug("sending to: "+to, "")
-
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	smtpCtx := ctx
+	reqCtx := ctx
 	var cancel context.CancelFunc
-	if _, ok := ctx.Deadline(); !ok {
-		smtpCtx, cancel = context.WithTimeout(ctx, 30*time.Second)
+	if _, ok := reqCtx.Deadline(); !ok {
+		reqCtx, cancel = context.WithTimeout(reqCtx, s.requestTimeout)
 		defer cancel()
 	}
-	if err := s.smtpSend(smtpCtx, to, msg.Bytes()); err != nil {
-		logger.Debug("smtp send failed: "+err.Error(), "mailer.send")
-		return "", apperrors.Unavailable.AddErrDetails("failed to send email")
+
+	conn, err := s.dial(reqCtx)
+	if err != nil {
+		logger.Debug("mail proxy dial failed: "+err.Error(), "mailer.send")
+		return "", apperrors.Unavailable.AddErrDetails("failed to connect mail proxy")
+	}
+	defer conn.Close()
+
+	client := mailproxyv1.NewMailProxyServiceClient(conn)
+	requestID := uuid.NewString()
+
+	resp, err := client.SendEmail(reqCtx, &mailproxyv1.SendEmailRequest{
+		RequestId: requestID,
+		To:        to,
+		Subject:   subject,
+		HtmlBody:  htmlBody,
+		TextBody:  textBody,
+		AuthToken: s.authToken,
+		Headers: map[string]string{
+			"X-Mailer-Service": "aesterial-backend",
+		},
+	})
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			logger.Debug("mail proxy send failed: "+err.Error(), "mailer.send")
+			return "", apperrors.Unavailable.AddErrDetails("mail proxy unavailable")
+		}
+
+		logger.Debug("mail proxy send failed: "+st.Message(), "mailer.send")
+		switch st.Code() {
+		case codes.InvalidArgument:
+			return "", apperrors.RequiredDataMissing.AddErrDetails(st.Message())
+		case codes.FailedPrecondition:
+			return "", apperrors.NotConfigured.AddErrDetails(st.Message())
+		case codes.Unavailable, codes.DeadlineExceeded:
+			return "", apperrors.Unavailable.AddErrDetails("mail proxy unavailable")
+		default:
+			return "", apperrors.ServerError.AddErrDetails(st.Message())
+		}
+	}
+
+	messageID := strings.TrimSpace(resp.GetMessageId())
+	if messageID == "" {
+		return "", apperrors.Unavailable.AddErrDetails("mail proxy returned empty message id")
 	}
 
 	return messageID, nil
 }
 
-func (s *Service) smtpSend(ctx context.Context, to string, msg []byte) error {
-	host := s.host
-	port := s.port
+func (s *Service) dial(ctx context.Context) (*grpc.ClientConn, error) {
+	dialCtx, cancel := context.WithTimeout(ctx, s.dialTimeout)
+	defer cancel()
 
-	addr := net.JoinHostPort(host, strconv.Itoa(port))
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+	}
 
-	dialer := &net.Dialer{Timeout: 10 * time.Second}
-	var conn net.Conn
-	var err error
-	if s.secure {
-		conn, err = tls.DialWithDialer(dialer, "tcp", addr, &tls.Config{
-			ServerName: host,
-			MinVersion: tls.VersionTLS12,
+	if s.proxyTLSEnabled {
+		creds := credentials.NewTLS(&tls.Config{
+			ServerName:         s.proxyTLSServerName,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: s.proxyTLSInsecureSkipVerify,
 		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
-		conn, err = dialer.DialContext(ctx, "tcp", addr)
-	}
-	if err != nil {
-		return fmt.Errorf("smtp dial: %w", err)
-	}
-	defer conn.Close()
-
-	c, err := smtp.NewClient(conn, host)
-	if err != nil {
-		return fmt.Errorf("smtp client: %w", err)
-	}
-	defer c.Close()
-
-	done := make(chan struct{})
-	go func() {
-		select {
-		case <-ctx.Done():
-			_ = c.Close()
-		case <-done:
-		}
-	}()
-	defer close(done)
-
-	if s.startTLS {
-		if ok, _ := c.Extension("STARTTLS"); !ok {
-			return fmt.Errorf("smtp starttls: server does not support STARTTLS")
-		}
-		if err := c.StartTLS(&tls.Config{
-			ServerName: host,
-			MinVersion: tls.VersionTLS12,
-		}); err != nil {
-			return fmt.Errorf("smtp starttls: %w", err)
-		}
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	if s.user != "" {
-		auth := smtp.PlainAuth("", s.user, s.pass, host)
-		if err := c.Auth(auth); err != nil {
-			return fmt.Errorf("smtp auth: %w", err)
-		}
-	}
-
-	if err := c.Mail(s.user); err != nil {
-		return fmt.Errorf("smtp mail from: %w", err)
-	}
-	if err := c.Rcpt(to); err != nil {
-		return fmt.Errorf("smtp rcpt to: %w", err)
-	}
-
-	w, err := c.Data()
-	if err != nil {
-		return fmt.Errorf("smtp data: %w", err)
-	}
-	if _, err := w.Write(msg); err != nil {
-		_ = w.Close()
-		return fmt.Errorf("smtp write: %w", err)
-	}
-	if err := w.Close(); err != nil {
-		return fmt.Errorf("smtp data close: %w", err)
-	}
-
-	return c.Quit()
+	return grpc.DialContext(dialCtx, s.proxyAddr, opts...)
 }
 
 func (s *Service) validateConfig() error {
 	if s == nil {
 		return apperrors.NotConfigured.AddErrDetails("mailer service is not configured")
 	}
-	if s.host == "" {
-		return apperrors.NotConfigured.AddErrDetails("smtp host is empty")
+	if s.proxyAddr == "" {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy address is empty")
 	}
-	if s.port == 0 {
-		return apperrors.NotConfigured.AddErrDetails("smtp port is empty")
+	if s.proxyTLSEnabled && s.proxyTLSServerName == "" {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy tls server name is empty")
 	}
-	if s.user == "" {
-		return apperrors.NotConfigured.AddErrDetails("smtp user is empty")
+	if s.dialTimeout <= 0 {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy dial timeout is empty")
 	}
-	if s.pass == "" {
-		return apperrors.NotConfigured.AddErrDetails("smtp pass is empty")
+	if s.requestTimeout <= 0 {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy request timeout is empty")
 	}
-	if s.secure && s.startTLS {
-		return apperrors.NotConfigured.AddErrDetails("smtp secure and starttls cannot both be enabled")
+	if s.authToken == "" {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy auth token is empty")
 	}
 	return nil
-}
-
-func buildBody(htmlBody string, textBody string) (string, string) {
-	if htmlBody != "" && textBody != "" {
-		boundary := "alt-" + uuid.New().String()
-		var body strings.Builder
-		body.WriteString("--" + boundary + "\r\n")
-		body.WriteString("Content-Type: text/plain; charset=\"UTF-8\"\r\n")
-		body.WriteString("Content-Transfer-Encoding: 7bit\r\n\r\n")
-		body.WriteString(textBody + "\r\n")
-		body.WriteString("--" + boundary + "\r\n")
-		body.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
-		body.WriteString("Content-Transfer-Encoding: 7bit\r\n\r\n")
-		body.WriteString(htmlBody + "\r\n")
-		body.WriteString("--" + boundary + "--")
-		return "multipart/alternative; boundary=" + boundary, body.String()
-	}
-	if htmlBody != "" {
-		return "text/html; charset=\"UTF-8\"", htmlBody
-	}
-	return "text/plain; charset=\"UTF-8\"", textBody
-}
-
-func formatAddress(name string, email string) string {
-	if name == "" {
-		return email
-	}
-	return fmt.Sprintf("%s <%s>", name, email)
 }

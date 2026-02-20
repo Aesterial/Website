@@ -107,10 +107,7 @@ func addAvatarKey(keys map[string]struct{}, avatar *userpb.Avatar) {
 
 func presignURLMap(ctx context.Context, storage *storageapp.Service, keys []string) map[string]string {
 	maxWorkers := mediaPresignWorkers()
-	workers := len(keys)
-	if workers > maxWorkers {
-		workers = maxWorkers
-	}
+	workers := min(len(keys), maxWorkers)
 	if workers < 1 {
 		workers = 1
 	}
@@ -125,9 +122,7 @@ func presignURLMap(ctx context.Context, storage *storageapp.Service, keys []stri
 	var wg sync.WaitGroup
 
 	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for key := range in {
 				url, err := storage.PresignGet(ctx, key)
 				if err != nil || strings.TrimSpace(url) == "" {
@@ -135,7 +130,7 @@ func presignURLMap(ctx context.Context, storage *storageapp.Service, keys []stri
 				}
 				out <- pair{key: key, url: url}
 			}
-		}()
+		})
 	}
 
 	for _, key := range keys {

@@ -5,6 +5,7 @@ WORKDIR /app/backend
 
 COPY go.work ./
 COPY internal/go.mod internal/go.sum ./internal/
+COPY mail-proxy/go.mod mail-proxy/go.sum ./mail-proxy/
 COPY starter/go.mod starter/go.sum ./starter/
 
 RUN go work sync

@@ -9,6 +9,7 @@ import (
 	"Aesterial/backend/internal/app/mailer"
 	maintenanceapp "Aesterial/backend/internal/app/maintenance"
 	usermodifier "Aesterial/backend/internal/app/modifier/user"
+	"Aesterial/backend/internal/app/notifications"
 	projectsapp "Aesterial/backend/internal/app/projects"
 	rankapp "Aesterial/backend/internal/app/rank"
 	appstatistics "Aesterial/backend/internal/app/statistics"
@@ -19,6 +20,7 @@ import (
 	checkerpb "Aesterial/backend/internal/gen/checker/v1"
 	loginpb "Aesterial/backend/internal/gen/login/v1"
 	maintenancepb "Aesterial/backend/internal/gen/maintenance/v1"
+	notifypb "Aesterial/backend/internal/gen/notifications/v1"
 	projpb "Aesterial/backend/internal/gen/projects/v1"
 	rankpb "Aesterial/backend/internal/gen/ranks/v1"
 	statpb "Aesterial/backend/internal/gen/statistics/v1"
@@ -120,6 +122,7 @@ func main() {
 	maintenanceRepo := db.NewMaintenanceRepository(dbConn)
 	ticketsRepo := db.NewTicketsRepository(dbConn)
 	ranksRepo := db.NewRanksRepository(dbConn)
+	notifyRepo := db.NewNotificationsRepository(dbConn)
 
 	loggerServ := loggerservice.New(loggerRepo)
 
@@ -129,13 +132,13 @@ func main() {
 	loggerServ.Start(ctx, 2*time.Second)
 
 	mailerService := mailer.New(mailer.Config{
-		Host:     env.Mailer.Host,
-		Port:     env.Mailer.Port,
-		User:     env.Mailer.User,
-		Pass:     env.Mailer.Pass,
-		FromName: env.Mailer.FromName,
-		Secure:   env.Mailer.Secure,
-		StartTLS: env.Mailer.StartTLS,
+		ProxyAddr:                  env.Mailer.ProxyAddr,
+		ProxyTLSEnabled:            env.Mailer.ProxyTLSEnabled,
+		ProxyTLSServerName:         env.Mailer.ProxyTLSServerName,
+		ProxyTLSInsecureSkipVerify: env.Mailer.ProxyTLSInsecureSkipVerify,
+		DialTimeout:                time.Duration(env.Mailer.ProxyDialTimeoutSeconds) * time.Second,
+		RequestTimeout:             time.Duration(env.Mailer.ProxyRequestTimeoutSeconds) * time.Second,
+		AuthToken:                  env.Mailer.ProxyAuthToken,
 	})
 	sessionsService := sessionsinfo.New(sessionsRepo)
 	userInfoService := userinfo.New(userRepo, sessionsRepo)
@@ -147,6 +150,7 @@ func main() {
 	submissionService := submissions.New(submissionsRepo, projectsService, userInfoService)
 	ticketsService := tickets.New(ticketsRepo, userRepo, mailerService)
 	ranksService := rankapp.New(ranksRepo)
+	notifyService := notifications.New(notifyRepo)
 	verificationService := verification.New(verificationRepo, mailerService)
 	storageService, err := storageapp.New()
 	if err != nil {
@@ -163,6 +167,7 @@ func main() {
 	maintenanceServer := grpcserver.NewMaintenanceService(maintenanceService, sessionsService, userInfoService)
 	ticketsServer := grpcserver.NewTicketsService(ticketsService, sessionsService, userInfoService, mailerService, storageService)
 	ranksServer := grpcserver.NewRanksService(ranksService, sessionsService, userInfoService, storageService)
+	notifyServer := grpcserver.NewNotificationService(userInfoService, sessionsService, verificationService, notifyService)
 	healthServer := grpcserver.NewHealthService()
 
 	gateway := runtime.NewServeMux(
@@ -209,6 +214,10 @@ func main() {
 		logger.Error("Failed to register health gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
 		return
 	}
+	if err := notifypb.RegisterNotificationServiceHandlerServer(ctx, gateway, notifyServer); err != nil {
+		logger.Error("failed to register notifications gateway: "+err.Error(), "service.gateway.register", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
+		return
+	}
 
 	grpcPort := normalizePort(env.Startup.GRPCPort, env.Startup.Port, "8080")
 	httpPort := normalizePort(env.Startup.HTTPPort, env.Startup.Port, grpcPort)
@@ -237,6 +246,7 @@ func main() {
 	maintenancepb.RegisterMaintenanceServiceServer(grpcServer, maintenanceServer)
 	tickpb.RegisterTicketsServiceServer(grpcServer, ticketsServer)
 	checkerpb.RegisterCheckerServiceServer(grpcServer, healthServer)
+	notifypb.RegisterNotificationServiceServer(grpcServer, notifyServer)
 
 	cors := newCORS(env.Cors.AllowedOrigins)
 	handler := buildHTTPHandler(grpcServer, gateway, cors, ticketsServer)

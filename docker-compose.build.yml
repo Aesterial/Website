@@ -1,4 +1,5 @@
-# To build use command: docker compose -f docker-compose.yml -f docker-compose.build.yml build
+# To build all images (including build-only services) use:
+# docker compose --profile build-only -f docker-compose.yml -f docker-compose.build.yml build
 services:
   aesterial_backend:
     build:
@@ -11,3 +12,9 @@ services:
       context: ./frontend/web
       dockerfile: Dockerfile
     image: ivanskem/aesterial-jcup:frontend-latest
+
+  aesterial_backend_mail:
+    build:
+      context: ./backend/mail-proxy
+      dockerfile: Dockerfile
+    image: aesterial_backend_mail:latest

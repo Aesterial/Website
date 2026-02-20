@@ -60,7 +60,6 @@ func (t Target) UserValid() bool {
 
 type Notification struct {
 	ID      uuid.UUID
-	Type    Type
 	Scope   Scope
 	Body    string
 	Target  Target
@@ -74,7 +73,7 @@ func (n *Notification) HasUser() bool {
 }
 
 func (n *Notification) IsValid() bool {
-	return n.Type.Valid() && n.Scope.Valid() && !n.Created.IsZero()
+	return n.Scope.Valid() && !n.Created.IsZero()
 }
 
 func (n *Notification) Proto() *notifypb.Notification {
@@ -84,21 +83,32 @@ func (n *Notification) Proto() *notifypb.Notification {
 	if !n.IsValid() {
 		return nil
 	}
-	var readed, expires time.Time
-	if n.Readed != nil {
-		readed = *n.Readed
-	}
-	if n.Expires != nil {
-		expires = *n.Expires
-	}
-	return &notifypb.Notification{
+
+	p := &notifypb.Notification{
 		Id:      n.ID.String(),
-		Type:    n.Type.String(),
 		Scope:   n.Scope.String(),
+		Body:    n.Body,
 		Created: timestamppb.New(n.Created),
-		Readed:  timestamppb.New(readed),
-		Expires: timestamppb.New(expires),
 	}
+
+	if n.Readed != nil {
+		p.Readed = timestamppb.New(*n.Readed)
+	}
+
+	if n.Expires != nil {
+		p.Expires = timestamppb.New(*n.Expires)
+	}
+
+	if n.Target.User != nil {
+		id := uint64(*n.Target.User)
+		p.UserId = &id
+	}
+
+	if n.Target.Rank != nil {
+		p.Rank = n.Target.Rank
+	}
+
+	return p
 }
 
 type Notifications []*Notification

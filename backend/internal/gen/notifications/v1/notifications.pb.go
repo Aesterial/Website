@@ -29,7 +29,7 @@ const file_notifications_notifications_proto_rawDesc = "" +
 	"\n" +
 	"!notifications/notifications.proto\x12\x10notifications.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1anotifications/domain.proto\x1a\vtypes.proto2\xb0\x03\n" +
 	"\x13NotificationService\x12o\n" +
-	"\aForUser\x12 .notifications.v1.ForUserRequest\x1a!.notifications.v1.ForUserResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/user/notifications\x12]\n" +
+	"\aForUser\x12 .notifications.v1.ForUserRequest\x1a!.notifications.v1.ForUserResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/notifications/user\x12]\n" +
 	"\x03All\x12\x16.google.protobuf.Empty\x1a\x1d.notifications.v1.AllResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/notifications/list\x12c\n" +
 	"\x06Create\x12\x1f.notifications.v1.CreateRequest\x1a\x12.types.WithTracing\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/notifications/create\x12d\n" +
 	"\x04Mark\x12\x1f.notifications.v1.WithIDRequest\x1a\x12.types.WithTracing\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/notifications/mark/{id}B?Z=Aesterial/backend/internal/gen/notifications/v1;notificationsb\x06proto3"

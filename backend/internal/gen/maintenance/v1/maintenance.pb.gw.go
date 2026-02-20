@@ -219,6 +219,27 @@ func local_request_MaintenanceService_Complete_0(ctx context.Context, marshaler 
 	return msg, metadata, err
 }
 
+func request_MaintenanceService_History_0(ctx context.Context, marshaler runtime.Marshaler, client MaintenanceServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.History(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_MaintenanceService_History_0(ctx context.Context, marshaler runtime.Marshaler, server MaintenanceServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.History(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterMaintenanceServiceHandlerServer registers the http handlers for service MaintenanceService to "mux".
 // UnaryRPC     :call MaintenanceServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -364,6 +385,26 @@ func RegisterMaintenanceServiceHandlerServer(ctx context.Context, mux *runtime.S
 			return
 		}
 		forward_MaintenanceService_Complete_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_MaintenanceService_History_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/maintenance.v1.MaintenanceService/History", runtime.WithHTTPPathPattern("/api/maintenance/list"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_MaintenanceService_History_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MaintenanceService_History_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -524,6 +565,23 @@ func RegisterMaintenanceServiceHandlerClient(ctx context.Context, mux *runtime.S
 		}
 		forward_MaintenanceService_Complete_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_MaintenanceService_History_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/maintenance.v1.MaintenanceService/History", runtime.WithHTTPPathPattern("/api/maintenance/list"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MaintenanceService_History_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MaintenanceService_History_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -535,6 +593,7 @@ var (
 	pattern_MaintenanceService_StartPlanned_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "maintenance", "create", "will_start"}, ""))
 	pattern_MaintenanceService_Edit_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "maintenance", "edit"}, ""))
 	pattern_MaintenanceService_Complete_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "maintenance", "complete"}, ""))
+	pattern_MaintenanceService_History_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "maintenance", "list"}, ""))
 )
 
 var (
@@ -545,4 +604,5 @@ var (
 	forward_MaintenanceService_StartPlanned_0 = runtime.ForwardResponseMessage
 	forward_MaintenanceService_Edit_0         = runtime.ForwardResponseMessage
 	forward_MaintenanceService_Complete_0     = runtime.ForwardResponseMessage
+	forward_MaintenanceService_History_0      = runtime.ForwardResponseMessage
 )

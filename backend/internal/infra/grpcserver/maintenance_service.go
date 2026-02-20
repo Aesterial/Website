@@ -81,9 +81,8 @@ func (s *MaintenanceService) Data(ctx context.Context, _ *emptypb.Empty) (*maint
 		logger.Debug("Failed to get maintenance data: "+err.Error(), "")
 		return nil, apperrors.ServerError.AddErrDetails("failed to get data")
 	}
-	resp := data.ToProto()
-	resp.Tracing = TraceIDOrNew(ctx)
-	return resp, nil
+	info := data.ToProto()
+	return &maintpb.DataResponse{Id: info.Id, Description: info.Description, WillEnd: info.Planned.End, Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateRequest) (*types.WithTracing, error) {
@@ -97,7 +96,7 @@ func (s *MaintenanceService) Start(ctx context.Context, req *maintpb.CreateReque
 		}
 		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
-	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.MaintenanceStart); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: time.Time{}, PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
@@ -120,7 +119,7 @@ func (s *MaintenanceService) StartPlanned(ctx context.Context, req *maintpb.Crea
 		}
 		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
-	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.MaintenanceStart); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Start(ctx, maintdomain.CreateST{Description: req.Description, Scope: req.Scope, PlannedStart: req.WillStart.AsTime(), PlannedEnd: req.WillEnd.AsTime()}, requestor.UID); err != nil {
@@ -142,7 +141,7 @@ func (s *MaintenanceService) Edit(ctx context.Context, req *maintpb.EditRequest)
 		}
 		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
-	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.MaintenanceEdit); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Edit(ctx, maintdomain.EditST{Description: req.Description, Scope: req.Scope}); err != nil {
@@ -164,7 +163,7 @@ func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*t
 		}
 		return nil, apperrors.Unauthenticated.AddErrDetails("user not authenticated")
 	}
-	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.RanksPermissionsChange); err != nil {
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.MaintenanceComplete); err != nil {
 		return nil, err
 	}
 	if err := s.serv.Complete(ctx); err != nil {
@@ -173,4 +172,23 @@ func (s *MaintenanceService) Complete(ctx context.Context, _ *emptypb.Empty) (*t
 	traceID := TraceIDOrNew(ctx)
 	logger.Info("Completed maintenance", "maintenance.complete.success", logger.EventActor{Type: logger.User, ID: requestor.UID}, logger.Success, traceID)
 	return &types.WithTracing{Tracing: traceID}, nil
+}
+
+func (s *MaintenanceService) History(ctx context.Context, req *emptypb.Empty) (*maintpb.HistoryResponse, error) {
+	if s == nil || s.serv == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.MaintenanceHistory); err != nil {
+		return nil, err
+	}
+	list, err := s.serv.List(ctx)
+	if err != nil {
+		logger.Debug("failed to receive maintenance list"+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &maintpb.HistoryResponse{List: list.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
 }
