@@ -29,6 +29,7 @@ type SendEmailRequest struct {
 	HtmlBody      string                 `protobuf:"bytes,4,opt,name=html_body,json=htmlBody,proto3" json:"html_body,omitempty"`
 	TextBody      string                 `protobuf:"bytes,5,opt,name=text_body,json=textBody,proto3" json:"text_body,omitempty"`
 	Headers       map[string]string      `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	AuthToken     string                 `protobuf:"bytes,7,opt,name=auth_token,json=authToken,proto3" json:"auth_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,6 +106,13 @@ func (x *SendEmailRequest) GetHeaders() map[string]string {
 	return nil
 }
 
+func (x *SendEmailRequest) GetAuthToken() string {
+	if x != nil {
+		return x.AuthToken
+	}
+	return ""
+}
+
 type SendEmailResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
@@ -153,7 +161,7 @@ var File_api_proto_mailproxy_v1_mail_proxy_proto protoreflect.FileDescriptor
 
 const file_api_proto_mailproxy_v1_mail_proxy_proto_rawDesc = "" +
 	"\n" +
-	"'api/proto/mailproxy/v1/mail_proxy.proto\x12\fmailproxy.v1\"\x98\x02\n" +
+	"'api/proto/mailproxy/v1/mail_proxy.proto\x12\fmailproxy.v1\"\xb7\x02\n" +
 	"\x10SendEmailRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x0e\n" +
@@ -161,7 +169,9 @@ const file_api_proto_mailproxy_v1_mail_proxy_proto_rawDesc = "" +
 	"\asubject\x18\x03 \x01(\tR\asubject\x12\x1b\n" +
 	"\thtml_body\x18\x04 \x01(\tR\bhtmlBody\x12\x1b\n" +
 	"\ttext_body\x18\x05 \x01(\tR\btextBody\x12E\n" +
-	"\aheaders\x18\x06 \x03(\v2+.mailproxy.v1.SendEmailRequest.HeadersEntryR\aheaders\x1a:\n" +
+	"\aheaders\x18\x06 \x03(\v2+.mailproxy.v1.SendEmailRequest.HeadersEntryR\aheaders\x12\x1d\n" +
+	"\n" +
+	"auth_token\x18\a \x01(\tR\tauthToken\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"2\n" +

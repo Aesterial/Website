@@ -14,18 +14,26 @@ import (
 
 type Service struct {
 	mailproxyv1.UnimplementedMailProxyServiceServer
-	mailer *mailer.Service
+	mailer    *mailer.Service
+	authToken string
 }
 
-func NewService(mailerService *mailer.Service) *Service {
+func NewService(mailerService *mailer.Service, authToken string) *Service {
 	return &Service{
-		mailer: mailerService,
+		mailer:    mailerService,
+		authToken: strings.TrimSpace(authToken),
 	}
 }
 
 func (s *Service) SendEmail(ctx context.Context, req *mailproxyv1.SendEmailRequest) (*mailproxyv1.SendEmailResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	if s.authToken == "" {
+		return nil, status.Error(codes.FailedPrecondition, "mail proxy auth token is not configured")
+	}
+	if strings.TrimSpace(req.GetAuthToken()) != s.authToken {
+		return nil, status.Error(codes.Unauthenticated, "invalid auth token")
 	}
 
 	headers := make(map[string]string, len(req.GetHeaders())+1)

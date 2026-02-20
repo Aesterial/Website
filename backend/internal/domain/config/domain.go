@@ -72,6 +72,7 @@ type Mailer struct {
 	ProxyTLSInsecureSkipVerify bool
 	ProxyDialTimeoutSeconds    int
 	ProxyRequestTimeoutSeconds int
+	ProxyAuthToken             string
 }
 
 type VK struct {

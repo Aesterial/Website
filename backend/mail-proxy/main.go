@@ -56,7 +56,7 @@ func run() error {
 	}
 
 	grpcServer := grpc.NewServer()
-	mailproxyv1.RegisterMailProxyServiceServer(grpcServer, mailproxysvc.NewService(mailerService))
+	mailproxyv1.RegisterMailProxyServiceServer(grpcServer, mailproxysvc.NewService(mailerService, cfg.GRPC.AuthToken))
 
 	healthServer := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)

@@ -121,6 +121,7 @@ func ensure() {
 			ProxyTLSInsecureSkipVerify: parseBool("MAIL_PROXY_INSECURE_SKIP_VERIFY", false),
 			ProxyDialTimeoutSeconds:    parseInt(8, "MAIL_PROXY_DIAL_TIMEOUT_SECONDS"),
 			ProxyRequestTimeoutSeconds: parseInt(15, "MAIL_PROXY_REQUEST_TIMEOUT_SECONDS"),
+			ProxyAuthToken:             envValue("MAIL_PROXY_AUTH_TOKEN"),
 		},
 		VK: domain.VK{
 			ClientID:           envValue("VK_CLIENT_ID"),

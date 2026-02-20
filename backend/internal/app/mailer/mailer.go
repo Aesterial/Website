@@ -33,6 +33,7 @@ type Config struct {
 	ProxyTLSInsecureSkipVerify bool
 	DialTimeout                time.Duration
 	RequestTimeout             time.Duration
+	AuthToken                  string
 }
 
 type Service struct {
@@ -42,6 +43,7 @@ type Service struct {
 	proxyTLSInsecureSkipVerify bool
 	dialTimeout                time.Duration
 	requestTimeout             time.Duration
+	authToken                  string
 }
 
 func New(cfg Config) *Service {
@@ -72,6 +74,7 @@ func New(cfg Config) *Service {
 		proxyTLSInsecureSkipVerify: cfg.ProxyTLSInsecureSkipVerify,
 		dialTimeout:                dialTimeout,
 		requestTimeout:             requestTimeout,
+		authToken:                  strings.TrimSpace(cfg.AuthToken),
 	}
 }
 
@@ -191,6 +194,7 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 		Subject:   subject,
 		HtmlBody:  htmlBody,
 		TextBody:  textBody,
+		AuthToken: s.authToken,
 		Headers: map[string]string{
 			"X-Mailer-Service": "aesterial-backend",
 		},
@@ -260,6 +264,9 @@ func (s *Service) validateConfig() error {
 	}
 	if s.requestTimeout <= 0 {
 		return apperrors.NotConfigured.AddErrDetails("mail proxy request timeout is empty")
+	}
+	if s.authToken == "" {
+		return apperrors.NotConfigured.AddErrDetails("mail proxy auth token is empty")
 	}
 	return nil
 }

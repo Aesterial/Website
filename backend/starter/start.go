@@ -138,6 +138,7 @@ func main() {
 		ProxyTLSInsecureSkipVerify: env.Mailer.ProxyTLSInsecureSkipVerify,
 		DialTimeout:                time.Duration(env.Mailer.ProxyDialTimeoutSeconds) * time.Second,
 		RequestTimeout:             time.Duration(env.Mailer.ProxyRequestTimeoutSeconds) * time.Second,
+		AuthToken:                  env.Mailer.ProxyAuthToken,
 	})
 	sessionsService := sessionsinfo.New(sessionsRepo)
 	userInfoService := userinfo.New(userRepo, sessionsRepo)

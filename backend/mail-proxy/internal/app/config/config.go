@@ -14,7 +14,8 @@ type Config struct {
 }
 
 type GRPCConfig struct {
-	Addr string
+	Addr      string
+	AuthToken string
 }
 
 type SMTPConfig struct {
@@ -35,6 +36,10 @@ func Load() (Config, error) {
 	grpcAddr := strings.TrimSpace(envOrDefault("GRPC_ADDR", ":50051"))
 	if grpcAddr == "" {
 		return Config{}, fmt.Errorf("GRPC_ADDR is empty")
+	}
+	authToken := strings.TrimSpace(os.Getenv("MAIL_PROXY_AUTH_TOKEN"))
+	if authToken == "" {
+		return Config{}, fmt.Errorf("MAIL_PROXY_AUTH_TOKEN is required")
 	}
 
 	smtpHost := strings.TrimSpace(os.Getenv("SMTP_HOST"))
@@ -91,7 +96,8 @@ func Load() (Config, error) {
 
 	return Config{
 		GRPC: GRPCConfig{
-			Addr: grpcAddr,
+			Addr:      grpcAddr,
+			AuthToken: authToken,
 		},
 		SMTP: SMTPConfig{
 			Host:        smtpHost,
