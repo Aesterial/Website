@@ -979,7 +979,7 @@ func (u *UserRepository) DeleteProfile(ctx context.Context, uid uint) error {
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
-	resp, err := u.DB.ExecContext(ctx, "DELETE FROM users WHERE id = $1", uid)
+	resp, err := u.DB.ExecContext(ctx, "DELETE FROM users WHERE uid = $1", uid)
 	if err != nil {
 		return err
 	}
