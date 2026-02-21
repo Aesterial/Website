@@ -228,12 +228,7 @@ func (s *Service) sendMail(ctx context.Context, to string, subject string, htmlB
 }
 
 func (s *Service) dial(ctx context.Context) (*grpc.ClientConn, error) {
-	dialCtx, cancel := context.WithTimeout(ctx, s.dialTimeout)
-	defer cancel()
-
-	opts := []grpc.DialOption{
-		grpc.WithBlock(),
-	}
+	opts := []grpc.DialOption{}
 
 	if s.proxyTLSEnabled {
 		creds := credentials.NewTLS(&tls.Config{
@@ -246,7 +241,7 @@ func (s *Service) dial(ctx context.Context) (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	return grpc.DialContext(dialCtx, s.proxyAddr, opts...)
+	return grpc.NewClient(s.proxyAddr, opts...)
 }
 
 func (s *Service) validateConfig() error {

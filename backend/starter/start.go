@@ -103,14 +103,7 @@ func main() {
 		return
 	}
 
-	defer func() {
-		type closer interface{ Close() error }
-		if c, ok := any(dbConn).(closer); ok {
-			if err = c.Close(); err != nil {
-				logger.Error("Failed to close db: "+err.Error(), "db.close.failed", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
-			}
-		}
-	}()
+	defer dbConn.Close()
 
 	userRepo := db.NewUserRepository(dbConn)
 	loggerRepo := db.NewLoggerRepository(dbConn)

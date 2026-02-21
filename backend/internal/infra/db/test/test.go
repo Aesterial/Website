@@ -2,11 +2,13 @@ package dbtest
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Init(DB *sql.DB) error {
+func Init(DB *pgxpool.Pool) error {
 	var err error
 	if err = pingTest(DB); err != nil {
 		return err
@@ -17,27 +19,29 @@ func Init(DB *sql.DB) error {
 	return nil
 }
 
-func pingTest(DB *sql.DB) error {
+func pingTest(DB *pgxpool.Pool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
-	if err := DB.PingContext(ctx); err != nil {
+	if err := DB.Ping(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func queryTest(DB *sql.DB) error {
+func queryTest(DB *pgxpool.Pool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
-	tx, err := DB.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	tx, err := DB.BeginTx(ctx, pgx.TxOptions{
+		AccessMode: pgx.ReadOnly,
+	})
 	if err != nil {
 		return err
 	}
 	defer func() {
-		_ = tx.Rollback()
+		_ = tx.Rollback(ctx)
 	}()
 	var one int
-	if err = tx.QueryRowContext(ctx, "SELECT 1").Scan(&one); err != nil {
+	if err = tx.QueryRow(ctx, "SELECT 1").Scan(&one); err != nil {
 		return err
 	}
 	return nil

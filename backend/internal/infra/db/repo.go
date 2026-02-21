@@ -15,6 +15,7 @@ import (
 	"Aesterial/backend/internal/domain/verification"
 	notifypb "Aesterial/backend/internal/gen/notifications/v1"
 	userpb "Aesterial/backend/internal/gen/user/v1"
+	dbqueries "Aesterial/backend/internal/infra/db/queries"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -33,94 +34,109 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type UserRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 type RanksRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 type LoggerRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 type LoginRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type SessionsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type ProjectsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type StatisticsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type SubmissionsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type VerificationRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type MaintenanceRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type TicketsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 type NotificationsRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
+	Q  *dbqueries.Queries
 }
 
 var _ user.Repository = (*UserRepository)(nil)
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{DB: db}
+func NewUserRepository(db *pgxpool.Pool) *UserRepository {
+	return &UserRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewRanksRepository(db *sql.DB) *RanksRepository { return &RanksRepository{DB: db} }
-func NewLoggerRepository(db *sql.DB) *LoggerRepository {
-	return &LoggerRepository{DB: db}
+func NewRanksRepository(db *pgxpool.Pool) *RanksRepository {
+	return &RanksRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewLoginRepository(db *sql.DB) *LoginRepository {
-	return &LoginRepository{DB: db}
+func NewLoggerRepository(db *pgxpool.Pool) *LoggerRepository {
+	return &LoggerRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewSessionsRepository(db *sql.DB) *SessionsRepository {
-	return &SessionsRepository{DB: db}
+func NewLoginRepository(db *pgxpool.Pool) *LoginRepository {
+	return &LoginRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewStatisticsRepository(db *sql.DB) *StatisticsRepository {
-	return &StatisticsRepository{DB: db}
+func NewSessionsRepository(db *pgxpool.Pool) *SessionsRepository {
+	return &SessionsRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewProjectsRepository(db *sql.DB) *ProjectsRepository {
-	return &ProjectsRepository{DB: db}
+func NewStatisticsRepository(db *pgxpool.Pool) *StatisticsRepository {
+	return &StatisticsRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewSubmissionRepository(db *sql.DB) *SubmissionsRepository {
-	return &SubmissionsRepository{DB: db}
+func NewProjectsRepository(db *pgxpool.Pool) *ProjectsRepository {
+	return &ProjectsRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewVerificationRepository(db *sql.DB) *VerificationRepository {
-	return &VerificationRepository{DB: db}
+func NewSubmissionRepository(db *pgxpool.Pool) *SubmissionsRepository {
+	return &SubmissionsRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewMaintenanceRepository(db *sql.DB) *MaintenanceRepository {
-	return &MaintenanceRepository{DB: db}
+func NewVerificationRepository(db *pgxpool.Pool) *VerificationRepository {
+	return &VerificationRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewTicketsRepository(db *sql.DB) *TicketsRepository {
-	return &TicketsRepository{DB: db}
+func NewMaintenanceRepository(db *pgxpool.Pool) *MaintenanceRepository {
+	return &MaintenanceRepository{DB: db, Q: dbqueries.New(db)}
 }
-func NewNotificationsRepository(db *sql.DB) *NotificationsRepository {
-	return &NotificationsRepository{DB: db}
+func NewTicketsRepository(db *pgxpool.Pool) *TicketsRepository {
+	return &TicketsRepository{DB: db, Q: dbqueries.New(db)}
+}
+func NewNotificationsRepository(db *pgxpool.Pool) *NotificationsRepository {
+	return &NotificationsRepository{DB: db, Q: dbqueries.New(db)}
 }
 
 type compositeField struct {
@@ -235,15 +251,12 @@ func parsePostgresTime(raw string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unsupported time format: %q", raw)
 }
 
-func parseRowsToUsers(ctx context.Context, rows *sql.Rows, getAvatar func(context.Context, uint) (*user.Avatar, error), isBanned func(context.Context, uint) (bool, *user.BanInfo, error)) (user.Users, error) {
+func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context.Context, uint) (*user.Avatar, error), isBanned func(context.Context, uint) (bool, *user.BanInfo, error)) (user.Users, error) {
 	var usrs user.Users
 	var err error
-	cols, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
+	cols := rows.FieldDescriptions()
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 	for rows.Next() {
 		var usr = user.User{Settings: &user.Settings{Avatar: &user.Avatar{}}, Rank: &rank.UserRank{}, Email: &user.Email{}}
@@ -477,7 +490,7 @@ func generateString(n int) (string, error) {
 }
 
 func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, error) {
-	rows, err := u.DB.QueryContext(ctx, "SELECT u.uid, u.username, (u.email).address, (u.email).verified, (u.rank).name, (u.rank).expires, u.joined FROM users u ORDER BY u.joined")
+	rows, err := u.DB.Query(ctx, dbqueries.UserRepositoryGetList1)
 	if err != nil {
 		return nil, err
 	}
@@ -489,10 +502,7 @@ func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, err
 }
 
 func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", name)
-	if err := row.Err(); err != nil {
-		return 0, err
-	}
+	row := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetUID1, name)
 	var uid uint
 	if err := row.Scan(&uid); err != nil {
 		return 0, err
@@ -501,10 +511,7 @@ func (u *UserRepository) GetUID(ctx context.Context, name string) (uint, error) 
 }
 
 func (u *UserRepository) GetUsername(ctx context.Context, uid uint) (string, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT u.username FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return "", err
-	}
+	row := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetUsername1, uid)
 	var username string
 	if err := row.Scan(&username); err != nil {
 		return "", err
@@ -513,10 +520,7 @@ func (u *UserRepository) GetUsername(ctx context.Context, uid uint) (string, err
 }
 
 func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT (u.email).address, (u.email).verified FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return nil, err
-	}
+	row := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetEmail1, uid)
 	var email user.Email
 	if err := row.Scan(&email.Address, &email.Verified); err != nil {
 		logger.Debug("failed to receive email: "+err.Error(), "")
@@ -526,10 +530,7 @@ func (u *UserRepository) GetEmail(ctx context.Context, uid uint) (*user.Email, e
 }
 
 func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.UserRank, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT (u.rank).name, (u.rank).expires FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return nil, err
-	}
+	row := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetRank1, uid)
 	var r rank.UserRank
 	var expires sql.NullTime
 	if err := row.Scan(&r.Name, &expires); err != nil {
@@ -542,10 +543,7 @@ func (u *UserRepository) GetRank(ctx context.Context, uid uint) (*rank.UserRank,
 }
 
 func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time, error) {
-	row := u.DB.QueryRowContext(ctx, "SELECT u.joined FROM users u WHERE u.uid = $1", uid)
-	if err := row.Err(); err != nil {
-		return nil, err
-	}
+	row := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetJoinedAT1, uid)
 	var t time.Time
 	if err := row.Scan(&t); err != nil {
 		return nil, err
@@ -556,16 +554,10 @@ func (u *UserRepository) GetJoinedAT(ctx context.Context, uid uint) (*time.Time,
 func (u *UserRepository) GetUserLastActive(ctx context.Context, uid uint) (*time.Time, error) {
 	var at time.Time
 
-	err := u.DB.QueryRowContext(ctx, `
-        SELECT at
-        FROM events
-        WHERE actor_type = 'User' AND actor_id = $1
-        ORDER BY at DESC, id DESC
-        LIMIT 1
-    `, uid).Scan(&at)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetUserLastActive1, uid).Scan(&at)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			logger.Debug("record not found", "")
 			return nil, nil
 		}
@@ -578,12 +570,9 @@ func (u *UserRepository) GetUserLastActive(ctx context.Context, uid uint) (*time
 
 func (u *UserRepository) GetSettings(ctx context.Context, uid uint) (*user.Settings, error) {
 	var err error
-	rowMain := u.DB.QueryRowContext(ctx,
-		"SELECT (u.settings).session_live_time, (u.settings).display_name, (u.settings).description FROM users u WHERE u.uid = $1",
+	rowMain := u.DB.QueryRow(ctx,
+		dbqueries.UserRepositoryGetSettings1,
 		uid)
-	if err = rowMain.Err(); err != nil {
-		return nil, err
-	}
 	var s user.Settings
 	var displayName sql.NullString
 	var description sql.NullString
@@ -660,7 +649,7 @@ func (u *UserRepository) GetUserSessionLiveTime(ctx context.Context, uid uint) (
 		return nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var liveTime int
-	if err := u.DB.QueryRowContext(ctx, "SELECT (u.settings).session_live_time FROM users u WHERE u.uid = $1", uid).Scan(&liveTime); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetUserSessionLiveTime1, uid).Scan(&liveTime); err != nil {
 		return nil, err
 	}
 	var sessionTime user.SessionTime
@@ -680,12 +669,8 @@ func (u *UserRepository) GetAvatar(ctx context.Context, uid uint) (*user.Avatar,
 		sizeBytes   sql.NullInt64
 		updatedAt   sql.NullTime
 	}
-	if err := u.DB.QueryRowContext(ctx, `
-		SELECT a.object_key, a.content_type, a.size_bytes, a.updated_at
-		FROM user_avatars a
-		WHERE a.user_id = $1
-	`, uid).Scan(&record.key, &record.contentType, &record.sizeBytes, &record.updatedAt); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetAvatar1, uid).Scan(&record.key, &record.contentType, &record.sizeBytes, &record.updatedAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -710,7 +695,7 @@ func (u *UserRepository) IsExists(ctx context.Context, user user.User) (bool, er
 	if user.Email != nil {
 		emailAddress = user.Email.Address
 	}
-	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users u WHERE u.username = $1 OR (u.email).address = $2 OR u.uid = $3)", user.Username, emailAddress, user.UID).Scan(&exists)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryIsExists1, user.Username, emailAddress, user.UID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -728,17 +713,11 @@ func (u *UserRepository) UpdateDisplayName(ctx context.Context, uid uint, displa
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
-	res, err := u.DB.ExecContext(ctx, `
-		UPDATE users u
-		SET settings = ROW($1, (u.settings).description, (u.settings).avatar, (u.settings).session_live_time)::user_settings_t
-		WHERE u.uid = $2`, displayName, uid)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositoryUpdateDisplayName1, displayName, uid)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return apperrors.RecordNotFound
 	}
@@ -749,17 +728,11 @@ func (u *UserRepository) UpdateDescription(ctx context.Context, uid uint, descri
 	if uid == 0 {
 		return apperrors.InvalidArguments
 	}
-	res, err := u.DB.ExecContext(ctx, `
-		UPDATE users u
-		SET settings = ROW((u.settings).display_name, $1, (u.settings).avatar, (u.settings).session_live_time)::user_settings_t
-		WHERE u.uid = $2`, description, uid)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositoryUpdateDescription1, description, uid)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return apperrors.RecordNotFound
 	}
@@ -770,18 +743,11 @@ func (u *UserRepository) SetEmailVerifiedByAddress(ctx context.Context, email st
 	if strings.TrimSpace(email) == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
-	res, err := u.DB.ExecContext(ctx, `
-		UPDATE users u
-		SET email = ROW((u.email).address, $2)::users_email_t
-		WHERE lower((u.email).address) = lower($1)
-	`, email, verified)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositorySetEmailVerifiedByAddress1, email, verified)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return apperrors.RecordNotFound
 	}
@@ -792,18 +758,11 @@ func (u *UserRepository) UpdatePasswordByEmail(ctx context.Context, email string
 	if strings.TrimSpace(email) == "" || passwordHash == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("email or password is empty")
 	}
-	res, err := u.DB.ExecContext(ctx, `
-		UPDATE users u
-		SET password = $2
-		WHERE lower((u.email).address) = lower($1)
-	`, email, passwordHash)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositoryUpdatePasswordByEmail1, email, passwordHash)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return apperrors.RecordNotFound
 	}
@@ -815,9 +774,7 @@ func (u *UserRepository) IsBanned(ctx context.Context, uid uint) (bool, *user.Ba
 		return false, nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var found bool
-	err := u.DB.QueryRowContext(ctx, `
-		SELECT EXISTS (SELECT 1 FROM bans b WHERE b.target = $1)
-	`, uid).Scan(&found)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryIsBanned1, uid).Scan(&found)
 	if err != nil {
 		return false, nil, err
 	}
@@ -839,7 +796,7 @@ func (u *UserRepository) Ban(ctx context.Context, info user.BanInfo) error {
 	if info.Expire.IsZero() {
 		expr = &info.Expire
 	}
-	_, err := u.DB.ExecContext(ctx, "INSERT INTO bans (executor, target, reason, expires) VALUES ($1, $2, $3, $4)", info.Executor, info.Target, info.Reason, expr)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositoryBan1, info.Executor, info.Target, info.Reason, expr)
 	return err
 }
 
@@ -847,7 +804,7 @@ func (u *UserRepository) UnBan(ctx context.Context, uid uint) error {
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
-	_, err := u.DB.ExecContext(ctx, "DELETE FROM bans b WHERE b.target = $1", uid)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositoryUnBan1, uid)
 	return err
 }
 
@@ -856,8 +813,8 @@ func (u *UserRepository) BanInfo(ctx context.Context, uid uint) (*user.BanInfo, 
 		return nil, apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
 	var info user.BanInfo
-	if err := u.DB.QueryRowContext(ctx, "SELECT b.id, b.executor, b.reason, b.at, b.expires FROM bans b WHERE b.target = $1", uid).Scan(&info.ID, &info.Executor, &info.Reason, &info.At, &info.Expires); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryBanInfo1, uid).Scan(&info.ID, &info.Executor, &info.Reason, &info.At, &info.Expires); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
 		}
 		return nil, err
@@ -872,16 +829,7 @@ func (u *UserRepository) AddAvatar(ctx context.Context, uid uint, avatar user.Av
 	if strings.TrimSpace(avatar.Key) == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("avatar key is empty")
 	}
-	_, err := u.DB.ExecContext(ctx, `
-		INSERT INTO user_avatars (user_id, object_key, content_type, size_bytes, updated_at)
-		VALUES ($1, $2, $3, $4, now())
-		ON CONFLICT (user_id)
-		DO UPDATE SET
-			object_key = excluded.object_key,
-			content_type = excluded.content_type,
-			size_bytes = excluded.size_bytes,
-			updated_at = now()
-	`, uid, avatar.Key, avatar.ContentType, avatar.SizeBytes)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositoryAddAvatar1, uid, avatar.Key, avatar.ContentType, avatar.SizeBytes)
 	return err
 }
 
@@ -889,14 +837,11 @@ func (u *UserRepository) DeleteAvatar(ctx context.Context, uid uint) error {
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is zero")
 	}
-	res, err := u.DB.ExecContext(ctx, "DELETE FROM user_avatars WHERE user_id = $1", uid)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositoryDeleteAvatar1, uid)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return apperrors.RecordNotFound.AddErrDetails("avatar not found")
 	}
@@ -911,14 +856,7 @@ func (u *UserRepository) HasPerm(ctx context.Context, uid uint, perm permissions
 		return false, apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
 	var has bool
-	if err := u.DB.QueryRowContext(ctx, `
-		SELECT CASE
-			WHEN (u.rank).name = 'root' THEN true
-			ELSE perm_allowed(u.permissions, $1)
-		END
-		FROM users u
-		WHERE u.uid = $2
-	`, perm.String(), uid).Scan(&has); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryHasPerm1, perm.String(), uid).Scan(&has); err != nil {
 		return false, err
 	}
 	return has, nil
@@ -943,15 +881,7 @@ func (u *UserRepository) HasAllPerms(ctx context.Context, uid uint, perms ...per
 
 func (u *UserRepository) Perms(ctx context.Context, uid uint) (*permissions.Permissions, error) {
 	var raw []byte
-	if err := u.DB.QueryRowContext(ctx, `
-		SELECT CASE
-			WHEN (u.rank).name = 'root' THEN COALESCE(to_jsonb(r.permissions), to_jsonb(u.permissions))
-			ELSE to_jsonb(u.permissions)
-		END
-		FROM users u
-		LEFT JOIN ranks r ON r.name = (u.rank).name
-		WHERE u.uid = $1
-	`, uid).Scan(&raw); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryPerms1, uid).Scan(&raw); err != nil {
 		return nil, err
 	}
 	var perms permissions.Permissions
@@ -965,12 +895,12 @@ func (u *UserRepository) ChangePerms(ctx context.Context, uid uint, perm permiss
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
-	res, err := u.DB.ExecContext(ctx, "UPDATE users u SET permissions = perm_set(u.permissions, $1, $2) WHERE u.uid = $3", perm.String(), state, uid)
+	res, err := u.DB.Exec(ctx, dbqueries.UserRepositoryChangePerms1, perm.String(), state, uid)
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return sql.ErrNoRows
+	if n := res.RowsAffected(); n == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -979,12 +909,12 @@ func (u *UserRepository) DeleteProfile(ctx context.Context, uid uint) error {
 	if uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("uid is null")
 	}
-	resp, err := u.DB.ExecContext(ctx, "DELETE FROM users WHERE uid = $1", uid)
+	resp, err := u.DB.Exec(ctx, dbqueries.UserRepositoryDeleteProfile1, uid)
 	if err != nil {
 		return err
 	}
-	if n, _ := resp.RowsAffected(); n == 0 {
-		return sql.ErrTxDone
+	if n := resp.RowsAffected(); n == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -994,25 +924,22 @@ func (u *UserRepository) SetRank(ctx context.Context, uid uint, rank string, exp
 		return apperrors.InvalidArguments.AddErrDetails("uid or rank is null")
 	}
 
-	query := "UPDATE users SET rank = ROW($1, NULL)::users_rank_t WHERE uid = $2"
+	query := dbqueries.UserRepositorySetRank1
 	args := []any{rank, uid}
 
 	if expires != nil {
-		query = "UPDATE users SET rank = ROW($1, $2)::users_rank_t WHERE uid = $3"
+		query = dbqueries.UserRepositorySetRank2
 		args = []any{rank, *expires, uid}
 	}
 
-	resp, err := u.DB.ExecContext(ctx, query, args...)
+	resp, err := u.DB.Exec(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 
-	n, err := resp.RowsAffected()
-	if err != nil {
-		return err
-	}
+	n := resp.RowsAffected()
 	if n == 0 {
-		return sql.ErrNoRows
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -1022,7 +949,7 @@ func (u *UserRepository) IsTOTPEnabled(ctx context.Context, uid uint) (bool, err
 		return false, apperrors.InvalidArguments
 	}
 	var enabled bool
-	if err := u.DB.QueryRowContext(ctx, "SELECT totp_enabled FROM users WHERE uid = $1", uid).Scan(&enabled); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryIsTOTPEnabled1, uid).Scan(&enabled); err != nil {
 		return false, err
 	}
 	return enabled, nil
@@ -1033,7 +960,7 @@ func (u *UserRepository) GetPendingTOTP(ctx context.Context, uid uint) (*string,
 		return nil, apperrors.InvalidArguments
 	}
 	var code sql.NullString
-	if err := u.DB.QueryRowContext(ctx, "SELECT totp_pending_secret FROM users WHERE uid = $1", uid).Scan(&code); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetPendingTOTP1, uid).Scan(&code); err != nil {
 		return nil, err
 	}
 	if !code.Valid {
@@ -1046,7 +973,7 @@ func (u *UserRepository) SetPendingTOTP(ctx context.Context, uid uint, pending s
 	if uid == 0 || pending == "" {
 		return apperrors.InvalidArguments
 	}
-	if _, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_pending_secret = $1, totp_pending_created_at = $2 WHERE uid = $3", pending, time.Now(), uid); err != nil {
+	if _, err := u.DB.Exec(ctx, dbqueries.UserRepositorySetPendingTOTP1, pending, time.Now(), uid); err != nil {
 		return err
 	}
 	return nil
@@ -1056,7 +983,7 @@ func (u *UserRepository) SetConfirmed(ctx context.Context, uid uint) error {
 	if uid == 0 {
 		return apperrors.InvalidArguments
 	}
-	if _, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_enabled = true, totp_secret = totp_pending_secret, totp_pending_secret = NULL, totp_last_step = NULL, totp_confirmed_at = now(), totp_pending_created_at = NULL WHERE uid = $1", uid); err != nil {
+	if _, err := u.DB.Exec(ctx, dbqueries.UserRepositorySetConfirmed1, uid); err != nil {
 		return err
 	}
 	return nil
@@ -1072,7 +999,7 @@ func (u *UserRepository) AppendRecoveryCodes(ctx context.Context, uid uint, cds 
 	}
 	for _, code := range cds {
 		if code != "" {
-			if _, err := u.DB.ExecContext(ctx, "INSERT INTO users_recovery_codes (user_id, code_hash) VALUES ($1, $2)", uid, code); err != nil {
+			if _, err := u.DB.Exec(ctx, dbqueries.UserRepositoryAppendRecoveryCodes1, uid, code); err != nil {
 				return err
 			}
 		}
@@ -1083,7 +1010,7 @@ func (u *UserRepository) AppendRecoveryCodes(ctx context.Context, uid uint, cds 
 func (u *UserRepository) CascadeRecoveryCodes(ctx context.Context, uid uint, codes []string) error {
 	for _, code := range codes {
 		if code != "" {
-			if _, err := u.DB.ExecContext(ctx, "DELETE FROM users_recovery_codes WHERE user_id = $1 AND code_hash = $2", uid, code); err != nil {
+			if _, err := u.DB.Exec(ctx, dbqueries.UserRepositoryCascadeRecoveryCodes1, uid, code); err != nil {
 				return err
 			}
 		}
@@ -1093,7 +1020,7 @@ func (u *UserRepository) CascadeRecoveryCodes(ctx context.Context, uid uint, cod
 
 func (u *UserRepository) GetRecoveryCodes(ctx context.Context, uid uint) ([]string, error) {
 	var codes []string
-	rows, err := u.DB.QueryContext(ctx, "SELECT code_hash FROM users_recovery_codes WHERE user_id = $1", uid)
+	rows, err := u.DB.Query(ctx, dbqueries.UserRepositoryGetRecoveryCodes1, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -1109,12 +1036,12 @@ func (u *UserRepository) GetRecoveryCodes(ctx context.Context, uid uint) ([]stri
 }
 
 func (u *UserRepository) SetCodeUsed(ctx context.Context, hash string) error {
-	_, err := u.DB.ExecContext(ctx, "UPDATE users_recovery_codes SET used_at = $1 WHERE code_hash = $2", time.Now(), hash)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositorySetCodeUsed1, time.Now(), hash)
 	return err
 }
 
 func (u *UserRepository) ResetTOTP(ctx context.Context, uid uint) error {
-	_, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_enabled = false, totp_secret = NULL, totp_pending_secret = NULL, totp_confirmed_at = NULL, totp_last_step = NULL, totp_pending_created_at = NULL WHERE uid = $1", uid)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositoryResetTOTP1, uid)
 	return err
 }
 
@@ -1123,10 +1050,8 @@ func (u *UserRepository) IsValidRecovery(ctx context.Context, uid uint, code str
 		return false, apperrors.InvalidArguments
 	}
 
-	rows, err := u.DB.QueryContext(ctx,
-		`SELECT code_hash
-		 FROM users_recovery_codes
-		 WHERE user_id = $1`,
+	rows, err := u.DB.Query(ctx,
+		dbqueries.UserRepositoryIsValidRecovery1,
 		uid,
 	)
 	if err != nil {
@@ -1156,9 +1081,9 @@ func (u *UserRepository) IsValidRecovery(ctx context.Context, uid uint, code str
 
 func (u *UserRepository) IsTOTPending(ctx context.Context, uid uint) (bool, error) {
 	var pending bool
-	err := u.DB.QueryRowContext(
+	err := u.DB.QueryRow(
 		ctx,
-		`SELECT totp_pending_secret IS NOT NULL FROM users WHERE uid = $1`,
+		dbqueries.UserRepositoryIsTOTPending1,
 		uid,
 	).Scan(&pending)
 	return pending, err
@@ -1166,13 +1091,13 @@ func (u *UserRepository) IsTOTPending(ctx context.Context, uid uint) (bool, erro
 
 func (u *UserRepository) GetTOTPSecret(ctx context.Context, uid uint) (string, error) {
 	var secret string
-	err := u.DB.QueryRowContext(ctx, "SELECT totp_secret FROM users WHERE uid = $1", uid).Scan(&secret)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetTOTPSecret1, uid).Scan(&secret)
 	return secret, err
 }
 
 func (u *UserRepository) GetTOTPLastStep(ctx context.Context, uid uint) (*int64, error) {
 	var step sql.NullInt64
-	err := u.DB.QueryRowContext(ctx, "SELECT totp_last_step FROM users WHERE uid = $1", uid).Scan(&step)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryGetTOTPLastStep1, uid).Scan(&step)
 	if err != nil {
 		return nil, err
 	}
@@ -1183,7 +1108,7 @@ func (u *UserRepository) GetTOTPLastStep(ctx context.Context, uid uint) (*int64,
 }
 
 func (u *UserRepository) SetTOTPLastStep(ctx context.Context, uid uint, step int64) error {
-	_, err := u.DB.ExecContext(ctx, "UPDATE users SET totp_last_step = $1 WHERE uid = $2", step, uid)
+	_, err := u.DB.Exec(ctx, dbqueries.UserRepositorySetTOTPLastStep1, step, uid)
 	return err
 }
 
@@ -1193,9 +1118,9 @@ func (u *UserRepository) CanEdit(ctx context.Context, user uint, target uint) (b
 	}
 
 	var can bool
-	err := u.DB.QueryRowContext(ctx, "SELECT COALESCE(r1.weight, 0) > COALESCE(r2.weight, 0) AS can_edit FROM users u1 JOIN users u2 ON u2.uid = $2 LEFT JOIN ranks r1 ON r1.name = (u1.rank).name LEFT JOIN ranks r2 ON r2.name = (u2.rank).name WHERE u1.uid = $1", user, target).Scan(&can)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryCanEdit1, user, target).Scan(&can)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, apperrors.RecordNotFound
 		}
 		return false, err
@@ -1206,14 +1131,14 @@ func (u *UserRepository) CanEdit(ctx context.Context, user uint, target uint) (b
 
 func (u *UserRepository) codeExists(ctx context.Context, code uuid.UUID) (bool, error) {
 	var exists bool
-	err := u.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM rank_activations WHERE code = $1)", code).Scan(&exists)
+	err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryCodeExists1, code).Scan(&exists)
 	return exists, err
 }
 
 func (u *UserRepository) canActivateCode(ctx context.Context, uid uint) (bool, error) {
 	var exists bool
-	err := u.DB.QueryRowContext(ctx,
-		"SELECT EXISTS (SELECT 1 FROM rank_activations WHERE activated_by = $1)",
+	err := u.DB.QueryRow(ctx,
+		dbqueries.UserRepositoryCanActivateCode1,
 		uid,
 	).Scan(&exists)
 	return !exists, err
@@ -1235,7 +1160,7 @@ func (u *UserRepository) ActivateRank(ctx context.Context, uid uint, code uuid.U
 	if !can {
 		return "", apperrors.Conflict
 	}
-	if err := u.DB.QueryRowContext(ctx, "UPDATE rank_activations SET activated = $1, activated_by = $2 WHERE code = $3 RETURNING rank", time.Now(), uid, code).Scan(&rank); err != nil {
+	if err := u.DB.QueryRow(ctx, dbqueries.UserRepositoryActivateRank1, time.Now(), uid, code).Scan(&rank); err != nil {
 		return "", err
 	}
 	expires := time.Now().Add(7 * time.Hour * 24)
@@ -1249,7 +1174,7 @@ func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error
 	if event.TraceID == "" {
 		event.TraceID = "-"
 	}
-	if _, err := l.DB.ExecContext(ctx, "INSERT INTO events(event_type, level, message, actor_type, actor_id, trace_id, result) VALUES ($1, $2, $3, $4, $5, $6, $7)", strings.ToLower(event.Type.String()), event.Level.String(), event.Message, event.Actor.Type.String(), event.Actor.ID, event.TraceID, event.Result.String()); err != nil {
+	if _, err := l.DB.Exec(ctx, dbqueries.LoggerRepositoryAppend1, strings.ToLower(event.Type.String()), event.Level.String(), event.Message, event.Actor.Type.String(), event.Actor.ID, event.TraceID, event.Result.String()); err != nil {
 		return err
 	}
 	return nil
@@ -1258,30 +1183,22 @@ func (l *LoggerRepository) Append(ctx context.Context, event logger.Event) error
 func (l *LoggerRepository) GetList(ctx context.Context, limit uint, offset uint) ([]*logger.Event, error) {
 	var events []*logger.Event
 	var err error
-	var rows *sql.Rows
+	var rows pgx.Rows
 	if limit > 0 {
-		rows, err = l.DB.QueryContext(ctx, "SELECT * FROM events ORDER BY at LIMIT $1 OFFSET $2", limit, offset)
+		rows, err = l.DB.Query(ctx, dbqueries.LoggerRepositoryGetList1, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		defer func(rows *sql.Rows) {
-			err = rows.Close()
-			if err != nil {
-				logger.Error("Failed to close rows: "+err.Error(), "runtime.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.None)
-				return
-			}
+		defer func(rows pgx.Rows) {
+			rows.Close()
 		}(rows)
 	} else {
-		rows, err = l.DB.QueryContext(ctx, "SELECT * FROM events ORDER BY at OFFSET $1", offset)
+		rows, err = l.DB.Query(ctx, dbqueries.LoggerRepositoryGetList2, offset)
 		if err != nil {
 			return nil, err
 		}
-		defer func(rows *sql.Rows) {
-			err = rows.Close()
-			if err != nil {
-				logger.Error("Failed to close rows: "+err.Error(), "runtime.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.None)
-				return
-			}
+		defer func(rows pgx.Rows) {
+			rows.Close()
 		}(rows)
 	}
 	for rows.Next() {
@@ -1300,12 +1217,7 @@ func (l *LoginRepository) Register(ctx context.Context, require login.RegisterRe
 	}
 	require.Email, require.Username = strings.ToLower(require.Email), strings.ToLower(require.Username)
 	var id uint
-	err := l.DB.QueryRowContext(ctx, `
-		INSERT INTO users (username, email, password)
-		VALUES (
-		$1,
-		ROW($2, false)::users_email_t,
-		$3) RETURNING uid`,
+	err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryRegister1,
 		require.Username, require.Email, require.Password).Scan(&id)
 	if err != nil {
 		var pqErr *pq.Error
@@ -1323,14 +1235,14 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 	}
 	require.Usermail = strings.ToLower(require.Usermail)
 	var uid uint
-	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE u.username = $1", require.Usermail).Scan(&uid); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+	if err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryAuthorization1, require.Usermail).Scan(&uid); err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
 	}
 	if uid == 0 {
-		if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE (u.email).address = $1", require.Usermail).Scan(&uid); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+		if err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryAuthorization2, require.Usermail).Scan(&uid); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, apperrors.RecordNotFound
 			}
 			return nil, err
@@ -1340,7 +1252,7 @@ func (l *LoginRepository) Authorization(ctx context.Context, require login.Autho
 		return nil, apperrors.RecordNotFound
 	}
 	var password string
-	if err := l.DB.QueryRowContext(ctx, "SELECT u.password FROM users u WHERE u.uid = $1", uid).Scan(&password); err != nil {
+	if err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryAuthorization3, uid).Scan(&password); err != nil {
 		return nil, err
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(require.Password)); err != nil {
@@ -1354,8 +1266,8 @@ func (l *LoginRepository) GetUIDByEmail(ctx context.Context, email string) (*uin
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("email is empty")
 	}
 	var uid uint
-	if err := l.DB.QueryRowContext(ctx, "SELECT u.uid FROM users u WHERE lower((u.email).address) = lower($1)", email).Scan(&uid); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryGetUIDByEmail1, email).Scan(&uid); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound
 		}
 		return nil, err
@@ -1368,8 +1280,8 @@ func (l *LoginRepository) GetOAuthUID(ctx context.Context, service login.OAuthSe
 		return nil, apperrors.InvalidArguments.AddErrDetails("oauth params are invalid")
 	}
 	var uid uint
-	if err := l.DB.QueryRowContext(ctx, "SELECT uid FROM oauth WHERE service = $1 AND linked_id = $2", service.String(), linkedID).Scan(&uid); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := l.DB.QueryRow(ctx, dbqueries.LoginRepositoryGetOAuthUID1, service.String(), linkedID).Scan(&uid); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound
 		}
 		return nil, err
@@ -1381,12 +1293,7 @@ func (l *LoginRepository) LinkOAuth(ctx context.Context, service login.OAuthServ
 	if !service.IsValid() || strings.TrimSpace(linkedID) == "" || uid == 0 {
 		return apperrors.InvalidArguments.AddErrDetails("oauth params are invalid")
 	}
-	_, err := l.DB.ExecContext(ctx, `
-		INSERT INTO oauth (uid, service, linked_id)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (service, uid)
-		DO UPDATE SET linked_id = EXCLUDED.linked_id
-	`, uid, service.String(), linkedID)
+	_, err := l.DB.Exec(ctx, dbqueries.LoginRepositoryLinkOAuth1, uid, service.String(), linkedID)
 	return err
 }
 
@@ -1394,7 +1301,7 @@ func (l *LoginRepository) Logout(ctx context.Context, sessionID uuid.UUID) error
 	if sessionID == uuid.Nil {
 		return apperrors.InvalidArguments.AddErrDetails("invalid session")
 	}
-	_, err := l.DB.ExecContext(ctx, "UPDATE sessions SET revoked = true WHERE id = $1", sessionID)
+	_, err := l.DB.Exec(ctx, dbqueries.LoginRepositoryLogout1, sessionID)
 	return err
 }
 
@@ -1414,9 +1321,9 @@ func (s *SessionsRepository) IsValid(ctx context.Context, sessionID uuid.UUID) (
 		JOIN users u ON u.uid = s.uid
 		WHERE s.id = $1
 	`
-	err := s.DB.QueryRowContext(ctx, q, sessionID).Scan(&expires, &revoked, &needVerify)
+	err := s.DB.QueryRow(ctx, q, sessionID).Scan(&expires, &revoked, &needVerify)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
 		return false, err
@@ -1431,7 +1338,7 @@ func (s *SessionsRepository) IsValid(ctx context.Context, sessionID uuid.UUID) (
 
 func (s *SessionsRepository) GetSession(ctx context.Context, sessionID uuid.UUID) (*sessions.Session, error) {
 	var ses sessions.Session
-	if err := s.DB.QueryRowContext(ctx, "SELECT * FROM sessions s WHERE s.id = $1", sessionID).Scan(&ses.ID, &ses.UID, &ses.Created, &ses.LastSeenAt, &ses.Expires, &ses.Revoked, &ses.MfaComplete, &ses.AgentHash); err != nil {
+	if err := s.DB.QueryRow(ctx, dbqueries.SessionsRepositoryGetSession1, sessionID).Scan(&ses.ID, &ses.UID, &ses.Created, &ses.LastSeenAt, &ses.Expires, &ses.Revoked, &ses.MfaComplete, &ses.AgentHash); err != nil {
 		return nil, err
 	}
 	return &ses, nil
@@ -1439,17 +1346,16 @@ func (s *SessionsRepository) GetSession(ctx context.Context, sessionID uuid.UUID
 
 func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) (*sessions.Sessions, error) {
 	var sess sessions.Sessions
-	rows, err := s.DB.QueryContext(
+	rows, err := s.DB.Query(
 		ctx,
-		"SELECT id FROM sessions s WHERE s.uid = $1 AND s.revoked = false AND s.expires > NOW() ORDER BY s.last_seen_at DESC NULLS LAST, s.created_at DESC",
+		dbqueries.SessionsRepositoryGetSessions1,
 		uid,
 	)
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			logger.Error("Failed to close rows: "+err.Error(), "runtime.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.None)
-			return
-		}
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows pgx.Rows) {
+		rows.Close()
 	}(rows)
 	for rows.Next() {
 		var data *sessions.Session
@@ -1468,38 +1374,38 @@ func (s *SessionsRepository) GetSessions(ctx context.Context, uid uint) (*sessio
 
 func (s *SessionsRepository) GetUID(ctx context.Context, sessionID uuid.UUID) (*uint, error) {
 	var uid uint
-	err := s.DB.QueryRowContext(ctx, "SELECT uid FROM sessions s WHERE s.id = $1", sessionID).Scan(&uid)
+	err := s.DB.QueryRow(ctx, dbqueries.SessionsRepositoryGetUID1, sessionID).Scan(&uid)
 	return &uid, err
 }
 
 func (s *SessionsRepository) SetRevoked(ctx context.Context, sessionID uuid.UUID) error {
-	if _, err := s.DB.ExecContext(ctx, "UPDATE sessions SET revoked = true WHERE id = $1", sessionID); err != nil {
+	if _, err := s.DB.Exec(ctx, dbqueries.SessionsRepositorySetRevoked1, sessionID); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *SessionsRepository) ResetMFAs(ctx context.Context, uid uint) error {
-	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET mfa_complete = false WHERE uid = $1", uid)
+	_, err := s.DB.Exec(ctx, dbqueries.SessionsRepositoryResetMFAs1, uid)
 	return err
 }
 
 func (s *SessionsRepository) SetMFACompleted(ctx context.Context, sessionID uuid.UUID) error {
-	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET mfa_complete = true WHERE id = $1", sessionID)
+	_, err := s.DB.Exec(ctx, dbqueries.SessionsRepositorySetMFACompleted1, sessionID)
 	return err
 }
 
 func (s *SessionsRepository) AddSession(ctx context.Context, sessionID uuid.UUID, agentHash string, expires time.Time, uid uint) error {
-	_, err := s.DB.ExecContext(ctx, "INSERT INTO sessions (id, uid, expires, user_agent_hash) VALUES ($1,$2, $3, $4)", sessionID, uid, expires, agentHash)
+	_, err := s.DB.Exec(ctx, dbqueries.SessionsRepositoryAddSession1, sessionID, uid, expires, agentHash)
 	return err
 }
 
 func (s *SessionsRepository) UpdateLastSeen(ctx context.Context, sessionID uuid.UUID) error {
-	_, err := s.DB.ExecContext(ctx, "UPDATE sessions SET last_seen_at = $1 WHERE id = $2", time.Now(), sessionID)
+	_, err := s.DB.Exec(ctx, dbqueries.SessionsRepositoryUpdateLastSeen1, time.Now(), sessionID)
 	return err
 }
 
-func getAuthor(ctx context.Context, uid uint, db *sql.DB) (*user.User, error) {
+func getAuthor(ctx context.Context, uid uint, db *pgxpool.Pool) (*user.User, error) {
 	usr, err := NewUserRepository(db).GetUserByUID(ctx, uid)
 	if err != nil {
 		return nil, err
@@ -1507,18 +1413,13 @@ func getAuthor(ctx context.Context, uid uint, db *sql.DB) (*user.User, error) {
 	return usr, nil
 }
 
-func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *sql.DB) (user.Avatars, error) {
-	rows, err := db.QueryContext(ctx, `
-		SELECT p.object_key, p.content_type, p.size_bytes, p.created_at
-		FROM project_photos p
-		WHERE p.project_id = $1
-		ORDER BY p.created_at
-	`, projId)
+func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *pgxpool.Pool) (user.Avatars, error) {
+	rows, err := db.Query(ctx, dbqueries.GetProjectPhotos1, projId)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 	avatars := make([]*user.Avatar, 0)
 	for rows.Next() {
@@ -1548,8 +1449,8 @@ func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *sql.DB) (user.A
 	return avatars, nil
 }
 
-func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *sql.DB) (user.Users, error) {
-	rows, err := db.QueryContext(ctx, "SELECT u.* FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC OFFSET $2", id, 0)
+func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (user.Users, error) {
+	rows, err := db.Query(ctx, dbqueries.GetWhoLikedProject1, id, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -1557,11 +1458,11 @@ func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *sql.DB) (user.Use
 	return parseRowsToUsers(ctx, rows, u.GetAvatar, u.IsBanned)
 }
 
-func getProject(ctx context.Context, id uuid.UUID, db *sql.DB) (*projectdomain.Project, error) {
+func getProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (*projectdomain.Project, error) {
 	var project projectdomain.Project
 	var err error
 	var authorID uint
-	if err = db.QueryRowContext(ctx, "SELECT p.id, p.author_uid, (p.info).title, (p.info).description, (p.info).category, ((p.info).location).city, ((p.info).location).latitude, ((p.info).location).longitude, ((p.info).location).address, p.likes_count, p.created_at, p.status FROM projects p WHERE p.id = $1", id).Scan(
+	if err = db.QueryRow(ctx, dbqueries.GetProject1, id).Scan(
 		&project.ID, &authorID, &project.Info.Title, &project.Info.Description, &project.Info.Category, &project.Info.Location.City, &project.Info.Location.Latitude, &project.Info.Location.Longitude, &project.Info.Location.Address, &project.Likes, &project.At, &project.Status); err != nil {
 		return nil, err
 	}
@@ -1586,7 +1487,7 @@ func getProject(ctx context.Context, id uuid.UUID, db *sql.DB) (*projectdomain.P
 const defaultProjectHydrationWorkers = 16
 const defaultProjectHydrationTimeout = 20 * time.Second
 
-func hydrateProjectsByIDs(ctx context.Context, db *sql.DB, ids []uuid.UUID) (projectdomain.Projects, error) {
+func hydrateProjectsByIDs(ctx context.Context, db *pgxpool.Pool, ids []uuid.UUID) (projectdomain.Projects, error) {
 	if len(ids) == 0 {
 		return projectdomain.Projects{}, nil
 	}
@@ -1686,15 +1587,12 @@ func (p *ProjectsRepository) GetTopProjects(ctx context.Context, limit int, city
 }
 
 func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) (projectdomain.Projects, error) {
-	rows, err := p.DB.QueryContext(ctx, "SELECT p.id FROM projects p WHERE p.author_uid = $1", uid)
+	rows, err := p.DB.Query(ctx, dbqueries.ProjectsRepositoryGetProjectsByUID1, uid)
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			logger.Error("failed to close rows: "+err.Error(), "system.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
-		}
+	defer func(rows pgx.Rows) {
+		rows.Close()
 	}(rows)
 	ids := make([]uuid.UUID, 0, 16)
 	for rows.Next() {
@@ -1713,18 +1611,10 @@ func (p *ProjectsRepository) GetProjectsByUID(ctx context.Context, uid int) (pro
 func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdomain.Project) (*uuid.UUID, error) {
 	var projectId uuid.UUID
 	logger.Debug(fmt.Sprintf("latitude: %f, longitude: %f", info.Info.Location.Latitude, info.Info.Location.Longitude), "")
-	if err := p.DB.QueryRowContext(ctx, "INSERT INTO projects (author_uid, info) VALUES ($1, ROW($2, $3, $4::project_categories, ROW($5, $6, $7, $8)::project_location_t)::project_info_t) RETURNING id", info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, strings.ToLower(info.Info.Location.City), info.Info.Location.Latitude, info.Info.Location.Longitude, info.Info.Location.Address).Scan(&projectId); err != nil {
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryCreateProject1, info.Author.UID, info.Info.Title, info.Info.Description, info.Info.Category, strings.ToLower(info.Info.Location.City), info.Info.Location.Latitude, info.Info.Location.Longitude, info.Info.Location.Address).Scan(&projectId); err != nil {
 		return nil, err
 	}
 	if len(info.Info.Photos) > 0 {
-		stmt, err := p.DB.PrepareContext(ctx, `
-			INSERT INTO project_photos (project_id, object_key, content_type, size_bytes, created_at)
-			VALUES ($1, $2, $3, $4, now())
-		`)
-		if err != nil {
-			return nil, err
-		}
-		defer stmt.Close()
 		for _, photo := range info.Info.Photos {
 			if photo == nil {
 				continue
@@ -1733,12 +1623,12 @@ func (p *ProjectsRepository) CreateProject(ctx context.Context, info projectdoma
 			if key == "" {
 				return nil, apperrors.RequiredDataMissing.AddErrDetails("project photo key is empty")
 			}
-			if _, err = stmt.Exec(projectId, key, strings.TrimSpace(photo.ContentType), photo.SizeBytes); err != nil {
+			if _, err := p.DB.Exec(ctx, dbqueries.ProjectsRepositoryCreateProject2, projectId, key, strings.TrimSpace(photo.ContentType), photo.SizeBytes); err != nil {
 				return nil, err
 			}
 		}
 	}
-	if _, err := p.DB.ExecContext(ctx, "INSERT INTO submissions (project_id) VALUES ($1)", projectId); err != nil {
+	if _, err := p.DB.Exec(ctx, dbqueries.ProjectsRepositoryCreateProject3, projectId); err != nil {
 		return nil, err
 	}
 	return &projectId, nil
@@ -1758,23 +1648,19 @@ func (p *ProjectsRepository) AddProjectPhoto(ctx context.Context, projectID uuid
 	if sizeBytes > 0 {
 		size = sql.NullInt64{Int64: int64(sizeBytes), Valid: true}
 	}
-	_, err := p.DB.ExecContext(ctx, `
-		INSERT INTO project_photos (project_id, object_key, content_type, size_bytes, created_at)
-		VALUES ($1, $2, $3, $4, now())
-		ON CONFLICT (object_key) DO NOTHING
-	`, projectID, key, content, size)
+	_, err := p.DB.Exec(ctx, dbqueries.ProjectsRepositoryCreateProject2, projectID, key, content, size)
 	return err
 }
 
 func (p *ProjectsRepository) GetCategories(ctx context.Context) ([]string, error) {
 	var enumName = "project_categories"
 	var result []string
-	rows, err := p.DB.QueryContext(ctx, "SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = $1 ORDER BY e.enumsortorder", enumName)
+	rows, err := p.DB.Query(ctx, dbqueries.ProjectEnumLabels, enumName)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 	for rows.Next() {
 		var label string
@@ -1794,7 +1680,7 @@ func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit 
 	}
 
 	var sb strings.Builder
-	sb.WriteString("SELECT p.id FROM projects p")
+	sb.WriteString(dbqueries.ProjectsSelectIDsBase)
 
 	args := make([]any, 0, len(q.Args)+2)
 	args = append(args, q.Args...)
@@ -1818,11 +1704,11 @@ func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit 
 		sb.WriteString(limPH)
 	}
 
-	rows, err := p.DB.QueryContext(ctx, sb.String(), args...)
+	rows, err := p.DB.Query(ctx, sb.String(), args...)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { rows.Close() }()
 
 	ids := make([]uuid.UUID, 0, 16)
 	for rows.Next() {
@@ -1830,7 +1716,6 @@ func (p *ProjectsRepository) GetProjects(ctx context.Context, offset int, limit 
 		if err = rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		logger.Debug("received id: "+id.String(), "")
 		ids = append(ids, id)
 	}
 
@@ -1846,7 +1731,7 @@ func (p *ProjectsRepository) ToggleLike(ctx context.Context, id uuid.UUID, userI
 		return apperrors.RequiredDataMissing.AddErrDetails("user is empty")
 	}
 	var set bool
-	if err := p.DB.QueryRowContext(ctx, `select toggle_project_like($1::uuid, $2::bigint)`, id, userID).Scan(&set); err != nil {
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryToggleLike1, id, userID).Scan(&set); err != nil {
 		return err
 	}
 	_ = set
@@ -1855,30 +1740,19 @@ func (p *ProjectsRepository) ToggleLike(ctx context.Context, id uuid.UUID, userI
 
 func (p *ProjectsRepository) Messages(ctx context.Context, id uuid.UUID) (projectdomain.ProjectMessages, error) {
 	var exists bool
-	if err := p.DB.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1)", id).Scan(&exists); err != nil {
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryMessages1, id).Scan(&exists); err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, apperrors.RecordNotFound
 	}
 
-	rows, err := p.DB.QueryContext(ctx, `
-		SELECT
-			id,
-			project_id,
-			author_uid,
-			content,
-			reply_to_id,
-			at
-		FROM project_messages
-		WHERE project_id = $1
-		ORDER BY at ASC, id ASC
-	`, id)
+	rows, err := p.DB.Query(ctx, dbqueries.ProjectsRepositoryMessages2, id)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 
 	var messages projectdomain.ProjectMessages
@@ -1920,7 +1794,7 @@ func (p *ProjectsRepository) CreateMessage(ctx context.Context, id uuid.UUID, au
 	}
 
 	var exists bool
-	if err := p.DB.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1)", id).Scan(&exists); err != nil {
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryCreateMessage1, id).Scan(&exists); err != nil {
 		return err
 	}
 	if !exists {
@@ -1933,9 +1807,9 @@ func (p *ProjectsRepository) CreateMessage(ctx context.Context, id uuid.UUID, au
 			return apperrors.InvalidArguments.AddErrDetails("reply message id is incorrect")
 		}
 		var replyExists bool
-		if err := p.DB.QueryRowContext(
+		if err := p.DB.QueryRow(
 			ctx,
-			"SELECT EXISTS(SELECT 1 FROM project_messages WHERE project_id = $1 AND id = $2)",
+			dbqueries.ProjectsRepositoryCreateMessage2,
 			id,
 			*replyToID,
 		).Scan(&replyExists); err != nil {
@@ -1947,9 +1821,9 @@ func (p *ProjectsRepository) CreateMessage(ctx context.Context, id uuid.UUID, au
 		replyTo = *replyToID
 	}
 
-	_, err := p.DB.ExecContext(
+	_, err := p.DB.Exec(
 		ctx,
-		"INSERT INTO project_messages (project_id, author_uid, content, reply_to_id) VALUES ($1, $2, $3, $4)",
+		dbqueries.ProjectsRepositoryCreateMessage3,
 		id,
 		authorUID,
 		trimmed,
@@ -1965,7 +1839,7 @@ func (s *StatisticsRepository) VoteCount(ctx context.Context, since time.Time) (
 		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 	var count uint
-	err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM project_likes WHERE created_at >= $1", since).Scan(&count)
+	err := s.DB.QueryRow(ctx, dbqueries.StatisticsRepositoryVoteCount1, since).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -1978,10 +1852,8 @@ func (s *StatisticsRepository) GetOnlineUsers(ctx context.Context, since time.Ti
 	}
 
 	var count uint32
-	err := s.DB.QueryRowContext(ctx,
-		`SELECT COUNT(DISTINCT e.actor_id) FILTER ( WHERE e.actor_id != 0 )
-		 FROM events e
-		 WHERE e.at >= $1`, since,
+	err := s.DB.QueryRow(ctx,
+		dbqueries.StatisticsRepositoryGetOnlineUsers1, since,
 	).Scan(&count)
 	if err != nil {
 		return 0, err
@@ -1996,11 +1868,7 @@ func (s *StatisticsRepository) GetOfflineUsers(ctx context.Context, since time.T
 	}
 
 	var offline int64
-	err := s.DB.QueryRowContext(ctx, `
-		SELECT
-		  (SELECT COUNT(*) FROM users)::bigint -
-		  (SELECT COUNT(DISTINCT e.actor_id)  FILTER ( WHERE e.actor_id != 0 ) FROM events e WHERE e.at >= $1)::bigint
-	`, since).Scan(&offline)
+	err := s.DB.QueryRow(ctx, dbqueries.StatisticsRepositoryGetOfflineUsers1, since).Scan(&offline)
 	if err != nil {
 		return 0, err
 	}
@@ -2016,7 +1884,7 @@ func (s *StatisticsRepository) NewIdeasCount(ctx context.Context, since time.Tim
 		return 0, apperrors.InvalidArguments.AddErrDetails("since is zero")
 	}
 	var count int
-	row := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects WHERE created_at >= $1", since)
+	row := s.DB.QueryRow(ctx, dbqueries.StatisticsRepositoryNewIdeasCount1, since)
 	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
@@ -2075,7 +1943,7 @@ func (s *StatisticsRepository) SaveStatisticsRecap(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if _, err := s.DB.ExecContext(ctx, "INSERT INTO statistics_recap (at, us_activity, new_ideas, vote_count) VALUES ($1, ROW($2, $3)::users_activity_t, $4, $5)", lastDay, offline, active, newIdeas, voteCount); err != nil {
+	if _, err := s.DB.Exec(ctx, dbqueries.StatisticsRepositorySaveStatisticsRecap1, lastDay, offline, active, newIdeas, voteCount); err != nil {
 		return err
 	}
 	return nil
@@ -2088,24 +1956,12 @@ func (s *StatisticsRepository) StatisticsRecap(ctx context.Context, since time.T
 
 	recap := make(map[time.Time]*statpb.StatisticsRecap)
 
-	rows, err := s.DB.QueryContext(ctx, `
-		SELECT
-			s.id,
-			s.at,
-			(s.us_activity).online,
-			(s.us_activity).offline,
-			s.new_ideas,
-			s.vote_count
-		FROM statistics_recap s
-		WHERE s.at >= $1
-	`, since)
+	rows, err := s.DB.Query(ctx, dbqueries.StatisticsRepositoryStatisticsRecap1, since)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			logger.Error("failed to close rows", "system.db.rows.close", logger.EventActor{Type: logger.System, ID: 0}, logger.Failure)
-		}
+		rows.Close()
 	}()
 
 	for rows.Next() {
@@ -2177,19 +2033,19 @@ func (s *StatisticsRepository) VoteCategories(ctx context.Context, since time.Ti
 	`
 
 	var (
-		rows *sql.Rows
+		rows pgx.Rows
 		err  error
 	)
 
 	if limit > 0 {
-		rows, err = s.DB.QueryContext(ctx, base+` LIMIT $2`, since, limit)
+		rows, err = s.DB.Query(ctx, base+` LIMIT $2`, since, limit)
 	} else {
-		rows, err = s.DB.QueryContext(ctx, base, since)
+		rows, err = s.DB.Query(ctx, base, since)
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { rows.Close() }()
 
 	var records []*statpb.CategoryRecord
 	for rows.Next() {
@@ -2220,13 +2076,7 @@ func (s *StatisticsRepository) VoteCategories(ctx context.Context, since time.Ti
 func (s *StatisticsRepository) IdeasRecap(ctx context.Context) (*statpb.IdeasApprovalResponse, error) {
 	var resp statpb.IdeasApprovalResponse
 
-	err := s.DB.QueryRowContext(ctx, `
-		SELECT
-			COUNT(*) FILTER (WHERE state = 'waiting')  AS waiting,
-			COUNT(*) FILTER (WHERE state = 'approved') AS approved,
-			COUNT(*) FILTER (WHERE state = 'declined') AS declined
-		FROM submissions
-	`).Scan(&resp.Waiting, &resp.Approved, &resp.Declined)
+	err := s.DB.QueryRow(ctx, dbqueries.StatisticsRepositoryIdeasRecap1).Scan(&resp.Waiting, &resp.Approved, &resp.Declined)
 	if err != nil {
 		return nil, err
 	}
@@ -2260,7 +2110,7 @@ func (s *StatisticsRepository) MediaCoverage(ctx context.Context, limit int) ([]
 		ORDER BY bucket;
 	`
 
-	rows, err := s.DB.QueryContext(ctx, q, limit, now)
+	rows, err := s.DB.Query(ctx, q, limit, now)
 	if err != nil {
 		return nil, err
 	}
@@ -2292,11 +2142,7 @@ func (s *StatisticsRepository) MediaCoverage(ctx context.Context, limit int) ([]
 
 func (s *StatisticsRepository) QualityRecap(ctx context.Context) (*statpb.EditorsGradeResponse, error) {
 	var good, bad uint
-	if err := s.DB.QueryRowContext(ctx, `
-		SELECT
-		    COUNT (*) FILTER (WHERE rate = 'good') AS good,
-		    COUNT (*) FILTER (WHERE rate = 'bad') AS bad
-		FROM pictures`).Scan(&good, &bad); err != nil {
+	if err := s.DB.QueryRow(ctx, dbqueries.StatisticsRepositoryQualityRecap1).Scan(&good, &bad); err != nil {
 		return nil, err
 	}
 	var grade statpb.EditorsGradeResponse
@@ -2309,11 +2155,11 @@ func (s *StatisticsRepository) QualityRecap(ctx context.Context) (*statpb.Editor
 
 func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Submission, error) {
 	var data []*submissions.Submission
-	rows, err := s.DB.QueryContext(ctx, "SELECT s.id, s.project_id, s.state, s.reason FROM submissions s")
+	rows, err := s.DB.Query(ctx, dbqueries.SubmissionsRepositoryGetList1)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { rows.Close() }()
 	for rows.Next() {
 		var sub submissions.Submission
 		var reason sql.NullString
@@ -2331,7 +2177,7 @@ func (s *SubmissionsRepository) GetList(ctx context.Context) ([]*submissions.Sub
 func (s *SubmissionsRepository) GetByID(ctx context.Context, id int32) (*submissions.Submission, error) {
 	var data submissions.Submission
 	var reason sql.NullString
-	if err := s.DB.QueryRowContext(ctx, "SELECT s.project_id, s.state, s.reason FROM submissions s WHERE s.id = $1", id).Scan(&data.ProjectID, &data.State, &reason); err != nil {
+	if err := s.DB.QueryRow(ctx, dbqueries.SubmissionsRepositoryGetByID1, id).Scan(&data.ProjectID, &data.State, &reason); err != nil {
 		return nil, err
 	}
 	if reason.Valid {
@@ -2345,7 +2191,7 @@ func (s *SubmissionsRepository) AlreadySetted(ctx context.Context, id int32) (bo
 		return false, apperrors.InvalidArguments.AddErrDetails("invalid id")
 	}
 	var setted bool
-	if err := s.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM submissions WHERE id = $1 AND state <> 'waiting')", id).Scan(&setted); err != nil {
+	if err := s.DB.QueryRow(ctx, dbqueries.SubmissionsRepositoryAlreadySetted1, id).Scan(&setted); err != nil {
 		return false, err
 	}
 	return setted, nil
@@ -2362,17 +2208,7 @@ func (s *SubmissionsRepository) Approve(ctx context.Context, id int32) error {
 	if setted {
 		return apperrors.Conflict.AddErrDetails("idea already moderated")
 	}
-	_, err = s.DB.ExecContext(ctx, `
-		WITH upd AS (
-			UPDATE submissions
-			SET state = 'approved'
-			WHERE id = $1
-			RETURNING project_id
-		)
-		UPDATE projects
-		SET status = 'published'
-		WHERE id = (SELECT project_id FROM upd);
-	`, id)
+	_, err = s.DB.Exec(ctx, dbqueries.SubmissionsRepositoryApprove1, id)
 	return err
 }
 
@@ -2387,7 +2223,7 @@ func (s *SubmissionsRepository) Decline(ctx context.Context, id int32, reason st
 	if setted {
 		return apperrors.Conflict.AddErrDetails("idea already moderated")
 	}
-	if _, err := s.DB.ExecContext(ctx, "UPDATE submissions SET state = 'declined', reason = $1 WHERE id = $2", reason, id); err != nil {
+	if _, err := s.DB.Exec(ctx, dbqueries.SubmissionsRepositoryDecline1, reason, id); err != nil {
 		return err
 	}
 	return nil
@@ -2405,18 +2241,7 @@ func (v *VerificationRepository) Create(ctx context.Context, email string, purpo
 	}
 	now := time.Now()
 	expiresAt := now.Add(ttl)
-	if _, err = v.DB.ExecContext(ctx, `
-		INSERT INTO auth_action_tokens (email, purpose, token_hash, expires_at, ip, user_agent, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (email, purpose) WHERE used_at IS NULL
-		DO UPDATE SET
-			token_hash = EXCLUDED.token_hash,
-			expires_at = EXCLUDED.expires_at,
-			ip = EXCLUDED.ip,
-			user_agent = EXCLUDED.user_agent,
-			created_at = EXCLUDED.created_at,
-			used_at = NULL
-	`, email, purpose.String(), []byte(token), expiresAt, ip, userAgent, now); err != nil {
+	if _, err = v.DB.Exec(ctx, dbqueries.VerificationRepositoryCreate1, email, purpose.String(), []byte(token), expiresAt, ip, userAgent, now); err != nil {
 		return "", err
 	}
 	return token, nil
@@ -2427,14 +2252,14 @@ func (v *VerificationRepository) GetRecord(ctx context.Context, purpose verifica
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
 	var record verification.TokenRecord
-	if err := v.DB.QueryRowContext(ctx, "SELECT id, email, purpose, expires_at, used_at FROM auth_action_tokens WHERE token_hash = $1 AND purpose = $2", []byte(token), purpose.String()).Scan(
+	if err := v.DB.QueryRow(ctx, dbqueries.VerificationRepositoryGetRecord1, []byte(token), purpose.String()).Scan(
 		&record.ID,
 		&record.Email,
 		&record.Purpose,
 		&record.ExpiresAt,
 		&record.UsedAt,
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound
 		}
 		return nil, err
@@ -2446,14 +2271,11 @@ func (v *VerificationRepository) Consume(ctx context.Context, purpose verificati
 	if !purpose.IsValid() || token == "" {
 		return nil, apperrors.InvalidArguments.AddErrDetails("invalid params")
 	}
-	res, err := v.DB.ExecContext(ctx, "UPDATE auth_action_tokens SET used_at = $1 WHERE token_hash = $2 AND purpose = $3 AND used_at IS NULL", time.Now(), []byte(token), purpose.String())
+	res, err := v.DB.Exec(ctx, dbqueries.VerificationRepositoryConsume1, time.Now(), []byte(token), purpose.String())
 	if err != nil {
 		return nil, err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
+	affected := res.RowsAffected()
 	if affected == 0 {
 		return nil, apperrors.RecordNotFound
 	}
@@ -2468,7 +2290,7 @@ func (v *VerificationRepository) BanEmail(ctx context.Context, email string, rea
 	if email == "" || reason == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
-	if _, err := v.DB.ExecContext(ctx, "INSERT INTO banned_emails (email, reason) VALUES ($1, $2)", email, reason); err != nil {
+	if _, err := v.DB.Exec(ctx, dbqueries.VerificationRepositoryBanEmail1, email, reason); err != nil {
 		return err
 	}
 	return nil
@@ -2479,7 +2301,7 @@ func (v *VerificationRepository) IsBanned(ctx context.Context, email string) (bo
 		return false, apperrors.RequiredDataMissing.AddErrDetails("param is empty")
 	}
 	var found bool
-	if err := v.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM banned_emails WHERE email = $1)", email).Scan(&found); err != nil {
+	if err := v.DB.QueryRow(ctx, dbqueries.VerificationRepositoryIsBanned1, email).Scan(&found); err != nil {
 		return false, err
 	}
 	return found, nil
@@ -2490,8 +2312,8 @@ func (v *VerificationRepository) EmailExists(ctx context.Context, email string) 
 		return false, apperrors.RequiredDataMissing.AddErrDetails("param is empty")
 	}
 	var exists bool
-	if err := v.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM users WHERE (email).address = $1)", email).Scan(&exists); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := v.DB.QueryRow(ctx, dbqueries.VerificationRepositoryEmailExists1, email).Scan(&exists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
 		logger.Debug("error: "+err.Error(), "")
@@ -2504,20 +2326,20 @@ var _ maintenance.Repository = (*MaintenanceRepository)(nil)
 
 func (m *MaintenanceRepository) CheckIsActive(ctx context.Context) (bool, error) {
 	var active bool
-	if err := m.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM maintenance m WHERE m.status = 'in progress')").Scan(&active); err != nil {
+	if err := m.DB.QueryRow(ctx, dbqueries.MaintenanceRepositoryCheckIsActive1).Scan(&active); err != nil {
 		return false, err
 	}
 	return active, nil
 }
 
 func (m *MaintenanceRepository) SetActive(ctx context.Context, id uuid.UUID) error {
-	_, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET status = 'in progress', actual_start_at = $1 WHERE id = $2", time.Now(), id)
+	_, err := m.DB.Exec(ctx, dbqueries.MaintenanceRepositorySetActive1, time.Now(), id)
 	return err
 }
 
 func (m *MaintenanceRepository) IsPlanned(ctx context.Context) (bool, error) {
 	var planned bool
-	if err := m.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM maintenance m WHERE m.status = 'scheduled')").Scan(&planned); err != nil {
+	if err := m.DB.QueryRow(ctx, dbqueries.MaintenanceRepositoryIsPlanned1).Scan(&planned); err != nil {
 		return false, err
 	}
 	return planned, nil
@@ -2534,7 +2356,7 @@ func (m *MaintenanceRepository) GetData(ctx context.Context) (*maintenance.Infor
 	var info maintenance.Information
 	var actualEnd sql.NullTime
 	var by uint
-	if err := m.DB.QueryRowContext(ctx, "SELECT m.* FROM maintenance m WHERE m.status = 'in progress'").Scan(&info.ID, &info.Description, &info.Status, &info.Scope, &info.Type, &info.Planned.Start, &info.Planned.End, &info.Actual.Start, &actualEnd, &info.CreatedAt, &by); err != nil {
+	if err := m.DB.QueryRow(ctx, dbqueries.MaintenanceRepositoryGetData1).Scan(&info.ID, &info.Description, &info.Status, &info.Scope, &info.Type, &info.Planned.Start, &info.Planned.End, &info.Actual.Start, &actualEnd, &info.CreatedAt, &by); err != nil {
 		return nil, err
 	}
 	_ = actualEnd
@@ -2562,7 +2384,7 @@ func (m *MaintenanceRepository) Start(ctx context.Context, req maintenance.Creat
 	if req.Scope != nil {
 		scope = *req.Scope
 	}
-	_, err = m.DB.ExecContext(ctx, "INSERT INTO maintenance (description, scope, type, planned_start_at, planned_end_at, called_by) VALUES ($1, $2, $3, $4, $5, $6)", req.Description, scope, typ, req.PlannedStart, req.PlannedEnd, by)
+	_, err = m.DB.Exec(ctx, dbqueries.MaintenanceRepositoryStart1, req.Description, scope, typ, req.PlannedStart, req.PlannedEnd, by)
 	return err
 }
 
@@ -2578,12 +2400,12 @@ func (m *MaintenanceRepository) Edit(ctx context.Context, req maintenance.EditST
 		return apperrors.RequiredDataMissing.AddErrDetails("params is nil")
 	}
 	if req.Description != nil {
-		if _, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET description = $1 WHERE status = 'in progress'", *req.Description); err != nil {
+		if _, err := m.DB.Exec(ctx, dbqueries.MaintenanceRepositoryEdit1, *req.Description); err != nil {
 			return err
 		}
 	}
 	if req.Scope != nil {
-		if _, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET scope = $1 WHERE status = 'in progress'", *req.Scope); err != nil {
+		if _, err := m.DB.Exec(ctx, dbqueries.MaintenanceRepositoryEdit2, *req.Scope); err != nil {
 			return err
 		}
 	}
@@ -2598,7 +2420,7 @@ func (m *MaintenanceRepository) Complete(ctx context.Context) error {
 	if !active {
 		return apperrors.Conflict.AddErrDetails("maintenance is not active")
 	}
-	if _, err := m.DB.ExecContext(ctx, "UPDATE maintenance SET status = 'completed', actual_end_at = $1 WHERE status = 'in progress'", time.Now()); err != nil {
+	if _, err := m.DB.Exec(ctx, dbqueries.MaintenanceRepositoryComplete1, time.Now()); err != nil {
 		return err
 	}
 	return nil
@@ -2607,7 +2429,7 @@ func (m *MaintenanceRepository) Complete(ctx context.Context) error {
 func (m *MaintenanceRepository) GetList(ctx context.Context) (maintenance.Informations, error) {
 	var list maintenance.Informations
 
-	rows, err := m.DB.QueryContext(ctx, "SELECT * FROM maintenance")
+	rows, err := m.DB.Query(ctx, dbqueries.MaintenanceRepositoryGetList1)
 	if err != nil {
 		return nil, err
 	}
@@ -2687,7 +2509,7 @@ func (t *TicketsRepository) Create(ctx context.Context, data tickets.TicketCreat
 	}
 	var id uuid.UUID
 	if data.Authorized {
-		if err := t.DB.QueryRowContext(ctx, "INSERT INTO tickets (name, email, topic, brief, authorized_uid, authorized) VALUES ($1, $2, $3, $4, $5, true) RETURNING id", data.Name, data.Email, topic, brief, *data.UID).Scan(&id); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryCreate1, data.Name, data.Email, topic, brief, *data.UID).Scan(&id); err != nil {
 			return nil, err
 		}
 	} else {
@@ -2695,14 +2517,14 @@ func (t *TicketsRepository) Create(ctx context.Context, data tickets.TicketCreat
 		if err != nil {
 			return nil, err
 		}
-		if err := t.DB.QueryRowContext(ctx, "INSERT INTO tickets (name, email, topic, brief, requestor_token) VALUES ($1, $2, $3, $4, $5) RETURNING id", data.Name, data.Email, topic, brief, token).Scan(&id); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryCreate2, data.Name, data.Email, topic, brief, token).Scan(&id); err != nil {
 			return nil, err
 		}
 		data.Token = &token
 	}
-	if _, err := t.DB.ExecContext(
+	if _, err := t.DB.Exec(
 		ctx,
-		"INSERT INTO ticket_messages (ticket, author_type, content) VALUES ($1, $2, $3)",
+		dbqueries.TicketsRepositoryCreate3,
 		id,
 		tickets.AuthorSystem.String(),
 		defaultTicketSystemMessage,
@@ -2722,11 +2544,11 @@ func (t *TicketsRepository) CreateMessage(ctx context.Context, id uuid.UUID, con
 		if req.Staff {
 			by = "staff"
 		}
-		if _, err := t.DB.ExecContext(ctx, "INSERT INTO ticket_messages (ticket, author_uid, author_name, author_email, author_type, content) VALUES ($1, $2, $3, $4, $5, $6)", id, *info.UID, info.Name, info.Email, by, content); err != nil {
+		if _, err := t.DB.Exec(ctx, dbqueries.TicketsRepositoryCreateMessage1, id, *info.UID, info.Name, info.Email, by, content); err != nil {
 			return err
 		}
 	} else {
-		if _, err := t.DB.ExecContext(ctx, "INSERT INTO ticket_messages (ticket, author_name, author_email, author_type, content) VALUES ($1, $2, $3, $4, $5)", id, info.Name, info.Email, by, content); err != nil {
+		if _, err := t.DB.Exec(ctx, dbqueries.TicketsRepositoryCreateMessage2, id, info.Name, info.Email, by, content); err != nil {
 			return err
 		}
 	}
@@ -2735,7 +2557,7 @@ func (t *TicketsRepository) CreateMessage(ctx context.Context, id uuid.UUID, con
 
 func (t *TicketsRepository) Accepted(ctx context.Context, id uuid.UUID) (bool, error) {
 	var inProgress bool
-	err := t.DB.QueryRowContext(ctx, `SELECT status = 'в обработке' FROM tickets WHERE id = $1`, id).Scan(&inProgress)
+	err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryAccepted1, id).Scan(&inProgress)
 	if err != nil {
 		return false, err
 	}
@@ -2747,9 +2569,9 @@ func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) 
 		return apperrors.RequiredDataMissing.AddErrDetails("params is empty")
 	}
 	status := tickets.InProcessStatus.String()
-	res, err := t.DB.ExecContext(
+	res, err := t.DB.Exec(
 		ctx,
-		"UPDATE tickets SET acceptor = $1, accepted = $2, status = $3 WHERE id = $4 AND status <> $3",
+		dbqueries.TicketsRepositoryAccept1,
 		who,
 		time.Now(),
 		status,
@@ -2758,15 +2580,12 @@ func (t *TicketsRepository) Accept(ctx context.Context, id uuid.UUID, who uint) 
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected > 0 {
 		return nil
 	}
 	var acceptor sql.NullInt64
-	if err := t.DB.QueryRowContext(ctx, "SELECT acceptor FROM tickets WHERE id = $1", id).Scan(&acceptor); err != nil {
+	if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryAccept2, id).Scan(&acceptor); err != nil {
 		return err
 	}
 	if acceptor.Valid && uint(acceptor.Int64) == who {
@@ -2850,7 +2669,7 @@ func (t *TicketsRepository) parseTicket(ctx context.Context, scanner scanner) (*
 }
 
 func (t *TicketsRepository) Info(ctx context.Context, id uuid.UUID) (*tickets.Ticket, error) {
-	info, err := t.parseTicket(ctx, t.DB.QueryRowContext(ctx, "SELECT t.* FROM tickets t WHERE t.id = $1", id))
+	info, err := t.parseTicket(ctx, t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryInfo1, id))
 	if err != nil {
 		return nil, err
 	}
@@ -2859,17 +2678,17 @@ func (t *TicketsRepository) Info(ctx context.Context, id uuid.UUID) (*tickets.Ti
 
 func (t *TicketsRepository) List(ctx context.Context, own bool, uid *uint, token *string) (tickets.Tickets, error) {
 	var (
-		query = "SELECT t.* FROM tickets t ORDER BY t.created DESC"
+		query = dbqueries.TicketsRepositoryList1
 		args  []any
 	)
 	if own {
 		switch {
 		case uid != nil:
-			query = "SELECT t.* FROM tickets t WHERE t.authorized = $1 AND t.authorized_uid = $2 ORDER BY t.created DESC"
+			query = dbqueries.TicketsRepositoryList2
 			args = []any{true, *uid}
 
 		case token != nil:
-			query = "SELECT t.* FROM tickets t WHERE t.authorized = $1 AND t.requestor_token = $2 ORDER BY t.created DESC"
+			query = dbqueries.TicketsRepositoryList3
 			args = []any{false, *token}
 
 		default:
@@ -2877,12 +2696,12 @@ func (t *TicketsRepository) List(ctx context.Context, own bool, uid *uint, token
 		}
 	}
 	var ts tickets.Tickets
-	rows, err := t.DB.QueryContext(ctx, query, args...)
+	rows, err := t.DB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 	for rows.Next() {
 		info, err := t.parseTicket(ctx, rows)
@@ -2993,12 +2812,12 @@ func (t *TicketsRepository) messages(ctx context.Context, id uuid.UUID, includeD
 		query += " AND m.deleted_at IS NULL"
 	}
 	query += " ORDER BY m.at ASC, m.id ASC"
-	rows, err := t.DB.QueryContext(ctx, query, id)
+	rows, err := t.DB.Query(ctx, query, id)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		rows.Close()
 	}()
 	for rows.Next() {
 		message, err := t.parseMessage(rows)
@@ -3033,9 +2852,9 @@ func (t *TicketsRepository) MessageByID(ctx context.Context, id uuid.UUID, messa
 	if !includeDeleted {
 		query += " AND m.deleted_at IS NULL"
 	}
-	msg, err := t.parseMessage(t.DB.QueryRowContext(ctx, query, id, messageID))
+	msg, err := t.parseMessage(t.DB.QueryRow(ctx, query, id, messageID))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound
 		}
 		return nil, err
@@ -3099,9 +2918,9 @@ func (t *TicketsRepository) EditMessage(ctx context.Context, id uuid.UUID, messa
 	if !owner {
 		return apperrors.AccessDenied
 	}
-	res, err := t.DB.ExecContext(
+	res, err := t.DB.Exec(
 		ctx,
-		"UPDATE ticket_messages SET content = $1, edited_at = NOW() WHERE ticket = $2 AND id = $3 AND deleted_at IS NULL",
+		dbqueries.TicketsRepositoryEditMessage1,
 		trimmed,
 		id,
 		messageID,
@@ -3109,10 +2928,7 @@ func (t *TicketsRepository) EditMessage(ctx context.Context, id uuid.UUID, messa
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected > 0 {
 		return nil
 	}
@@ -3127,9 +2943,9 @@ func (t *TicketsRepository) DeleteMessage(ctx context.Context, id uuid.UUID, mes
 	if deleterUID != nil {
 		deletedBy = int64(*deleterUID)
 	}
-	res, err := t.DB.ExecContext(
+	res, err := t.DB.Exec(
 		ctx,
-		"UPDATE ticket_messages SET deleted_at = NOW(), deleted_by = $1 WHERE ticket = $2 AND id = $3 AND deleted_at IS NULL",
+		dbqueries.TicketsRepositoryDeleteMessage1,
 		deletedBy,
 		id,
 		messageID,
@@ -3137,10 +2953,7 @@ func (t *TicketsRepository) DeleteMessage(ctx context.Context, id uuid.UUID, mes
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 	if affected > 0 {
 		return nil
 	}
@@ -3155,30 +2968,13 @@ func (t *TicketsRepository) DeleteMessage(ctx context.Context, id uuid.UUID, mes
 }
 
 func (t *TicketsRepository) GetLatestMessage(ctx context.Context, id uuid.UUID) (*tickets.TicketMessage, error) {
-	msg, err := t.parseMessage(t.DB.QueryRowContext(
+	msg, err := t.parseMessage(t.DB.QueryRow(
 		ctx,
-		`
-		SELECT
-			m.id,
-			m.ticket,
-			m.author_type,
-			m.author_uid,
-			m.author_name,
-			m.author_email,
-			m.content,
-			m.at,
-			m.edited_at,
-			m.deleted_at,
-			m.deleted_by
-		FROM ticket_messages m
-		WHERE m.ticket = $1
-		ORDER BY m.at DESC, m.id DESC
-		LIMIT 1
-		`,
+		dbqueries.TicketsRepositoryGetLatestMessage1,
 		id,
 	))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -3189,12 +2985,12 @@ func (t *TicketsRepository) GetLatestMessage(ctx context.Context, id uuid.UUID) 
 func (t *TicketsRepository) IsReqValid(ctx context.Context, id uuid.UUID, token tickets.TicketDataReq) (bool, error) {
 	var exists bool
 	if token.Token != nil {
-		if err := t.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM tickets WHERE requestor_token = $1 AND id = $2)", *token.Token, id).Scan(&exists); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryIsReqValid1, *token.Token, id).Scan(&exists); err != nil {
 			return false, err
 		}
 	}
 	if token.UID != nil {
-		if err := t.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM tickets WHERE authorized_uid = $1 AND id = $2)", *token.UID, id).Scan(&exists); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryIsReqValid2, *token.UID, id).Scan(&exists); err != nil {
 			return false, err
 		}
 	}
@@ -3208,7 +3004,7 @@ func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.
 	if by != tickets.ClosedByUser && reason == "" {
 		return apperrors.RequiredDataMissing.AddErrDetails("reason not provided")
 	}
-	if _, err := t.DB.ExecContext(ctx, "UPDATE tickets SET closed = NOW(), closed_by = $1, close_reason = $2, status = $3 WHERE id = $4", by.String(), reason, "закрыт", id); err != nil {
+	if _, err := t.DB.Exec(ctx, dbqueries.TicketsRepositoryClose1, by.String(), reason, "закрыт", id); err != nil {
 		return err
 	}
 	return nil
@@ -3216,7 +3012,7 @@ func (t *TicketsRepository) Close(ctx context.Context, id uuid.UUID, by tickets.
 
 func (t *TicketsRepository) IsClosed(ctx context.Context, id uuid.UUID) (bool, error) {
 	var closed bool
-	if err := t.DB.QueryRowContext(ctx, "SELECT status = 'закрыт' FROM tickets WHERE id = $1", id).Scan(&closed); err != nil {
+	if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryIsClosed1, id).Scan(&closed); err != nil {
 		return false, err
 	}
 	return closed, nil
@@ -3249,12 +3045,12 @@ func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.
 	}
 	var data tickets.TicketUserData
 	if req.Token != nil {
-		if err := t.DB.QueryRowContext(ctx, "SELECT name, email FROM tickets WHERE requestor_token = $1", *req.Token).Scan(&data.Name, &data.Email); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryUser1, *req.Token).Scan(&data.Name, &data.Email); err != nil {
 			return nil, err
 		}
 	}
 	if req.UID != nil {
-		if err := t.DB.QueryRowContext(ctx, "SELECT name, email FROM tickets WHERE authorized_uid = $1", *req.UID).Scan(&data.Name, &data.Email); err != nil {
+		if err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryUser2, *req.UID).Scan(&data.Name, &data.Email); err != nil {
 			return nil, err
 		}
 		data.Authorized = true
@@ -3265,9 +3061,9 @@ func (t *TicketsRepository) User(ctx context.Context, id uuid.UUID, req tickets.
 
 func (t *TicketsRepository) LatestAt(ctx context.Context, id uuid.UUID) (*time.Time, error) {
 	var at time.Time
-	err := t.DB.QueryRowContext(ctx, "SELECT at FROM ticket_messages WHERE ticket = $1 ORDER BY at DESC LIMIT 1", id).Scan(&at)
+	err := t.DB.QueryRow(ctx, dbqueries.TicketsRepositoryLatestAt1, id).Scan(&at)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		logger.Debug("error: "+err.Error(), "")
@@ -3280,7 +3076,7 @@ var _ rank.Repository = (*RanksRepository)(nil)
 
 func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
 	var list []*rank.Rank
-	rows, err := r.DB.QueryContext(ctx, "SELECT r.name, r.color, r.description, r.weight, r.permissions, r.added_at FROM ranks r ORDER BY r.added_at DESC")
+	rows, err := r.DB.Query(ctx, dbqueries.RanksRepositoryList1)
 	if err != nil {
 		return nil, err
 	}
@@ -3298,7 +3094,7 @@ func (r *RanksRepository) List(ctx context.Context) ([]*rank.Rank, error) {
 
 func (r *RanksRepository) UsersWithRank(ctx context.Context, name string) ([]*uint, error) {
 	var list []*uint
-	rows, err := r.DB.QueryContext(ctx, "SELECT u.uid FROM users u WHERE (u.rank).name = $1", name)
+	rows, err := r.DB.Query(ctx, dbqueries.RanksRepositoryUsersWithRank1, name)
 	if err != nil {
 		return nil, err
 	}
@@ -3315,8 +3111,8 @@ func (r *RanksRepository) UsersWithRank(ctx context.Context, name string) ([]*ui
 
 func (r *RanksRepository) Perms(ctx context.Context, rank string) (*permissions.Permissions, error) {
 	var raw []byte
-	if err := r.DB.QueryRowContext(ctx,
-		`SELECT to_jsonb(r.permissions) FROM ranks r WHERE r.name = $1`, rank,
+	if err := r.DB.QueryRow(ctx,
+		dbqueries.RanksRepositoryPerms1, rank,
 	).Scan(&raw); err != nil {
 		return nil, err
 	}
@@ -3329,18 +3125,16 @@ func (r *RanksRepository) Perms(ctx context.Context, rank string) (*permissions.
 }
 
 func (r *RanksRepository) ChangePerms(ctx context.Context, rank string, perm permissions.Permission, state bool) error {
-	res, err := r.DB.ExecContext(ctx,
-		`UPDATE ranks r
-		 SET permissions = perm_set(r.permissions, $1, $2)
-		 WHERE r.name = $3`,
+	res, err := r.DB.Exec(ctx,
+		dbqueries.RanksRepositoryChangePerms1,
 		perm.String(), state, rank,
 	)
 	if err != nil {
 		return err
 	}
 
-	if n, _ := res.RowsAffected(); n == 0 {
-		return sql.ErrNoRows
+	if n := res.RowsAffected(); n == 0 {
+		return pgx.ErrNoRows
 	}
 
 	return nil
@@ -3361,16 +3155,13 @@ func (r *RanksRepository) Create(ctx context.Context, name string, color int, de
 		if err != nil {
 			return err
 		}
-		_, err = r.DB.ExecContext(ctx, `
-			INSERT INTO ranks (name, color, description, permissions)
-			VALUES ($1, $2, $3, jsonb_populate_record(null::permissions_t, $4::jsonb))
-		`, name, color, description, bytes)
+		_, err = r.DB.Exec(ctx, dbqueries.RanksRepositoryCreate1, name, color, description, bytes)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-	_, err := r.DB.ExecContext(ctx, "INSERT INTO ranks (name, color, description) VALUES ($1, $2, $3)", name, color, description)
+	_, err := r.DB.Exec(ctx, dbqueries.RanksRepositoryCreate2, name, color, description)
 	if err != nil {
 		return err
 	}
@@ -3382,8 +3173,8 @@ func (r *RanksRepository) IsExists(ctx context.Context, rank string) (bool, erro
 		return false, apperrors.InvalidArguments.AddErrDetails("param is incorrect")
 	}
 	var exists bool
-	if err := r.DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM ranks WHERE name = $1)", rank).Scan(&exists); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := r.DB.QueryRow(ctx, dbqueries.RanksRepositoryIsExists1, rank).Scan(&exists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
 		return false, err
@@ -3487,8 +3278,8 @@ func (r *RanksRepository) Edit(ctx context.Context, rank string, target string, 
 		return apperrors.InvalidArguments.AddErrDetails("invalid target config")
 	}
 
-	query = "UPDATE ranks SET " + info.col + " = $1 WHERE name = $2"
-	_, err = r.DB.ExecContext(ctx, query, val, rank)
+	query = dbqueries.UpdateRankByColumnPrefix + info.col + " = $1 WHERE name = $2"
+	_, err = r.DB.Exec(ctx, query, val, rank)
 	return err
 }
 
@@ -3497,7 +3288,7 @@ func (r *RanksRepository) Get(ctx context.Context, name string) (*rank.Rank, err
 		return nil, apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
 	var ra rank.Rank
-	if err := r.DB.QueryRowContext(ctx, "SELECT color, description, added_at FROM ranks WHERE name = $1", name).Scan(&ra.Color, &ra.Description, &ra.AddedAt); err != nil {
+	if err := r.DB.QueryRow(ctx, dbqueries.RanksRepositoryGet1, name).Scan(&ra.Color, &ra.Description, &ra.AddedAt); err != nil {
 		return nil, err
 	}
 	ra.Name = name
@@ -3508,7 +3299,7 @@ func (r *RanksRepository) Delete(ctx context.Context, rank string) error {
 	if rank == "" {
 		return apperrors.InvalidArguments.AddErrDetails("params is incorrect")
 	}
-	if _, err := r.DB.ExecContext(ctx, "DELETE FROM ranks WHERE name = $1", rank); err != nil {
+	if _, err := r.DB.Exec(ctx, dbqueries.RanksRepositoryDelete1, rank); err != nil {
 		return err
 	}
 	return nil
@@ -3520,9 +3311,9 @@ func (r *RanksRepository) CanEdit(ctx context.Context, current string, target st
 	}
 
 	var can bool
-	err := r.DB.QueryRowContext(ctx, "SELECT COALESCE(r1.weight, 0) > COALESCE(r2.weight, 0) AS can_edit FROM (SELECT weight FROM ranks WHERE name = $1) r1 CROSS JOIN (SELECT weight FROM ranks WHERE name = $2) r2", current, target).Scan(&can)
+	err := r.DB.QueryRow(ctx, dbqueries.RanksRepositoryCanEdit1, current, target).Scan(&can)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, apperrors.RecordNotFound
 		}
 		return false, err
@@ -3533,7 +3324,7 @@ func (r *RanksRepository) CanEdit(ctx context.Context, current string, target st
 
 func (r *RanksRepository) CreateActivations(ctx context.Context, list []rank.ActivationData) error {
 	for _, l := range list {
-		if _, err := r.DB.ExecContext(ctx, "INSERT INTO rank_activations (code, rank) VALUES ($1, $2)", l.Code, l.Rank); err != nil {
+		if _, err := r.DB.Exec(ctx, dbqueries.RanksRepositoryCreateActivations1, l.Code, l.Rank); err != nil {
 			return err
 		}
 	}
@@ -3541,7 +3332,7 @@ func (r *RanksRepository) CreateActivations(ctx context.Context, list []rank.Act
 }
 
 func (n *NotificationsRepository) GetAll(ctx context.Context) (notifications.Notifications, error) {
-	rows, err := n.DB.QueryContext(ctx, "SELECT id, body, createdAt, scope, targetUserID, targetSegment, expiresAt FROM notifications ORDER BY createdAt DESC")
+	rows, err := n.DB.Query(ctx, dbqueries.NotificationsRepositoryGetAll1)
 	if err != nil {
 		return nil, err
 	}
@@ -3587,30 +3378,7 @@ func (n *NotificationsRepository) ForUser(ctx context.Context, id uint, rank str
 		return nil, apperrors.InvalidArguments
 	}
 
-	filter := "AND nr.readAt IS NULL"
-	if shown {
-		filter = ""
-	}
-
-	rows, err := n.DB.QueryContext(ctx,
-		fmt.Sprintf(
-			`SELECT n.id, n.body, n.createdAt, n.scope, n.expiresAt, nr.readAt
-			 FROM notifications n
-			 LEFT JOIN notification_receipts nr
-			   ON nr.notify_id = n.id AND nr.userID = $1
-			 WHERE
-			   (n.expiresAt IS NULL OR n.expiresAt > now())
-			   AND (
-			     n.scope = 'broadcast'
-			     OR (n.scope = 'user' AND n.targetUserID = $1)
-			     OR (n.scope = 'segment' AND n.targetSegment = $2)
-			   )
-			   %s
-			 ORDER BY n.createdAt DESC`,
-			filter,
-		),
-		id, rank,
-	)
+	rows, err := n.DB.Query(ctx, dbqueries.NotificationsRepositoryForUser1, id, rank, shown)
 	if err != nil {
 		return nil, err
 	}
@@ -3685,9 +3453,9 @@ func (n *NotificationsRepository) Create(ctx context.Context, scope notifypb.Sco
 
 func (n *NotificationsRepository) insertNotification(ctx context.Context, body, scope string, targetUserID sql.NullInt64, targetSegment sql.NullString, expires *time.Time) error {
 	var id uuid.UUID
-	if err := n.DB.QueryRowContext(
+	if err := n.DB.QueryRow(
 		ctx,
-		"INSERT INTO notifications (body, scope, targetUserID, targetSegment, expiresAt) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		dbqueries.NotificationsRepositoryInsertNotification1,
 		body, scope, targetUserID, targetSegment, expires,
 	).Scan(&id); err != nil {
 		return err
@@ -3700,11 +3468,8 @@ func (n *NotificationsRepository) Mark(ctx context.Context, id uuid.UUID, uid ui
 		return apperrors.InvalidArguments
 	}
 
-	_, err := n.DB.ExecContext(ctx,
-		`INSERT INTO notification_receipts (notify_id, userID, readAt)
-		 VALUES ($1, $2, now())
-		 ON CONFLICT (notify_id, userID)
-		 DO UPDATE SET readAt = EXCLUDED.readAt`,
+	_, err := n.DB.Exec(ctx,
+		dbqueries.NotificationsRepositoryMark1,
 		id, uid,
 	)
 	return err

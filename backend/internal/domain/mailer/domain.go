@@ -35,7 +35,7 @@ func (l lang) SetCustom(data map[string]string) lang {
 	for old, to := range data {
 		old = strings.ReplaceAll(old, "{", "")
 		old = "{{" + old + "}}"
-		l.Replace(old, to)
+		l = l.Replace(old, to)
 	}
 	return l
 }

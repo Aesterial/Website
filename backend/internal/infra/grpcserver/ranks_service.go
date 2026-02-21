@@ -12,8 +12,8 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
-	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"strings"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -161,7 +161,7 @@ func (s *RanksService) Delete(ctx context.Context, req *rankpb.NameRequest) (*ty
 		return nil, err
 	}
 	if err := s.ranks.Delete(ctx, name); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
 		}
 		return nil, apperrors.Wrap(err)
@@ -191,7 +191,7 @@ func (s *RanksService) Get(ctx context.Context, req *rankpb.NameRequest) (*rankp
 	}
 	rank, err := s.ranks.Get(ctx, name)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
 		}
 		return nil, apperrors.Wrap(err)
@@ -292,7 +292,7 @@ func (s *RanksService) Perms(ctx context.Context, req *rankpb.NameRequest) (*per
 	}
 	perms, err := s.ranks.Perms(ctx, name)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
 		}
 		return nil, apperrors.Wrap(err)
@@ -328,7 +328,7 @@ func (s *RanksService) PermsPatch(ctx context.Context, req *rankpb.PermsPatchReq
 		return nil, apperrors.RequiredDataMissing.AddErrDetails("permission is empty")
 	}
 	if err := s.ranks.ChangePerms(ctx, name, permsdomain.Permission(perm), req.GetState()); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("rank not found")
 		}
 		return nil, apperrors.Wrap(err)

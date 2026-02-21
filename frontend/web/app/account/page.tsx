@@ -144,9 +144,7 @@ export default function AccountPage() {
   >(null);
   const isAvatarSaving = avatarAction !== null;
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const sessionRemovalTimersRef = useRef<
-    Record<string, ReturnType<typeof setTimeout>>
-  >({});
+  const sessionRemovalTimersRef = useRef<Record<string, number>>({});
   const roleGlowStyle = getRankGlowStyle(user?.rank?.name);
   const languageOptions = [
     { code: "RU" as const, label: "RU" },

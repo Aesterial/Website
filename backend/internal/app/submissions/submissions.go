@@ -10,8 +10,8 @@ import (
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"Aesterial/backend/internal/shared/safe"
 	"context"
-	"database/sql"
 	stderrors "errors"
+	"github.com/jackc/pgx/v5"
 	"strings"
 	"sync"
 	"time"
@@ -209,7 +209,7 @@ func shouldSkipHydrationError(err error) bool {
 	if err == nil {
 		return false
 	}
-	if stderrors.Is(err, sql.ErrNoRows) {
+	if stderrors.Is(err, pgx.ErrNoRows) {
 		return true
 	}
 	if status.Code(err) == codes.NotFound {

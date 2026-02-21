@@ -11,7 +11,6 @@ import (
 	"Aesterial/backend/internal/shared/types"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"net"
@@ -19,6 +18,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -81,7 +82,7 @@ func (a *Authenticator) RequireUser(ctx context.Context, nocheck ...bool) (*user
 		return nil, apperrors.InvalidArguments
 	}
 	banned, _, err := a.User.IsBanned(ctx, *uid)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		logger.Debug("error: "+err.Error(), "")
 		return nil, apperrors.InvalidArguments
 	}

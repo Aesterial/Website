@@ -13,9 +13,9 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"strconv"
 	"strings"
 	"time"
@@ -326,7 +326,7 @@ func (s *UserService) BanInfo(ctx context.Context, _ *emptypb.Empty) (*userpb.Ba
 	}
 	info, err := s.info.BanInfo(ctx, requestor.UID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
 		}
 		return nil, apperrors.Wrap(err)
@@ -354,7 +354,7 @@ func (s *UserService) BanInfoOther(ctx context.Context, req *userpb.OtherUserReq
 	}
 	info, err := s.info.BanInfo(ctx, uint(req.UserID))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperrors.RecordNotFound.AddErrDetails("user is not banned")
 		}
 		return nil, apperrors.Wrap(err)
