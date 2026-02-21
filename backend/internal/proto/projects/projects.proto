@@ -46,4 +46,22 @@ service ProjectService {
   rpc ToggleLike(LikeRequest) returns (types.WithTracing) {
     option (google.api.http) = {post: "/api/projects/like/{id}"};
   }
+  rpc Messages(RequestWithID) returns (ProjectMessagesResponse) {
+    option (google.api.http) = {get: "/api/projects/{id}/discussion/list"};
+  }
+  rpc CreateMessage(CreateMessageRequest) returns (types.WithTracing) {
+    option (google.api.http) = {
+      post: "/api/projects/{id}/discussion/create"
+      body: "*"
+    };
+  }
+  rpc UpdateMessage(UpdateMessageRequest) returns (types.WithTracing) {
+    option (google.api.http) = {
+      patch: "/api/projects/{id}/discussion/{m_id}/update"
+      body: "*"
+    };
+  }
+  rpc DeleteMessage(DeleteMessageRequest) returns (types.WithTracing) {
+    option (google.api.http) = {delete: "/api/projects/{id}/discussion/{m_id}/delete"};
+  }
 }

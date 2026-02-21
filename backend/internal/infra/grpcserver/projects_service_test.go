@@ -16,6 +16,9 @@ import (
 
 type projectsRepoStub struct {
 	categories []string
+	authorUID  uint
+	edited     bool
+	deleted    bool
 }
 
 func (p *projectsRepoStub) GetProject(context.Context, uuid.UUID) (*projects.Project, error) {
@@ -40,6 +43,23 @@ func (p *projectsRepoStub) Messages(context.Context, uuid.UUID) (projects.Projec
 
 func (p *projectsRepoStub) CreateMessage(context.Context, uuid.UUID, uint, string, *int64) error {
 	return nil
+}
+
+func (p *projectsRepoStub) EditMessage(context.Context, uuid.UUID, int64, string) error {
+	p.edited = true
+	return nil
+}
+
+func (p *projectsRepoStub) DeleteMessage(context.Context, uuid.UUID, int64) error {
+	p.deleted = true
+	return nil
+}
+
+func (p *projectsRepoStub) GetMessageAuthorUID(context.Context, int64) (uint, error) {
+	if p.authorUID != 0 {
+		return p.authorUID, nil
+	}
+	return 10, nil
 }
 
 func (p *projectsRepoStub) GetCategories(context.Context) ([]string, error) {
@@ -80,5 +100,42 @@ func TestProjectServiceCategoriesSuccess(t *testing.T) {
 	}
 	if resp == nil || len(resp.Categories) != 1 {
 		t.Fatalf("unexpected response: %+v", resp)
+	}
+}
+
+func TestProjectServiceUpdateMessageSuccess(t *testing.T) {
+	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
+	repo := &projectsRepoStub{authorUID: 10}
+	projectsSvc := projectsapp.New(repo, nil)
+	svc := grpcserver.NewProjectService(projectsSvc, sessionsSvc, userSvc, nil)
+
+	_, err := svc.UpdateMessage(ctx, &projpb.UpdateMessageRequest{
+		Id:      uuid.NewString(),
+		MId:     1,
+		Content: "updated",
+	})
+	if err != nil {
+		t.Fatalf("UpdateMessage() error: %v", err)
+	}
+	if !repo.edited {
+		t.Fatal("expected EditMessage to be called")
+	}
+}
+
+func TestProjectServiceDeleteMessageSuccess(t *testing.T) {
+	ctx, sessionsSvc, userSvc, _, _ := newAuthDeps(t, 10)
+	repo := &projectsRepoStub{authorUID: 10}
+	projectsSvc := projectsapp.New(repo, nil)
+	svc := grpcserver.NewProjectService(projectsSvc, sessionsSvc, userSvc, nil)
+
+	_, err := svc.DeleteMessage(ctx, &projpb.DeleteMessageRequest{
+		Id:  uuid.NewString(),
+		MId: 1,
+	})
+	if err != nil {
+		t.Fatalf("DeleteMessage() error: %v", err)
+	}
+	if !repo.deleted {
+		t.Fatal("expected DeleteMessage to be called")
 	}
 }

@@ -141,17 +141,6 @@ type Project struct {
 	At     time.Time
 }
 
-type ProjectMessage struct {
-	ID        int64
-	ProjectID uuid.UUID
-	AuthorUID uint
-	Content   string
-	ReplyToID *int64
-	At        time.Time
-}
-
-type ProjectMessages []*ProjectMessage
-
 func (p *Project) ToProto() *projpb.Project {
 	var proj projpb.Project
 	proj.Id = p.ID.String()
@@ -174,6 +163,50 @@ func (p Projects) ToProto() []*projpb.Project {
 		projects = append(projects, project.ToProto())
 	}
 	return projects
+}
+
+type ProjectMessage struct {
+	ID        int64
+	ProjectID uuid.UUID
+	Author    *user.User
+	Content   string
+	ReplyToID *int64
+	At        time.Time
+	Updated   *time.Time
+	Deleted   *time.Time
+}
+
+func (p ProjectMessage) Proto() *projpb.ProjectMessage {
+	return &projpb.ProjectMessage{
+		Id:        p.ID,
+		ProjectId: p.ProjectID.String(),
+		Author:    p.Author.ToPublic(),
+		Content:   p.Content,
+		Reply:     p.ReplyToID,
+		At:        timestamppb.New(p.At),
+		Updated: func() *timestamppb.Timestamp {
+			if p.Updated != nil {
+				return timestamppb.New(*p.Updated)
+			}
+			return nil
+		}(),
+		Deleted: func() *timestamppb.Timestamp {
+			if p.Deleted != nil {
+				return timestamppb.New(*p.Deleted)
+			}
+			return nil
+		}(),
+	}
+}
+
+type ProjectMessages []*ProjectMessage
+
+func (p ProjectMessages) Proto() []*projpb.ProjectMessage {
+	var list []*projpb.ProjectMessage
+	for _, element := range p {
+		list = append(list, element.Proto())
+	}
+	return list
 }
 
 type ProjectOption func(*ProjectQuery)

@@ -1721,6 +1721,14 @@ func projectHydrationSettings(db *pgxpool.Pool) (int, time.Duration) {
 	return workers, timeout
 }
 
+func (p *ProjectsRepository) IsExists(ctx context.Context, id uuid.UUID) (bool, error) {
+	var exists bool
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryIsExists1, id).Scan(&exists); err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
 func (p *ProjectsRepository) GetProject(ctx context.Context, id uuid.UUID) (*projectdomain.Project, error) {
 	return getProject(ctx, id, p.DB)
 }
@@ -1905,15 +1913,16 @@ func (p *ProjectsRepository) ToggleLike(ctx context.Context, id uuid.UUID, userI
 }
 
 func (p *ProjectsRepository) Messages(ctx context.Context, id uuid.UUID) (projectdomain.ProjectMessages, error) {
-	var exists bool
-	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryMessages1, id).Scan(&exists); err != nil {
+	exists, err := p.IsExists(ctx, id)
+	if err != nil {
 		return nil, err
 	}
+
 	if !exists {
 		return nil, apperrors.RecordNotFound
 	}
 
-	rows, err := p.DB.Query(ctx, dbqueries.ProjectsRepositoryMessages2, id)
+	rows, err := p.DB.Query(ctx, dbqueries.ProjectsRepositoryMessages1, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1924,8 +1933,9 @@ func (p *ProjectsRepository) Messages(ctx context.Context, id uuid.UUID) (projec
 	var messages projectdomain.ProjectMessages
 	for rows.Next() {
 		var message projectdomain.ProjectMessage
-		var authorUID uint64
+		var authorUID uint
 		var replyToID sql.NullInt64
+		var deletedAt, updatedAt sql.NullTime
 		if err := rows.Scan(
 			&message.ID,
 			&message.ProjectID,
@@ -1933,13 +1943,27 @@ func (p *ProjectsRepository) Messages(ctx context.Context, id uuid.UUID) (projec
 			&message.Content,
 			&replyToID,
 			&message.At,
+			&updatedAt,
+			&deletedAt,
 		); err != nil {
 			return nil, err
 		}
-		message.AuthorUID = uint(authorUID)
+		message.Author, err = getAuthor(ctx, authorUID, p.DB)
+		if err != nil {
+			return nil, err
+		}
 		if replyToID.Valid {
 			id := replyToID.Int64
 			message.ReplyToID = &id
+		}
+		if updatedAt.Valid {
+			at := updatedAt.Time
+			message.Updated = &at
+		}
+		if deletedAt.Valid {
+			at := deletedAt.Time
+			message.Deleted = &at
+			message.Content = "deleted"
 		}
 		messages = append(messages, &message)
 	}
@@ -1948,6 +1972,20 @@ func (p *ProjectsRepository) Messages(ctx context.Context, id uuid.UUID) (projec
 	}
 
 	return messages, nil
+}
+
+func (p *ProjectsRepository) isMessageExists(ctx context.Context, id uuid.UUID, replyID int64) (bool, error) {
+	if replyID == 0 {
+		return false, apperrors.InvalidArguments
+	}
+	var exists bool
+	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryIsMessageExists1, replyID, id).Scan(&exists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return exists, nil
 }
 
 func (p *ProjectsRepository) CreateMessage(ctx context.Context, id uuid.UUID, authorUID uint, content string, replyToID *int64) error {
@@ -1959,43 +1997,104 @@ func (p *ProjectsRepository) CreateMessage(ctx context.Context, id uuid.UUID, au
 		return apperrors.RequiredDataMissing.AddErrDetails("content is empty")
 	}
 
-	var exists bool
-	if err := p.DB.QueryRow(ctx, dbqueries.ProjectsRepositoryCreateMessage1, id).Scan(&exists); err != nil {
+	exists, err := p.IsExists(ctx, id)
+	if err != nil {
 		return err
 	}
 	if !exists {
 		return apperrors.RecordNotFound
 	}
 
-	var replyTo any
+	var replyTo sql.NullInt64
 	if replyToID != nil {
 		if *replyToID <= 0 {
 			return apperrors.InvalidArguments.AddErrDetails("reply message id is incorrect")
 		}
-		var replyExists bool
-		if err := p.DB.QueryRow(
-			ctx,
-			dbqueries.ProjectsRepositoryCreateMessage2,
-			id,
-			*replyToID,
-		).Scan(&replyExists); err != nil {
+		exists, err = p.isMessageExists(ctx, id, *replyToID)
+		if err != nil {
 			return err
 		}
-		if !replyExists {
-			return apperrors.RecordNotFound.AddErrDetails("reply message not found")
+		if !exists {
+			return apperrors.RecordNotFound
 		}
-		replyTo = *replyToID
+		replyTo = sql.NullInt64{Int64: *replyToID, Valid: true}
 	}
 
-	_, err := p.DB.Exec(
+	_, err = p.DB.Exec(
 		ctx,
-		dbqueries.ProjectsRepositoryCreateMessage3,
+		dbqueries.ProjectsRepositoryCreateMessage1,
 		id,
 		authorUID,
 		trimmed,
 		replyTo,
 	)
 	return err
+}
+
+func (p *ProjectsRepository) EditMessage(ctx context.Context, id uuid.UUID, m_id int64, content string) error {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return apperrors.InvalidArguments
+	}
+	if m_id == 0 {
+		return apperrors.InvalidArguments
+	}
+	exists, err := p.IsExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return apperrors.RecordNotFound
+	}
+	exists, err = p.isMessageExists(ctx, id, m_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return apperrors.RecordNotFound
+	}
+	if _, err := p.DB.Exec(ctx, dbqueries.ProjectsRepositoryEditMessage1, trimmed, m_id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *ProjectsRepository) DeleteMessage(ctx context.Context, id uuid.UUID, m_id int64) error {
+	if m_id == 0 {
+		return apperrors.InvalidArguments
+	}
+	exists, err := p.IsExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return apperrors.RecordNotFound
+	}
+	exists, err = p.isMessageExists(ctx, id, m_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return apperrors.RecordNotFound
+	}
+	if _, err := p.DB.Exec(ctx, dbqueries.ProjectsRepositoryDeleteMessage1, m_id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *ProjectsRepository) GetMessageAuthorUID(ctx context.Context, id int64) (uint, error) {
+	if id == 0 {
+		return 0, apperrors.InvalidArguments
+	}
+	var authorUID uint
+	if err := p.DB.QueryRow(ctx, "SELECT author_uid FROM project_messages WHERE id = $1", id).Scan(&authorUID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, apperrors.RecordNotFound
+		}
+		return 0, err
+	}
+	return authorUID, nil
 }
 
 var _ statistics.Repository = (*StatisticsRepository)(nil)

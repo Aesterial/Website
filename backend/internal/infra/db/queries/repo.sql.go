@@ -100,20 +100,22 @@ type GetWhoLikedProject1Params struct {
 	Offset    int32
 }
 
-func (q *Queries) GetWhoLikedProject1(ctx context.Context, arg GetWhoLikedProject1Params) ([]User, error) {
+type GetWhoLikedProject1Row struct {
+	Uid      int64
+	Username string
+	Joined   pgtype.Timestamptz
+}
+
+func (q *Queries) GetWhoLikedProject1(ctx context.Context, arg GetWhoLikedProject1Params) ([]GetWhoLikedProject1Row, error) {
 	rows, err := q.db.Query(ctx, GetWhoLikedProject1, arg.ProjectID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []GetWhoLikedProject1Row
 	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.Uid,
-			&i.Username,
-			&i.Joined,
-		); err != nil {
+		var i GetWhoLikedProject1Row
+		if err := rows.Scan(&i.Uid, &i.Username, &i.Joined); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -611,46 +613,19 @@ func (q *Queries) NotificationsRepositoryMark1(ctx context.Context, arg Notifica
 	return err
 }
 
-const ProjectsRepositoryCreateMessage1 = `-- name: ProjectsRepositoryCreateMessage1 :one
-SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1)
-`
-
-func (q *Queries) ProjectsRepositoryCreateMessage1(ctx context.Context, id pgtype.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, ProjectsRepositoryCreateMessage1, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
-const ProjectsRepositoryCreateMessage2 = `-- name: ProjectsRepositoryCreateMessage2 :one
-SELECT EXISTS(SELECT 1 FROM project_messages WHERE project_id = $1 AND id = $2)
-`
-
-type ProjectsRepositoryCreateMessage2Params struct {
-	ProjectID pgtype.UUID
-	ID        int64
-}
-
-func (q *Queries) ProjectsRepositoryCreateMessage2(ctx context.Context, arg ProjectsRepositoryCreateMessage2Params) (bool, error) {
-	row := q.db.QueryRow(ctx, ProjectsRepositoryCreateMessage2, arg.ProjectID, arg.ID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
-const ProjectsRepositoryCreateMessage3 = `-- name: ProjectsRepositoryCreateMessage3 :exec
+const ProjectsRepositoryCreateMessage1 = `-- name: ProjectsRepositoryCreateMessage1 :exec
 INSERT INTO project_messages (project_id, author_uid, content, reply_to_id) VALUES ($1, $2, $3, $4)
 `
 
-type ProjectsRepositoryCreateMessage3Params struct {
+type ProjectsRepositoryCreateMessage1Params struct {
 	ProjectID pgtype.UUID
 	AuthorUid int64
 	Content   string
 	ReplyToID pgtype.Int8
 }
 
-func (q *Queries) ProjectsRepositoryCreateMessage3(ctx context.Context, arg ProjectsRepositoryCreateMessage3Params) error {
-	_, err := q.db.Exec(ctx, ProjectsRepositoryCreateMessage3,
+func (q *Queries) ProjectsRepositoryCreateMessage1(ctx context.Context, arg ProjectsRepositoryCreateMessage1Params) error {
+	_, err := q.db.Exec(ctx, ProjectsRepositoryCreateMessage1,
 		arg.ProjectID,
 		arg.AuthorUid,
 		arg.Content,
@@ -722,6 +697,29 @@ func (q *Queries) ProjectsRepositoryCreateProject3(ctx context.Context, projectI
 	return err
 }
 
+const ProjectsRepositoryDeleteMessage1 = `-- name: ProjectsRepositoryDeleteMessage1 :exec
+UPDATE project_messages SET deleted = now() WHERE id = $1
+`
+
+func (q *Queries) ProjectsRepositoryDeleteMessage1(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, ProjectsRepositoryDeleteMessage1, id)
+	return err
+}
+
+const ProjectsRepositoryEditMessage1 = `-- name: ProjectsRepositoryEditMessage1 :exec
+UPDATE project_messages SET content = $1, updated = now() WHERE id = $2
+`
+
+type ProjectsRepositoryEditMessage1Params struct {
+	Content string
+	ID      int64
+}
+
+func (q *Queries) ProjectsRepositoryEditMessage1(ctx context.Context, arg ProjectsRepositoryEditMessage1Params) error {
+	_, err := q.db.Exec(ctx, ProjectsRepositoryEditMessage1, arg.Content, arg.ID)
+	return err
+}
+
 const ProjectsRepositoryGetProjectsByUID1 = `-- name: ProjectsRepositoryGetProjectsByUID1 :many
 SELECT p.id FROM projects p WHERE p.author_uid = $1
 `
@@ -746,32 +744,48 @@ func (q *Queries) ProjectsRepositoryGetProjectsByUID1(ctx context.Context, autho
 	return items, nil
 }
 
-const ProjectsRepositoryMessages1 = `-- name: ProjectsRepositoryMessages1 :one
+const ProjectsRepositoryIsExists1 = `-- name: ProjectsRepositoryIsExists1 :one
 SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1)
 `
 
-func (q *Queries) ProjectsRepositoryMessages1(ctx context.Context, id pgtype.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, ProjectsRepositoryMessages1, id)
+func (q *Queries) ProjectsRepositoryIsExists1(ctx context.Context, id pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, ProjectsRepositoryIsExists1, id)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
-const ProjectsRepositoryMessages2 = `-- name: ProjectsRepositoryMessages2 :many
+const ProjectsRepositoryIsMessageExists1 = `-- name: ProjectsRepositoryIsMessageExists1 :exec
+SELECT EXISTS (SELECT 1 FROM project_messages WHERE id = $1 AND project_id = $2)
+`
+
+type ProjectsRepositoryIsMessageExists1Params struct {
+	ID        int64
+	ProjectID pgtype.UUID
+}
+
+func (q *Queries) ProjectsRepositoryIsMessageExists1(ctx context.Context, arg ProjectsRepositoryIsMessageExists1Params) error {
+	_, err := q.db.Exec(ctx, ProjectsRepositoryIsMessageExists1, arg.ID, arg.ProjectID)
+	return err
+}
+
+const ProjectsRepositoryMessages1 = `-- name: ProjectsRepositoryMessages1 :many
 SELECT
 			id,
 			project_id,
 			author_uid,
 			content,
 			reply_to_id,
-			at
+			at,
+			updated,
+			deleted
 		FROM project_messages
 		WHERE project_id = $1
 		ORDER BY at ASC, id ASC
 `
 
-func (q *Queries) ProjectsRepositoryMessages2(ctx context.Context, projectID pgtype.UUID) ([]ProjectMessage, error) {
-	rows, err := q.db.Query(ctx, ProjectsRepositoryMessages2, projectID)
+func (q *Queries) ProjectsRepositoryMessages1(ctx context.Context, projectID pgtype.UUID) ([]ProjectMessage, error) {
+	rows, err := q.db.Query(ctx, ProjectsRepositoryMessages1, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -786,6 +800,8 @@ func (q *Queries) ProjectsRepositoryMessages2(ctx context.Context, projectID pgt
 			&i.Content,
 			&i.ReplyToID,
 			&i.At,
+			&i.Updated,
+			&i.Deleted,
 		); err != nil {
 			return nil, err
 		}

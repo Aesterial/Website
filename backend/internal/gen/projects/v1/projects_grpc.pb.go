@@ -32,6 +32,10 @@ const (
 	ProjectService_Delete_FullMethodName            = "/projects.v1.ProjectService/Delete"
 	ProjectService_Categories_FullMethodName        = "/projects.v1.ProjectService/Categories"
 	ProjectService_ToggleLike_FullMethodName        = "/projects.v1.ProjectService/ToggleLike"
+	ProjectService_Messages_FullMethodName          = "/projects.v1.ProjectService/Messages"
+	ProjectService_CreateMessage_FullMethodName     = "/projects.v1.ProjectService/CreateMessage"
+	ProjectService_UpdateMessage_FullMethodName     = "/projects.v1.ProjectService/UpdateMessage"
+	ProjectService_DeleteMessage_FullMethodName     = "/projects.v1.ProjectService/DeleteMessage"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -49,6 +53,10 @@ type ProjectServiceClient interface {
 	Delete(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*v1.WithTracing, error)
 	Categories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CategoriesResponse, error)
 	ToggleLike(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	Messages(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*ProjectMessagesResponse, error)
+	CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
+	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error)
 }
 
 type projectServiceClient struct {
@@ -169,6 +177,46 @@ func (c *projectServiceClient) ToggleLike(ctx context.Context, in *LikeRequest, 
 	return out, nil
 }
 
+func (c *projectServiceClient) Messages(ctx context.Context, in *RequestWithID, opts ...grpc.CallOption) (*ProjectMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectMessagesResponse)
+	err := c.cc.Invoke(ctx, ProjectService_Messages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.WithTracing)
+	err := c.cc.Invoke(ctx, ProjectService_CreateMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.WithTracing)
+	err := c.cc.Invoke(ctx, ProjectService_UpdateMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*v1.WithTracing, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.WithTracing)
+	err := c.cc.Invoke(ctx, ProjectService_DeleteMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -184,6 +232,10 @@ type ProjectServiceServer interface {
 	Delete(context.Context, *RequestWithID) (*v1.WithTracing, error)
 	Categories(context.Context, *emptypb.Empty) (*CategoriesResponse, error)
 	ToggleLike(context.Context, *LikeRequest) (*v1.WithTracing, error)
+	Messages(context.Context, *RequestWithID) (*ProjectMessagesResponse, error)
+	CreateMessage(context.Context, *CreateMessageRequest) (*v1.WithTracing, error)
+	UpdateMessage(context.Context, *UpdateMessageRequest) (*v1.WithTracing, error)
+	DeleteMessage(context.Context, *DeleteMessageRequest) (*v1.WithTracing, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -226,6 +278,18 @@ func (UnimplementedProjectServiceServer) Categories(context.Context, *emptypb.Em
 }
 func (UnimplementedProjectServiceServer) ToggleLike(context.Context, *LikeRequest) (*v1.WithTracing, error) {
 	return nil, status.Error(codes.Unimplemented, "method ToggleLike not implemented")
+}
+func (UnimplementedProjectServiceServer) Messages(context.Context, *RequestWithID) (*ProjectMessagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Messages not implemented")
+}
+func (UnimplementedProjectServiceServer) CreateMessage(context.Context, *CreateMessageRequest) (*v1.WithTracing, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateMessage not implemented")
+}
+func (UnimplementedProjectServiceServer) UpdateMessage(context.Context, *UpdateMessageRequest) (*v1.WithTracing, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMessage not implemented")
+}
+func (UnimplementedProjectServiceServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*v1.WithTracing, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMessage not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -446,6 +510,78 @@ func _ProjectService_ToggleLike_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_Messages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestWithID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).Messages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_Messages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).Messages(ctx, req.(*RequestWithID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_CreateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).CreateMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_CreateMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).CreateMessage(ctx, req.(*CreateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UpdateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UpdateMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UpdateMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UpdateMessage(ctx, req.(*UpdateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_DeleteMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).DeleteMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_DeleteMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).DeleteMessage(ctx, req.(*DeleteMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -496,6 +632,22 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ToggleLike",
 			Handler:    _ProjectService_ToggleLike_Handler,
+		},
+		{
+			MethodName: "Messages",
+			Handler:    _ProjectService_Messages_Handler,
+		},
+		{
+			MethodName: "CreateMessage",
+			Handler:    _ProjectService_CreateMessage_Handler,
+		},
+		{
+			MethodName: "UpdateMessage",
+			Handler:    _ProjectService_UpdateMessage_Handler,
+		},
+		{
+			MethodName: "DeleteMessage",
+			Handler:    _ProjectService_DeleteMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -125,8 +125,6 @@ func buildHTTPHandler(
 	grpcServer *grpc.Server,
 	gateway *runtime.ServeMux,
 	cors corsConfig,
-	ticketsHandler *grpcserver.TicketsService,
-	projectsHandler *grpcserver.ProjectService,
 ) http.Handler {
 	grpcWebServer := grpcweb.WrapServer(
 		grpcServer,
@@ -162,18 +160,7 @@ func buildHTTPHandler(
 		cors.apply(rec, r)
 
 		loggedStart := false
-		if ticketsHandler != nil || projectsHandler != nil {
-			logGatewayStart(r, traceID)
-			loggedStart = true
-			if ticketsHandler != nil && ticketsHandler.ServeDiscussionHTTP(rec, r.WithContext(ctx)) {
-				logGatewayFinish(r, traceID, rec.status, time.Since(rec.startedAt))
-				return
-			}
-			if projectsHandler != nil && projectsHandler.ServeDiscussionHTTP(rec, r.WithContext(ctx)) {
-				logGatewayFinish(r, traceID, rec.status, time.Since(rec.startedAt))
-				return
-			}
-		}
+		logGatewayStart(r, traceID)
 		if gateway != nil {
 			if !loggedStart {
 				logGatewayStart(r, traceID)

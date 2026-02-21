@@ -27,7 +27,7 @@ var File_projects_projects_proto protoreflect.FileDescriptor
 
 const file_projects_projects_proto_rawDesc = "" +
 	"\n" +
-	"\x17projects/projects.proto\x12\vprojects.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15projects/domain.proto\x1a\vtypes.proto2\xc6\b\n" +
+	"\x17projects/projects.proto\x12\vprojects.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15projects/domain.proto\x1a\vtypes.proto2\xb6\f\n" +
 	"\x0eProjectService\x12O\n" +
 	"\x03Get\x12\x17.projects.v1.GetRequest\x1a\x18.projects.v1.GetResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/projects\x12f\n" +
 	"\aGetByID\x12\x1e.projects.v1.GetProjectRequest\x1a\x1f.projects.v1.GetProjectResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/projects/{id}\x12a\n" +
@@ -41,23 +41,31 @@ const file_projects_projects_proto_rawDesc = "" +
 	"\n" +
 	"Categories\x12\x16.google.protobuf.Empty\x1a\x1f.projects.v1.CategoriesResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/projects/categories\x12[\n" +
 	"\n" +
-	"ToggleLike\x12\x18.projects.v1.LikeRequest\x1a\x12.types.WithTracing\"\x1f\x82\xd3\xe4\x93\x02\x19\"\x17/api/projects/like/{id}B5Z3Aesterial/backend/internal/gen/projects/v1;projectsb\x06proto3"
+	"ToggleLike\x12\x18.projects.v1.LikeRequest\x1a\x12.types.WithTracing\"\x1f\x82\xd3\xe4\x93\x02\x19\"\x17/api/projects/like/{id}\x12x\n" +
+	"\bMessages\x12\x1a.projects.v1.RequestWithID\x1a$.projects.v1.ProjectMessagesResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/api/projects/{id}/discussion/list\x12w\n" +
+	"\rCreateMessage\x12!.projects.v1.CreateMessageRequest\x1a\x12.types.WithTracing\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/projects/{id}/discussion/create\x12~\n" +
+	"\rUpdateMessage\x12!.projects.v1.UpdateMessageRequest\x1a\x12.types.WithTracing\"6\x82\xd3\xe4\x93\x020:\x01*2+/api/projects/{id}/discussion/{m_id}/update\x12{\n" +
+	"\rDeleteMessage\x12!.projects.v1.DeleteMessageRequest\x1a\x12.types.WithTracing\"3\x82\xd3\xe4\x93\x02-*+/api/projects/{id}/discussion/{m_id}/deleteB5Z3Aesterial/backend/internal/gen/projects/v1;projectsb\x06proto3"
 
 var file_projects_projects_proto_goTypes = []any{
-	(*GetRequest)(nil),         // 0: projects.v1.GetRequest
-	(*GetProjectRequest)(nil),  // 1: projects.v1.GetProjectRequest
-	(*MadeByRequest)(nil),      // 2: projects.v1.MadeByRequest
-	(*GetTopRequest)(nil),      // 3: projects.v1.GetTopRequest
-	(*CreateRequest)(nil),      // 4: projects.v1.CreateRequest
-	(*ChangeRequest)(nil),      // 5: projects.v1.ChangeRequest
-	(*RequestWithID)(nil),      // 6: projects.v1.RequestWithID
-	(*emptypb.Empty)(nil),      // 7: google.protobuf.Empty
-	(*LikeRequest)(nil),        // 8: projects.v1.LikeRequest
-	(*GetResponse)(nil),        // 9: projects.v1.GetResponse
-	(*GetProjectResponse)(nil), // 10: projects.v1.GetProjectResponse
-	(*CreateResponse)(nil),     // 11: projects.v1.CreateResponse
-	(*v1.WithTracing)(nil),     // 12: types.WithTracing
-	(*CategoriesResponse)(nil), // 13: projects.v1.CategoriesResponse
+	(*GetRequest)(nil),              // 0: projects.v1.GetRequest
+	(*GetProjectRequest)(nil),       // 1: projects.v1.GetProjectRequest
+	(*MadeByRequest)(nil),           // 2: projects.v1.MadeByRequest
+	(*GetTopRequest)(nil),           // 3: projects.v1.GetTopRequest
+	(*CreateRequest)(nil),           // 4: projects.v1.CreateRequest
+	(*ChangeRequest)(nil),           // 5: projects.v1.ChangeRequest
+	(*RequestWithID)(nil),           // 6: projects.v1.RequestWithID
+	(*emptypb.Empty)(nil),           // 7: google.protobuf.Empty
+	(*LikeRequest)(nil),             // 8: projects.v1.LikeRequest
+	(*CreateMessageRequest)(nil),    // 9: projects.v1.CreateMessageRequest
+	(*UpdateMessageRequest)(nil),    // 10: projects.v1.UpdateMessageRequest
+	(*DeleteMessageRequest)(nil),    // 11: projects.v1.DeleteMessageRequest
+	(*GetResponse)(nil),             // 12: projects.v1.GetResponse
+	(*GetProjectResponse)(nil),      // 13: projects.v1.GetProjectResponse
+	(*CreateResponse)(nil),          // 14: projects.v1.CreateResponse
+	(*v1.WithTracing)(nil),          // 15: types.WithTracing
+	(*CategoriesResponse)(nil),      // 16: projects.v1.CategoriesResponse
+	(*ProjectMessagesResponse)(nil), // 17: projects.v1.ProjectMessagesResponse
 }
 var file_projects_projects_proto_depIdxs = []int32{
 	0,  // 0: projects.v1.ProjectService.Get:input_type -> projects.v1.GetRequest
@@ -71,19 +79,27 @@ var file_projects_projects_proto_depIdxs = []int32{
 	6,  // 8: projects.v1.ProjectService.Delete:input_type -> projects.v1.RequestWithID
 	7,  // 9: projects.v1.ProjectService.Categories:input_type -> google.protobuf.Empty
 	8,  // 10: projects.v1.ProjectService.ToggleLike:input_type -> projects.v1.LikeRequest
-	9,  // 11: projects.v1.ProjectService.Get:output_type -> projects.v1.GetResponse
-	10, // 12: projects.v1.ProjectService.GetByID:output_type -> projects.v1.GetProjectResponse
-	9,  // 13: projects.v1.ProjectService.ByUID:output_type -> projects.v1.GetResponse
-	9,  // 14: projects.v1.ProjectService.GetTop:output_type -> projects.v1.GetResponse
-	9,  // 15: projects.v1.ProjectService.GetArchived:output_type -> projects.v1.GetResponse
-	11, // 16: projects.v1.ProjectService.Create:output_type -> projects.v1.CreateResponse
-	12, // 17: projects.v1.ProjectService.ChangeTitle:output_type -> types.WithTracing
-	12, // 18: projects.v1.ProjectService.ChangeDescription:output_type -> types.WithTracing
-	12, // 19: projects.v1.ProjectService.Delete:output_type -> types.WithTracing
-	13, // 20: projects.v1.ProjectService.Categories:output_type -> projects.v1.CategoriesResponse
-	12, // 21: projects.v1.ProjectService.ToggleLike:output_type -> types.WithTracing
-	11, // [11:22] is the sub-list for method output_type
-	0,  // [0:11] is the sub-list for method input_type
+	6,  // 11: projects.v1.ProjectService.Messages:input_type -> projects.v1.RequestWithID
+	9,  // 12: projects.v1.ProjectService.CreateMessage:input_type -> projects.v1.CreateMessageRequest
+	10, // 13: projects.v1.ProjectService.UpdateMessage:input_type -> projects.v1.UpdateMessageRequest
+	11, // 14: projects.v1.ProjectService.DeleteMessage:input_type -> projects.v1.DeleteMessageRequest
+	12, // 15: projects.v1.ProjectService.Get:output_type -> projects.v1.GetResponse
+	13, // 16: projects.v1.ProjectService.GetByID:output_type -> projects.v1.GetProjectResponse
+	12, // 17: projects.v1.ProjectService.ByUID:output_type -> projects.v1.GetResponse
+	12, // 18: projects.v1.ProjectService.GetTop:output_type -> projects.v1.GetResponse
+	12, // 19: projects.v1.ProjectService.GetArchived:output_type -> projects.v1.GetResponse
+	14, // 20: projects.v1.ProjectService.Create:output_type -> projects.v1.CreateResponse
+	15, // 21: projects.v1.ProjectService.ChangeTitle:output_type -> types.WithTracing
+	15, // 22: projects.v1.ProjectService.ChangeDescription:output_type -> types.WithTracing
+	15, // 23: projects.v1.ProjectService.Delete:output_type -> types.WithTracing
+	16, // 24: projects.v1.ProjectService.Categories:output_type -> projects.v1.CategoriesResponse
+	15, // 25: projects.v1.ProjectService.ToggleLike:output_type -> types.WithTracing
+	17, // 26: projects.v1.ProjectService.Messages:output_type -> projects.v1.ProjectMessagesResponse
+	15, // 27: projects.v1.ProjectService.CreateMessage:output_type -> types.WithTracing
+	15, // 28: projects.v1.ProjectService.UpdateMessage:output_type -> types.WithTracing
+	15, // 29: projects.v1.ProjectService.DeleteMessage:output_type -> types.WithTracing
+	15, // [15:30] is the sub-list for method output_type
+	0,  // [0:15] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

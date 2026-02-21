@@ -186,3 +186,37 @@ func (s *Service) CreateMessage(ctx context.Context, id uuid.UUID, authorUID uin
 	}
 	return nil
 }
+
+func (s *Service) GetMessageAuthorUID(ctx context.Context, m_id int64) (uint, error) {
+	if s == nil || s.repo == nil {
+		return 0, apperrors.NotConfigured
+	}
+	if m_id == 0 {
+		return 0, apperrors.InvalidArguments
+	}
+	return s.repo.GetMessageAuthorUID(ctx, m_id)
+}
+
+func (s *Service) EditMessage(ctx context.Context, id uuid.UUID, m_id int64, content string) error {
+	if s == nil || s.repo == nil {
+		return apperrors.NotConfigured
+	}
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return apperrors.InvalidArguments
+	}
+	if m_id == 0 {
+		return apperrors.InvalidArguments
+	}
+	return s.repo.EditMessage(ctx, id, m_id, content)
+}
+
+func (s *Service) DeleteMessage(ctx context.Context, id uuid.UUID, m_id int64) error {
+	if s == nil || s.repo == nil {
+		return apperrors.NotConfigured
+	}
+	if m_id == 0 {
+		return apperrors.InvalidArguments
+	}
+	return s.repo.DeleteMessage(ctx, id, m_id)
+}

@@ -256,29 +256,40 @@ INSERT INTO project_photos (project_id, object_key, content_type, size_bytes, cr
 -- name: ProjectsRepositoryToggleLike1 :one
 select toggle_project_like($1::uuid, $2::bigint);
 
--- name: ProjectsRepositoryMessages1 :one
+-- name: ProjectsRepositoryIsExists1 :one
 SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1);
 
--- name: ProjectsRepositoryMessages2 :many
+-- name: ProjectsRepositoryMessages1 :many
 SELECT
 			id,
 			project_id,
 			author_uid,
 			content,
 			reply_to_id,
-			at
+			at,
+			updated,
+			deleted
 		FROM project_messages
 		WHERE project_id = $1
 		ORDER BY at ASC, id ASC;
-
--- name: ProjectsRepositoryCreateMessage1 :one
-SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1);
-
--- name: ProjectsRepositoryCreateMessage2 :one
-SELECT EXISTS(SELECT 1 FROM project_messages WHERE project_id = $1 AND id = $2);
-
--- name: ProjectsRepositoryCreateMessage3 :exec
+		
+-- name: ProjectsRepositoryMessage1 :one
+SELECT id, project_id, author_uid, content, reply_to_id, at, updated, deleted FROM project_messages WHERE id = $1;  
+		
+-- name: ProjectsRepositoryCreateMessage1 :exec
 INSERT INTO project_messages (project_id, author_uid, content, reply_to_id) VALUES ($1, $2, $3, $4);
+
+-- name: ProjectsRepositoryEditMessage1 :exec
+UPDATE project_messages SET content = $1, updated = now() WHERE id = $2;
+
+-- name: ProjectsRepositoryDeleteMessage1 :exec
+UPDATE project_messages SET deleted = now() WHERE id = $1 AND project_id = $2;
+
+-- name: ProjectsRepositoryIsMessageExists1 :exec
+SELECT EXISTS (SELECT 1 FROM project_messages WHERE id = $1 AND project_id = $2);
+
+-- name: ProjectsRepositoryMessageOwner1 :one
+SELECT author_uid FROM project_messages WHERE id = $1;
 
 -- name: StatisticsRepositoryVoteCount1 :one
 SELECT COUNT(*) FROM project_likes WHERE created_at >= $1;

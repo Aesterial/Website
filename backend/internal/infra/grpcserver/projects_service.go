@@ -5,7 +5,6 @@ import (
 	userapp "Aesterial/backend/internal/app/info/user"
 	projectsapp "Aesterial/backend/internal/app/projects"
 	storageapp "Aesterial/backend/internal/app/storage"
-	"Aesterial/backend/internal/domain/permissions"
 	permsdomain "Aesterial/backend/internal/domain/permissions"
 	projectsdomain "Aesterial/backend/internal/domain/projects"
 	"Aesterial/backend/internal/domain/user"
@@ -14,6 +13,7 @@ import (
 	"Aesterial/backend/internal/infra/logger"
 	apperrors "Aesterial/backend/internal/shared/errors"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -196,7 +196,7 @@ func (s *ProjectService) ByUID(ctx context.Context, req *projpb.MadeByRequest) (
 	if requestor == nil {
 		return nil, apperrors.Unauthenticated.AddErrDetails("user not logon")
 	}
-	if err := s.auth.RequirePermissions(ctx, requestor.UID, permissions.UsersViewProfilePublic); err != nil {
+	if err := s.auth.RequirePermissions(ctx, requestor.UID, permsdomain.UsersViewProfilePublic); err != nil {
 		return nil, err
 	}
 	list, err := s.projects.GetProjectsByUID(ctx, int(req.UserId))
@@ -263,6 +263,122 @@ func (s *ProjectService) GetTop(ctx context.Context, req *projpb.GetTopRequest) 
 		return nil, apperrors.ServerError.AddErrDetails("failed to get projects top list: " + err.Error() + "for city: " + req.GetCity())
 	}
 	return &projpb.GetResponse{Projects: proj.ToProto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) Messages(ctx context.Context, req *projpb.RequestWithID) (*projpb.ProjectMessagesResponse, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured
+	}
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	list, err := s.projects.Messages(ctx, id)
+	if err != nil {
+		logger.Debug("failed to receive messages: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &projpb.ProjectMessagesResponse{List: list.Proto(), Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) CreateMessage(ctx context.Context, req *projpb.CreateMessageRequest) (*types.WithTracing, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	if err := s.projects.CreateMessage(ctx, id, requestor.UID, req.GetContent(), req.ReplyTo); err != nil {
+		logger.Debug("failed to create message: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) hasAnyProjectPermission(ctx context.Context, uid uint, perms ...permsdomain.Permission) (bool, error) {
+	for _, perm := range perms {
+		if err := s.auth.RequirePermissions(ctx, uid, perm); err == nil {
+			return true, nil
+		} else if !errors.Is(err, apperrors.AccessDenied) {
+			return false, err
+		}
+	}
+	return false, nil
+}
+
+func (s *ProjectService) canManageDiscussionMessage(ctx context.Context, requestorUID uint, authorUID uint, extraPerms ...permsdomain.Permission) (bool, error) {
+	if requestorUID == authorUID {
+		return true, nil
+	}
+	perms := make([]permsdomain.Permission, 0, len(extraPerms)+1)
+	perms = append(perms, permsdomain.ProjectsAll)
+	perms = append(perms, extraPerms...)
+	return s.hasAnyProjectPermission(ctx, requestorUID, perms...)
+}
+
+func (s *ProjectService) UpdateMessage(ctx context.Context, req *projpb.UpdateMessageRequest) (*types.WithTracing, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	authorUID, err := s.projects.GetMessageAuthorUID(ctx, req.GetMId())
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	allowed, err := s.canManageDiscussionMessage(ctx, requestor.UID, authorUID, permsdomain.ProjectsUpdateAll, permsdomain.ProjectsUpdateAny)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, apperrors.AccessDenied
+	}
+	if err := s.projects.EditMessage(ctx, id, req.GetMId(), req.GetContent()); err != nil {
+		logger.Debug("failed to update message: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
+}
+
+func (s *ProjectService) DeleteMessage(ctx context.Context, req *projpb.DeleteMessageRequest) (*types.WithTracing, error) {
+	if s == nil || s.projects == nil {
+		return nil, apperrors.NotConfigured
+	}
+	requestor, err := s.auth.RequireUser(ctx)
+	if err != nil || requestor == nil {
+		return nil, err
+	}
+	id, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, apperrors.InvalidArguments
+	}
+	authorUID, err := s.projects.GetMessageAuthorUID(ctx, req.GetMId())
+	if err != nil {
+		return nil, apperrors.Wrap(err)
+	}
+	allowed, err := s.canManageDiscussionMessage(ctx, requestor.UID, authorUID, permsdomain.ProjectsDeleteAll, permsdomain.ProjectsDeleteAny)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, apperrors.AccessDenied
+	}
+	if err := s.projects.DeleteMessage(ctx, id, req.GetMId()); err != nil {
+		logger.Debug("failed to delete message: "+err.Error(), "")
+		return nil, apperrors.Wrap(err)
+	}
+	return &types.WithTracing{Tracing: TraceIDOrNew(ctx)}, nil
 }
 
 func normalizeProjectCategory(raw string) string {

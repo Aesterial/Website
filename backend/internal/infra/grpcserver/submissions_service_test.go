@@ -79,6 +79,18 @@ func (p *submissionsProjectsRepoStub) CreateMessage(context.Context, uuid.UUID, 
 	return nil
 }
 
+func (p *submissionsProjectsRepoStub) EditMessage(context.Context, uuid.UUID, int64, string) error {
+	return nil
+}
+
+func (p *submissionsProjectsRepoStub) DeleteMessage(context.Context, uuid.UUID, int64) error {
+	return nil
+}
+
+func (p *submissionsProjectsRepoStub) GetMessageAuthorUID(context.Context, int64) (uint, error) {
+	return 0, nil
+}
+
 func (p *submissionsProjectsRepoStub) GetCategories(context.Context) ([]string, error) {
 	return nil, nil
 }

@@ -512,7 +512,9 @@ create table project_messages (
     author_uid bigint not null references users(uid) on delete restrict,
     content text not null,
     reply_to_id bigint references project_messages(id) on delete set null,
-    at timestamptz not null default now()
+    at timestamptz not null default now(),
+    updated timestamptz,
+    deleted timestamptz
 );
 
 create index project_messages_project_at_idx on project_messages (project_id, at);

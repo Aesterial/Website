@@ -52,6 +52,10 @@ services:
       URL_PRIVACY: ${URL_PRIVACY}
       URL_SUPPORT: ${URL_SUPPORT}
       URL_MAIN: ${URL_MAIN}
+      GEOCODE_PROVIDER: ${GEOCODE_PROVIDER}
+      GEOCODE_USER_AGENT: ${GEOCODE_USER_AGENT}
+      GEOCODE_CONTACT_EMAIL: ${GEOCODE_CONTACT_EMAIL}
+      GEOCODE_RATE_LIMIT_MS: ${GEOCODE_RATE_LIMIT_MS}
 
   aesterial_frontend:
     image: ivanskem/aesterial-jcup:frontend-latest

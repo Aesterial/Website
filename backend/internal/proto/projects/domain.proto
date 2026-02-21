@@ -110,3 +110,36 @@ message CategoriesResponse {
   repeated string categories = 1;
   string tracing = 2;
 }
+
+message ProjectMessage {
+  int64 id = 1;
+  string project_id = 2;
+  user.v1.UserPublic author = 3;
+  string content = 4;
+  optional int64 reply = 5;
+  google.protobuf.Timestamp at = 6;
+  optional google.protobuf.Timestamp updated = 7;
+  optional google.protobuf.Timestamp deleted = 8;
+}
+
+message ProjectMessagesResponse {
+  repeated ProjectMessage list = 1;
+  string tracing = 2;
+}
+
+message CreateMessageRequest {
+  string id = 1;
+  string content = 2;
+  optional int64 replyTo = 3;
+}
+
+message UpdateMessageRequest {
+  string id = 1;
+  int64 m_id = 2;
+  string content = 3;
+}
+
+message DeleteMessageRequest {
+  string id = 1;
+  int64 m_id = 2;
+}

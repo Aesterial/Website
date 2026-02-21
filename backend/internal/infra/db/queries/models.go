@@ -857,6 +857,8 @@ type ProjectMessage struct {
 	Content   string
 	ReplyToID pgtype.Int8
 	At        pgtype.Timestamptz
+	Updated   pgtype.Timestamptz
+	Deleted   pgtype.Timestamptz
 }
 
 type ProjectPhoto struct {
