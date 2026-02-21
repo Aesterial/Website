@@ -91,16 +91,17 @@ func (q *Queries) GetProjectPhotos1(ctx context.Context, projectID pgtype.UUID) 
 }
 
 const GetWhoLikedProject1 = `-- name: GetWhoLikedProject1 :many
-SELECT u.uid, u.username, u.email, u.settings, u.rank, u.permissions, u.joined, u.password, u.totp_enabled, u.totp_secret, u.totp_pending_secret, u.totp_confirmed_at, u.totp_last_step, u.totp_pending_created_at FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC OFFSET $2
+SELECT u.uid, u.username, u.joined FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC LIMIT $2 OFFSET $3
 `
 
 type GetWhoLikedProject1Params struct {
 	ProjectID pgtype.UUID
+	Limit     int32
 	Offset    int32
 }
 
 func (q *Queries) GetWhoLikedProject1(ctx context.Context, arg GetWhoLikedProject1Params) ([]User, error) {
-	rows, err := q.db.Query(ctx, GetWhoLikedProject1, arg.ProjectID, arg.Offset)
+	rows, err := q.db.Query(ctx, GetWhoLikedProject1, arg.ProjectID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -111,18 +112,7 @@ func (q *Queries) GetWhoLikedProject1(ctx context.Context, arg GetWhoLikedProjec
 		if err := rows.Scan(
 			&i.Uid,
 			&i.Username,
-			&i.Email,
-			&i.Settings,
-			&i.Rank,
-			&i.Permissions,
 			&i.Joined,
-			&i.Password,
-			&i.TotpEnabled,
-			&i.TotpSecret,
-			&i.TotpPendingSecret,
-			&i.TotpConfirmedAt,
-			&i.TotpLastStep,
-			&i.TotpPendingCreatedAt,
 		); err != nil {
 			return nil, err
 		}

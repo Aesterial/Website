@@ -234,7 +234,7 @@ SELECT p.object_key, p.content_type, p.size_bytes, p.created_at
 		ORDER BY p.created_at;
 
 -- name: GetWhoLikedProject1 :many
-SELECT u.* FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC OFFSET $2;
+SELECT u.uid, u.username, u.joined FROM project_likes l JOIN users u ON u.uid = l.user_uid WHERE l.project_id = $1 ORDER BY l.created_at DESC LIMIT $2 OFFSET $3;
 
 -- name: GetProject1 :one
 SELECT p.id, p.author_uid, (p.info).title, (p.info).description, (p.info).category, ((p.info).location).city, ((p.info).location).latitude, ((p.info).location).longitude, ((p.info).location).address, p.likes_count, p.created_at, p.status FROM projects p WHERE p.id = $1;

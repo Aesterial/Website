@@ -251,9 +251,23 @@ func parsePostgresTime(raw string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unsupported time format: %q", raw)
 }
 
-func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context.Context, uint) (*user.Avatar, error), isBanned func(context.Context, uint) (bool, *user.BanInfo, error)) (user.Users, error) {
+const usersAvatarsByUIDsQuery = `
+SELECT a.user_id, a.object_key, a.content_type, a.size_bytes, a.updated_at
+FROM user_avatars a
+WHERE a.user_id = ANY($1::bigint[])
+ORDER BY a.user_id, a.updated_at DESC
+`
+
+const usersBansByUIDsQuery = `
+SELECT DISTINCT b.target
+FROM bans b
+WHERE b.target = ANY($1::bigint[])
+`
+
+func parseRowsToUsers(ctx context.Context, rows pgx.Rows, db *pgxpool.Pool) (user.Users, error) {
 	var usrs user.Users
-	var err error
+	uniqueUIDs := make(map[uint]struct{})
+	uids := make([]uint, 0, 16)
 	cols := rows.FieldDescriptions()
 	defer func() {
 		rows.Close()
@@ -261,6 +275,10 @@ func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context
 	for rows.Next() {
 		var usr = user.User{Settings: &user.Settings{Avatar: &user.Avatar{}}, Rank: &rank.UserRank{}, Email: &user.Email{}}
 		switch len(cols) {
+		case 3:
+			if err := rows.Scan(&usr.UID, &usr.Username, &usr.Joined); err != nil {
+				return nil, err
+			}
 		case 7:
 			var emailAddress sql.NullString
 			var emailVerified sql.NullBool
@@ -323,7 +341,7 @@ func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context
 						usr.Settings.DisplayName = &displayName
 					}
 				}
-				if len(fields) >= 3 && fields[3].Valid && fields[3].Value != "" {
+				if len(fields) >= 4 && fields[3].Valid && fields[3].Value != "" {
 					liveTime, err := strconv.Atoi(fields[3].Value)
 					if err != nil {
 						logger.Debug("error on parsing user sessions live time, value: "+fields[2].Value, "")
@@ -423,7 +441,7 @@ func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context
 						usr.Settings.DisplayName = &displayName
 					}
 				}
-				if len(fields) >= 3 && fields[3].Valid && fields[3].Value != "" {
+				if len(fields) >= 4 && fields[3].Valid && fields[3].Value != "" {
 					liveTime, err := strconv.Atoi(fields[3].Value)
 					if err != nil {
 						logger.Debug("error on parsing user sessions live time, value: "+fields[2].Value, "")
@@ -454,20 +472,128 @@ func parseRowsToUsers(ctx context.Context, rows pgx.Rows, getAvatar func(context
 		default:
 			return nil, fmt.Errorf("unexpected users columns count: %d", len(cols))
 		}
-		usr.Settings.Avatar, err = getAvatar(ctx, usr.UID)
-		if err != nil {
-			return nil, err
+		if _, seen := uniqueUIDs[usr.UID]; !seen {
+			uniqueUIDs[usr.UID] = struct{}{}
+			uids = append(uids, usr.UID)
 		}
-		usr.Banned, _, err = isBanned(ctx, usr.UID)
-		if err != nil {
-			return nil, err
-		}
-		usrs = append(usrs, &usr)
+		userCopy := usr
+		usrs = append(usrs, &userCopy)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	if len(usrs) == 0 || db == nil || len(uids) == 0 {
+		return usrs, nil
+	}
+
+	avatarsByUID, err := batchGetAvatarsByUID(ctx, db, uids)
+	if err != nil {
+		return nil, err
+	}
+
+	bannedByUID, err := batchGetBannedByUID(ctx, db, uids)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, usr := range usrs {
+		if usr == nil {
+			continue
+		}
+		if usr.Settings == nil {
+			usr.Settings = &user.Settings{}
+		}
+		if avatar, ok := avatarsByUID[usr.UID]; ok {
+			usr.Settings.Avatar = avatar
+		} else {
+			usr.Settings.Avatar = nil
+		}
+		usr.Banned = bannedByUID[usr.UID]
+	}
+
 	return usrs, nil
+}
+
+func batchGetAvatarsByUID(ctx context.Context, db *pgxpool.Pool, uids []uint) (map[uint]*user.Avatar, error) {
+	result := make(map[uint]*user.Avatar, len(uids))
+	if len(uids) == 0 {
+		return result, nil
+	}
+
+	userIDs := make([]int64, 0, len(uids))
+	for _, uid := range uids {
+		userIDs = append(userIDs, int64(uid))
+	}
+
+	rows, err := db.Query(ctx, usersAvatarsByUIDsQuery, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID int64
+		var key sql.NullString
+		var contentType sql.NullString
+		var sizeBytes sql.NullInt64
+		var updatedAt sql.NullTime
+		if err := rows.Scan(&userID, &key, &contentType, &sizeBytes, &updatedAt); err != nil {
+			return nil, err
+		}
+		uid := uint(userID)
+		if _, exists := result[uid]; exists {
+			continue
+		}
+		if !key.Valid || strings.TrimSpace(key.String) == "" {
+			continue
+		}
+		avatar := &user.Avatar{
+			Key:         key.String,
+			ContentType: contentType.String,
+		}
+		if sizeBytes.Valid {
+			avatar.SizeBytes = int(sizeBytes.Int64)
+		}
+		if updatedAt.Valid {
+			avatar.Updated = updatedAt.Time
+		}
+		result[uid] = avatar
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func batchGetBannedByUID(ctx context.Context, db *pgxpool.Pool, uids []uint) (map[uint]bool, error) {
+	result := make(map[uint]bool, len(uids))
+	if len(uids) == 0 {
+		return result, nil
+	}
+
+	userIDs := make([]int64, 0, len(uids))
+	for _, uid := range uids {
+		userIDs = append(userIDs, int64(uid))
+	}
+
+	rows, err := db.Query(ctx, usersBansByUIDsQuery, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID int64
+		if err := rows.Scan(&userID); err != nil {
+			return nil, err
+		}
+		result[uint(userID)] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -494,7 +620,7 @@ func (u *UserRepository) GetList(ctx context.Context) ([]*userpb.UserPublic, err
 	if err != nil {
 		return nil, err
 	}
-	usrs, err := parseRowsToUsers(ctx, rows, u.GetAvatar, u.IsBanned)
+	usrs, err := parseRowsToUsers(ctx, rows, u.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -1449,13 +1575,35 @@ func getProjectPhotos(ctx context.Context, projId uuid.UUID, db *pgxpool.Pool) (
 	return avatars, nil
 }
 
-func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (user.Users, error) {
-	rows, err := db.Query(ctx, dbqueries.GetWhoLikedProject1, id, 0)
+const defaultWhoLikedProjectLimit int32 = 50
+const maxWhoLikedProjectLimit int32 = 100
+
+func getWhoLikedProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool, offset int32, limit int32) (user.Users, error) {
+	startedAt := time.Now()
+	if offset < 0 {
+		offset = 0
+	}
+	if limit <= 0 {
+		limit = defaultWhoLikedProjectLimit
+	}
+	if limit > maxWhoLikedProjectLimit {
+		limit = maxWhoLikedProjectLimit
+	}
+
+	rows, err := db.Query(ctx, dbqueries.GetWhoLikedProject1, id, limit, offset)
 	if err != nil {
+		logger.Debug(fmt.Sprintf("getWhoLikedProject query failed project_id=%s limit=%d offset=%d took=%s err=%v", id, limit, offset, time.Since(startedAt), err), "")
 		return nil, err
 	}
-	u := NewUserRepository(db)
-	return parseRowsToUsers(ctx, rows, u.GetAvatar, u.IsBanned)
+
+	liked, err := parseRowsToUsers(ctx, rows, db)
+	if err != nil {
+		logger.Debug(fmt.Sprintf("getWhoLikedProject parse failed project_id=%s limit=%d offset=%d took=%s err=%v", id, limit, offset, time.Since(startedAt), err), "")
+		return nil, err
+	}
+
+	logger.Debug(fmt.Sprintf("getWhoLikedProject project_id=%s limit=%d offset=%d users=%d took=%s", id, limit, offset, len(liked), time.Since(startedAt)), "")
+	return liked, nil
 }
 
 func getProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (*projectdomain.Project, error) {
@@ -1475,7 +1623,7 @@ func getProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (*projectdo
 		return nil, err
 	}
 	if project.Likes > 0 {
-		liked, err := getWhoLikedProject(ctx, project.ID, db)
+		liked, err := getWhoLikedProject(ctx, project.ID, db, 0, defaultWhoLikedProjectLimit)
 		if err != nil {
 			return nil, err
 		}
@@ -1486,17 +1634,19 @@ func getProject(ctx context.Context, id uuid.UUID, db *pgxpool.Pool) (*projectdo
 
 const defaultProjectHydrationWorkers = 16
 const defaultProjectHydrationTimeout = 20 * time.Second
+const projectHydrationDBCallsPerProject = 4
 
 func hydrateProjectsByIDs(ctx context.Context, db *pgxpool.Pool, ids []uuid.UUID) (projectdomain.Projects, error) {
 	if len(ids) == 0 {
 		return projectdomain.Projects{}, nil
 	}
 
-	maxWorkers, hydrationTimeout := projectHydrationSettings()
+	maxWorkers, hydrationTimeout := projectHydrationSettings(db)
 	workers := min(len(ids), maxWorkers)
 	if workers < 1 {
 		workers = 1
 	}
+	startedAt := time.Now()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -1508,6 +1658,8 @@ func hydrateProjectsByIDs(ctx context.Context, db *pgxpool.Pool, ids []uuid.UUID
 	var firstErr error
 
 	for i, id := range ids {
+		i := i
+		id := id
 		wg.Go(func() {
 			select {
 			case sem <- struct{}{}:
@@ -1533,18 +1685,32 @@ func hydrateProjectsByIDs(ctx context.Context, db *pgxpool.Pool, ids []uuid.UUID
 
 	wg.Wait()
 	if firstErr != nil {
+		logger.Debug(fmt.Sprintf("hydrateProjectsByIDs failed ids=%d workers=%d took=%s err=%v", len(ids), workers, time.Since(startedAt), firstErr), "")
 		return nil, firstErr
 	}
 
+	logger.Debug(fmt.Sprintf("hydrateProjectsByIDs ids=%d workers=%d took=%s", len(ids), workers, time.Since(startedAt)), "")
 	return projects, nil
 }
 
-func projectHydrationSettings() (int, time.Duration) {
+func projectHydrationSettings(db *pgxpool.Pool) (int, time.Duration) {
 	cfg := appconfig.Get().Async
 
 	workers := cfg.ProjectsHydrationWorkers
 	if workers < 1 {
 		workers = defaultProjectHydrationWorkers
+	}
+	if db != nil {
+		maxConns := int(db.Config().MaxConns)
+		if maxConns > 0 {
+			poolSafeWorkers := maxConns / projectHydrationDBCallsPerProject
+			if poolSafeWorkers < 1 {
+				poolSafeWorkers = 1
+			}
+			if workers > poolSafeWorkers {
+				workers = poolSafeWorkers
+			}
+		}
 	}
 
 	timeout := time.Duration(cfg.ProjectsHydrationTimeoutSeconds) * time.Second
