@@ -327,7 +327,7 @@ create table users (
 
     joined timestamptz not null default now(),
 
-    password varchar(255),
+    password varchar(255) not null,
 
     -- totp fields
     totp_enabled boolean not null default false,
