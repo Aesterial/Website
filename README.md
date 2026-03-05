@@ -179,4 +179,3 @@ MIT — подробности в `LICENSE`.
 
 ## meme
 
-![](https://i.ibb.co/rGVhdVHQ/MEME.jpg)
