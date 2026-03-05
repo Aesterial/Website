@@ -27,7 +27,7 @@
     <img alt="CI" src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white">
   </a>
   <a href="https://go.dev/">
-    <img alt="Go" src="https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go&logoColor=white">
+    <img alt="Go" src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white">
   </a>
   <a href="https://nextjs.org/">
     <img alt="Next.js" src="https://img.shields.io/badge/Next.js-React-000000?logo=next.js&logoColor=white">
@@ -92,7 +92,7 @@ frontend/web/       Next.js app (app/, components/, public/)
 ## ✅ Требования
 
 - **Node 20+** и **npm** (веб)
-- **Go 1.25.5** (бэкенд, как в `go.work`)
+- **Go 1.26** (бэкенд, как в `go.work`)
 
 ---
 
@@ -176,6 +176,3 @@ AGPL-3.0 — подробности в `LICENSE`.
 структурированный backend на Go, современный web-стек на Next.js и продуманная модель развития платформы для взаимодействия жителей и города.
 
 Работа над проектом показала, что даже если результат конкурса определяется другими критериями, вложенные инженерные усилия формируют фундамент, на котором можно строить гораздо более серьёзные системы.
-
-## meme
-
