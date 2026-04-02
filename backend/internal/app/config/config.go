@@ -115,7 +115,7 @@ func ensure() {
 			IPService: envValue("SERVICES_IP", "BOOT_IPSERVICE"),
 		},
 		Storage: domain.Storage{
-			UseStorage:        parseBoolAny(true, "USE_STORAGE", "STORAGE_USE"),
+			UseStorage:        parseBoolAny(false, "USE_STORAGE", "STORAGE_USE"),
 			Endpoint:          envValue("STORAGE_ENDPOINT"),
 			Region:            envValue("STORAGE_REGION"),
 			Bucket:            envValue("STORAGE_BUCKET"),
@@ -126,7 +126,7 @@ func ensure() {
 			PresignTTLSeconds: parseInt(900, "STORAGE_PRESIGN_TTL_SECONDS"),
 		},
 		Mailer: domain.Mailer{
-			UseMailer: parseBoolAny(true, "USE_MAILER", "MAILER_USE"),
+			UseMailer: parseBoolAny(false, "USE_MAILER", "MAILER_USE"),
 			Host:      envValue("SMTP_HOST"),
 			Port:      parseInt(0, "SMTP_PORT"),
 			User:      envValue("SMTP_USER"),
