@@ -19,26 +19,9 @@ export const ensureHttps = (value: string) => {
   return `https://${trimmed}`;
 };
 
-const getBackendLocation = () =>
-  (
-    process.env.NEXT_PUBLIC_BACKEND_LOCATION ||
-    process.env.BACKEND_LOCATION ||
-    ""
-  )
-    .trim()
-    .toLowerCase();
-
-const applyBackendLocation = (origin: string) => {
+const applyApiSubdomain = (origin: string) => {
   const normalizedOrigin = stripTrailingSlash(origin.trim());
   if (!normalizedOrigin) {
-    return normalizedOrigin;
-  }
-
-  const backendLocation = getBackendLocation();
-  if (backendLocation === "path") {
-    return `${normalizedOrigin}/api`;
-  }
-  if (backendLocation !== "domain") {
     return normalizedOrigin;
   }
 
@@ -62,10 +45,10 @@ export const resolveApiBaseUrl = (origin?: string) => {
     return DEV_API_BASE_URL;
   }
   if (origin) {
-    return applyBackendLocation(origin);
+    return applyApiSubdomain(origin);
   }
   if (typeof window !== "undefined" && window.location?.host) {
-    return applyBackendLocation(window.location.origin);
+    return applyApiSubdomain(window.location.origin);
   }
   return "";
 };
