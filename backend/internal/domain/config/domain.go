@@ -7,6 +7,7 @@ type Database struct {
 	Port     string
 	User     string
 	Password string
+	Sslmode  string
 }
 
 type TLS struct {

@@ -86,6 +86,7 @@ func ensure() {
 		database.Port = envValue("POSTGRES_PORT")
 		database.User = envValue("POSTGRES_USER")
 		database.Password = envValue("POSTGRES_PASSWORD")
+		database.Sslmode = envValue("POSTGRES_SSLMODE")
 	}
 
 	env = domain.Environment{

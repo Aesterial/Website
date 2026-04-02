@@ -19,7 +19,11 @@ func NewConnection() (*pgxpool.Pool, error) {
 		}
 		return pgxpool.New(context.Background(), dsn)
 	}
-	dburl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.Name)
+	var sslMode = "require"
+	if db.Sslmode != "" {
+		sslMode = db.Sslmode
+	}
+	dburl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", db.Host, db.Port, db.User, db.Password, db.Name, sslMode)
 	return pgxpool.New(context.Background(), dburl)
 }
 
